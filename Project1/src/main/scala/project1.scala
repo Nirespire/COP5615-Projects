@@ -3,8 +3,8 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Await
-import scala.util.Random
 import scala.concurrent.duration._
+import scala.util.Random
 
 object project1 extends App {
   val configStr = """
@@ -45,9 +45,10 @@ object project1 extends App {
   // work unit.
   val (reader, findIndicator) = if (input.matches("^\\d+$")) {
     val k = input.toInt
-    (system.actorOf(Props(new Reader(k = k)), name = "reader"),
+    (system.actorOf(Props(new WorkAssigner(k = k)), name = "reader"),
       system.actorOf(Props[FindIndicator], name = "findIndicator"))
   } else {
+    //TODO: throw exception in case the master actors are not found
     implicit val timeout = Timeout(5 seconds)
     (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/reader").
       resolveOne(), timeout.duration),
@@ -65,7 +66,7 @@ object project1 extends App {
   system.shutdown()
 }
 
-class Reader(k: Int) extends Actor {
+class WorkAssigner(k: Int) extends Actor {
   val random = new Random()
   var numCoins: Long = 0
   var strLength: Long = 0
