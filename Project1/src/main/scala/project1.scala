@@ -1,6 +1,8 @@
 import akka.actor._
 import com.typesafe.config.ConfigFactory
 
+import scala.util.Random
+
 object project1 extends App {
   val configStr = """
                     |akka {
@@ -16,12 +18,19 @@ object project1 extends App {
                     | }
                     |}
                   """.stripMargin
-  val input = "5"
+  val input = "4"
   //arg(0)
   val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
   val system = ActorSystem(name = "BitcoinMiningSystem", config = config)
 
   // number of bitcoin strings that will be sent to a worker at a time
+  // we need to change this, actually, work unit is not the number of strings being sent to each
+  // worker, but some indication of where that workers assigment of work starts and ends
+  // the reader class needs to be changed to be a WorkAssigner
+  // This realization came one you see how the workers and reader interacts, they send each other messages
+  // If reader is expected to generate the string, there may be times, where other workers are idle
+  // Each worker should be given enough work without keeping the reader class too busy/ too relaxed is the ideal
+  // work unit.
   val NUM_COINS_PER_WORKER = 5
   // constant that prefixes all bitcoins to be hashed
   val BITCOIN_STRING_PREFIX = "snair"
@@ -40,18 +49,33 @@ object project1 extends App {
   //Set up Worker
   system.actorOf(Props(new Worker(masterIP = masterIP)), name = "worker")
 
-  Thread.sleep(15000)
+  Thread.sleep(180000)
   system.shutdown()
 }
 
 class Reader(k: Int, numberOfCoins: Int, prefix: String) extends Actor {
+  val random = new Random()
+  var numCoins: Long = 0
+  var strLength:Long = 0
+  var charIdx = 0
+  val charList = (33 until 126).toList
+
+
   def receive = {
     case x: String =>
       println(x) //This will be the workers, ip address
       sender ! k
     case true =>
-      val coins = (0 until numberOfCoins).foldLeft(List[String]()) { (op, idx) => prefix + "random" :: op }
+      numCoins = numCoins + numberOfCoins
+      val coins = (0 until numberOfCoins).foldLeft(List[String]()) { (op, idx) =>
+        val str = (0 to 52).foldLeft("") { (opStr, sIdx) =>
+          opStr + random.nextPrintableChar()
+        }
+        prefix + str :: op
+      }
+      println(numCoins)
       sender ! Work(coins)
+
   }
 }
 
@@ -98,7 +122,7 @@ class FindIndicator extends Actor {
 }
 
 case class Bitcoin(bitcoinString: String, bitcoinHash: String) {
-  override def toString(): String = bitcoinString + "  " + bitcoinHash
+  override def toString: String = bitcoinString + "  " + bitcoinHash
 }
 
 sealed trait BitcoinMessage
