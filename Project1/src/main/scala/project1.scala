@@ -17,8 +17,8 @@ object project1 extends App {
                     |}
                   """.stripMargin
   val input = "5"
-  val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
   //arg(0)
+  val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
   val system = ActorSystem(name = "BitcoinMiningSystem", config = config)
 
   // number of bitcoin strings that will be sent to a worker at a time
@@ -29,10 +29,9 @@ object project1 extends App {
   //Get Master IP, set up actors that are required in the master machine
   val masterIP = if (input.matches("^\\d+$")) {
     val k = input.toInt
-    val r = system.actorOf(Props(new Reader(k = k, numberOfCoins = NUM_COINS_PER_WORKER)), name = "reader")
-    r ! "setup"
+    system.actorOf(Props(new Reader(k = k, numberOfCoins = NUM_COINS_PER_WORKER, prefix = BITCOIN_STRING_PREFIX)),
+      name = "reader")
     system.actorOf(Props[FindIndicator], name = "findIndicator")
-    println(r)
     "127.0.0.1"
   } else {
     input
@@ -41,34 +40,30 @@ object project1 extends App {
   //Set up Worker
   system.actorOf(Props(new Worker(masterIP = masterIP)), name = "worker")
 
-  Thread.sleep(2000)
+  Thread.sleep(15000)
   system.shutdown()
 }
 
-class Reader(k: Int, numberOfCoins: Int) extends Actor {
+class Reader(k: Int, numberOfCoins: Int, prefix: String) extends Actor {
   def receive = {
-    case x: String => println(x) //This will be the workers, ip address
-    case Calculate =>
-      println("starting workers")
-    // Start the workers
-    //val workerRouter = context.actorOf(Props(new Worker(k=k, listener = listener)).withRouter(RoundRobinPool(4)), name = "workerRouter")
-    //for(i <- 0 until 10) workerRouter ! Work(Array("random"))
-
+    case x: String =>
+      println(x) //This will be the workers, ip address
+      sender ! k
+    case true =>
+      val coins = (0 until numberOfCoins).foldLeft(List[String]()) { (op, idx) => prefix + "random" :: op }
+      sender ! Work(coins)
   }
-
 }
 
 class Worker(masterIP: String) extends Actor {
   val config = ConfigFactory.load()
   val port = config.getInt("akka.remote.netty.tcp.port")
-  println(port)
-  println(masterIP)
   val reader = context.actorSelection(s"akka.tcp://BitcoinMiningSystem@$masterIP:$port/user/reader")
   val findIndicator = context.actorSelection(s"akka.tcp://BitcoinMiningSystem@$masterIP:$port/user/findIndicator")
   val thisIP = if (masterIP.equals("127.0.0.1")) masterIP else java.net.InetAddress.getLocalHost.getHostAddress
-  println(reader)
-  reader ! thisIP
   var k: Int = _
+
+  reader ! thisIP
 
   def MD5(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
@@ -77,43 +72,39 @@ class Worker(masterIP: String) extends Actor {
 
   def receive = {
     case setK: Int => k = setK
+      sender ! true
     // Receive some strings to hash from Reader
     case Work(bitcoins) =>
-      val validCoins = Array[Bitcoin]()
-
-      for (coin <- bitcoins) {
+      val validCoins = bitcoins.foldLeft(List[Bitcoin]()) { (op, coin) =>
         val hash = MD5(coin)
-        if (hash.substring(0, k).count(_ == '0') == k)
-          validCoins :+ new Bitcoin(bitcoinString = coin, bitcoinHash = hash)
+        if (hash.substring(0, k).count(_ == '0') == k) {
+          Bitcoin(bitcoinString = coin, bitcoinHash = hash) :: op
+        } else {
+          op
+        }
       }
 
       // Send any valid coins to the Listener
-      if (!validCoins.isEmpty) findIndicator ! Result(validCoins)
+      if (validCoins.nonEmpty) findIndicator ! Result(validCoins)
+      sender ! true
   }
 }
 
 class FindIndicator extends Actor {
   def receive = {
     // Print all valid bitcoin returned from Worker
-    case Result(bitcoins) =>
-      for (coin <- bitcoins) {
-        println(coin)
-      }
+    case Result(bitcoins) => bitcoins.foreach(println)
   }
 }
 
-class Bitcoin(bitcoinString: String, bitcoinHash: String) {
-  var bc: String = bitcoinString
-  var hs: String = bitcoinHash
-
-  override def toString(): String = bc + "  " + hs
-
+case class Bitcoin(bitcoinString: String, bitcoinHash: String) {
+  override def toString(): String = bitcoinString + "  " + bitcoinHash
 }
 
 sealed trait BitcoinMessage
 
 case object Calculate extends BitcoinMessage
 
-case class Work(potentialBitcoins: Array[String]) extends BitcoinMessage
+case class Work(potentialBitcoins: List[String]) extends BitcoinMessage
 
-case class Result(bitcoins: Array[Bitcoin]) extends BitcoinMessage
+case class Result(bitcoins: List[Bitcoin]) extends BitcoinMessage
