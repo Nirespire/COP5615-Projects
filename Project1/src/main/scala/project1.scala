@@ -8,6 +8,10 @@ import scala.concurrent.duration._
 
 object project1 extends App {
   val configStr = """
+                    |app.name = "BitcoinMiningSystem"
+                    |app.prefix = "snair"
+                    |app.work_unit = 3
+                    |app.number_of_workers = 5
                     |akka {
                     |  actor {
                     |    provider = "akka.remote.RemoteActorRefProvider"
@@ -21,12 +25,17 @@ object project1 extends App {
                     | }
                     |}
                   """.stripMargin
-  val input = "4"
+  val input = "1"
   //arg(0)
   val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
-  val system = ActorSystem(name = "BitcoinMiningSystem", config = config)
+  val appName = config.getString("app.name")
+  // constant that prefixes all bitcoins to be hashed
+  val prefix = config.getString("app.prefix")
+  val port = config.getInt("akka.remote.netty.tcp.port")
+  val workUnit = config.getInt("app.work_unit")
+  val numOfWorkers = config.getInt("app.number_of_workers")
+  val system = ActorSystem(name = appName, config = config)
 
-  val WORK_UNIT = 3
   // Changed from NUMBER_OF_COINS to WORK_UNIT, actually, work unit is not the number of strings being sent to each
   // worker, but some indication of where that workers assigment of work starts and ends
   // the reader class needs to be changed to be a WorkAssigner
@@ -34,29 +43,23 @@ object project1 extends App {
   // If reader is expected to generate the string, there may be times, where other workers are idle
   // Each worker should be given enough work without keeping the reader class too busy/ too relaxed is the ideal
   // work unit.
-  // constant that prefixes all bitcoins to be hashed
-  val BITCOIN_STRING_PREFIX = "snair"
-  val port = config.getInt("akka.remote.netty.tcp.port")
-  //Get this machines IP
-  //Get Master IP, set up actors that are required in the master machine
   val (reader, findIndicator) = if (input.matches("^\\d+$")) {
     val k = input.toInt
     (system.actorOf(Props(new Reader(k = k)), name = "reader"),
       system.actorOf(Props[FindIndicator], name = "findIndicator"))
   } else {
     implicit val timeout = Timeout(5 seconds)
-    (Await.result(system.actorSelection(s"akka.tcp://BitcoinMiningSystem@$input:$port/user/reader").
+    (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/reader").
       resolveOne(), timeout.duration),
-      Await.result(system.actorSelection(s"akka.tcp://BitcoinMiningSystem@$input:$port/user/findIndicator").
+      Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/findIndicator").
         resolveOne(), timeout.duration))
   }
 
-  // Set up Worker
-  // Should we create more workers per machine? Maybe yes!
-  system.actorOf(Props(new Worker(reader = reader, findIndicator = findIndicator,
-    prefix = BITCOIN_STRING_PREFIX, workUnit = WORK_UNIT)), name = "worker")
-
-
+  // Set up Workers
+  (1 to numOfWorkers).foreach { idx =>
+    system.actorOf(Props(new Worker(reader = reader, findIndicator = findIndicator,
+      prefix = prefix, workUnit = workUnit)), name = s"worker$idx")
+  }
 
   Thread.sleep(10000)
   system.shutdown()
