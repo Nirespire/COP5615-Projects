@@ -1,7 +1,10 @@
 import akka.actor._
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.Await
 import scala.util.Random
+import scala.concurrent.duration._
 
 object project1 extends App {
   val configStr = """
@@ -23,71 +26,83 @@ object project1 extends App {
   val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
   val system = ActorSystem(name = "BitcoinMiningSystem", config = config)
 
-  // number of bitcoin strings that will be sent to a worker at a time
-  // we need to change this, actually, work unit is not the number of strings being sent to each
+  val WORK_UNIT = 3
+  // Changed from NUMBER_OF_COINS to WORK_UNIT, actually, work unit is not the number of strings being sent to each
   // worker, but some indication of where that workers assigment of work starts and ends
   // the reader class needs to be changed to be a WorkAssigner
   // This realization came one you see how the workers and reader interacts, they send each other messages
   // If reader is expected to generate the string, there may be times, where other workers are idle
   // Each worker should be given enough work without keeping the reader class too busy/ too relaxed is the ideal
   // work unit.
-  val NUM_COINS_PER_WORKER = 5
   // constant that prefixes all bitcoins to be hashed
   val BITCOIN_STRING_PREFIX = "snair"
+  val port = config.getInt("akka.remote.netty.tcp.port")
   //Get this machines IP
   //Get Master IP, set up actors that are required in the master machine
-  val masterIP = if (input.matches("^\\d+$")) {
+  val (reader, findIndicator) = if (input.matches("^\\d+$")) {
     val k = input.toInt
-    system.actorOf(Props(new Reader(k = k, numberOfCoins = NUM_COINS_PER_WORKER, prefix = BITCOIN_STRING_PREFIX)),
-      name = "reader")
-    system.actorOf(Props[FindIndicator], name = "findIndicator")
-    "127.0.0.1"
+    (system.actorOf(Props(new Reader(k = k)), name = "reader"),
+      system.actorOf(Props[FindIndicator], name = "findIndicator"))
   } else {
-    input
+    implicit val timeout = Timeout(5 seconds)
+    (Await.result(system.actorSelection(s"akka.tcp://BitcoinMiningSystem@$input:$port/user/reader").
+      resolveOne(), timeout.duration),
+      Await.result(system.actorSelection(s"akka.tcp://BitcoinMiningSystem@$input:$port/user/findIndicator").
+        resolveOne(), timeout.duration))
   }
 
-  //Set up Worker
-  system.actorOf(Props(new Worker(masterIP = masterIP)), name = "worker")
+  // Set up Worker
+  // Should we create more workers per machine? Maybe yes!
+  system.actorOf(Props(new Worker(reader = reader, findIndicator = findIndicator,
+    prefix = BITCOIN_STRING_PREFIX, workUnit = WORK_UNIT)), name = "worker")
 
-  Thread.sleep(180000)
+
+
+  Thread.sleep(10000)
   system.shutdown()
 }
 
-class Reader(k: Int, numberOfCoins: Int, prefix: String) extends Actor {
+class Reader(k: Int) extends Actor {
   val random = new Random()
   var numCoins: Long = 0
-  var strLength:Long = 0
+  var strLength: Long = 0
   var charIdx = 0
-  val charList = (33 until 126).toList
-
+  val numberOfCoins = 5
 
   def receive = {
     case x: String =>
       println(x) //This will be the workers, ip address
-      sender ! k
+    case false => sender ! k
     case true =>
-      numCoins = numCoins + numberOfCoins
+      //Instead send a seed string, and each worker will have to try say adding all combinations
+      // of three chars appended to given seed,
+      // example,if WORK_UNIT is 3 & the seed send to the worker is "a", worker is expected to try everything
+      // from snairaaaa to sanirazzz, in this way we are assigning each worker a unique set of stuff to try
+      // among themselves.
+      // The only exception is when a blank seed ("") is  sent to a worker, that work will try all
+      // 0 to 3 length string combinations , e.g. snair, snaira, sanirb,... sanirzzz.
+
+      //We need to see which work unit i.e. number of combinations(2,3,4, or more) should
+      // each worker try, and which is most efficient.
+
       val coins = (0 until numberOfCoins).foldLeft(List[String]()) { (op, idx) =>
         val str = (0 to 52).foldLeft("") { (opStr, sIdx) =>
           opStr + random.nextPrintableChar()
         }
-        prefix + str :: op
+        str :: op
       }
-      println(numCoins)
-      sender ! Work(coins)
 
+      println(sender)
+      sender ! Work(coins)
   }
 }
 
-class Worker(masterIP: String) extends Actor {
-  val config = ConfigFactory.load()
-  val port = config.getInt("akka.remote.netty.tcp.port")
-  val reader = context.actorSelection(s"akka.tcp://BitcoinMiningSystem@$masterIP:$port/user/reader")
-  val findIndicator = context.actorSelection(s"akka.tcp://BitcoinMiningSystem@$masterIP:$port/user/findIndicator")
-  val thisIP = if (masterIP.equals("127.0.0.1")) masterIP else java.net.InetAddress.getLocalHost.getHostAddress
+class Worker(reader: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
   var k: Int = _
+  // List of visible ASCII chars
+  val charList = (33 until 126).toList
 
-  reader ! thisIP
+  reader ! false
 
   def MD5(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
@@ -98,6 +113,8 @@ class Worker(masterIP: String) extends Actor {
     case setK: Int => k = setK
       sender ! true
     // Receive some strings to hash from Reader
+    case seed: String =>
+    //
     case Work(bitcoins) =>
       val validCoins = bitcoins.foldLeft(List[Bitcoin]()) { (op, coin) =>
         val hash = MD5(coin)
