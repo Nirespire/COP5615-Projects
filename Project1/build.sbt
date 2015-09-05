@@ -8,4 +8,6 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
  
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.10" % "2.3.12"
 
+libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.3.12"
+
 scalacOptions += "-deprecation"
