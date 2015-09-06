@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.util.Random
 
 object project1 extends App {
   val configStr = """
@@ -25,7 +24,7 @@ object project1 extends App {
                     |}
                   """.stripMargin
   val input = args(0)
-  val ipStr = s"akka.remote.netty.tcp.hostname = \"${java.net.InetAddress.getLocalHost}\""
+  val ipStr = "akka.remote.netty.tcp.hostname = \"" + java.net.InetAddress.getLocalHost.getHostAddress + "\""
   val config = ConfigFactory.load(ConfigFactory.parseString(configStr + ipStr))
   val appName = config.getString("app.name")
   // constant that prefixes all bitcoins to be hashed
@@ -100,11 +99,6 @@ object StringIterator {
 }
 
 class WorkAssigner(k: Int) extends Actor {
-  val random = new Random()
-  var numCoins: Long = 0
-  var strLength: Long = 0
-  var charIdx = 0
-  val numberOfCoins = 5
   var seed = ""
 
   def receive = {
@@ -129,10 +123,9 @@ class WorkAssigner(k: Int) extends Actor {
 
 class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
   var k: Int = _
-  // List of visible ASCII chars
   workAssigner ! false
 
-  def SHA256(s: String): String = {
+  @inline def SHA256(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
     m.map("%02x".format(_)).mkString
   }
@@ -140,19 +133,8 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
   def receive = {
     case setK: Int => k = setK
       sender ! true
-    // Receive some strings to hash from workAssigner
-    case "" =>
-      var postFix = ""
-      while (postFix != StringIterator.startString * (workUnit + 1)) {
-        val coin = prefix + postFix
-        val hash = SHA256(coin)
-        if (hash.substring(0, k).count(_ == '0') == k) {
-          findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
-        }
-        postFix = StringIterator.getNextCombo(postFix)
-      }
     case seed: String =>
-      var postFix = StringIterator.startString
+      var postFix = if (seed.isEmpty) "" else StringIterator.startString * workUnit
       while (postFix != StringIterator.startString * (workUnit + 1)) {
         val coin = prefix + seed + postFix
         val hash = SHA256(coin)
