@@ -19,15 +19,14 @@ object project1 extends App {
                     |  remote {
                     |    enabled-transports = ["akka.remote.netty.tcp"]
                     |    netty.tcp {
-                    |      hostname = "127.0.0.1"
                     |      port = 2552
                     |    }
                     | }
                     |}
                   """.stripMargin
-  val input = "1"
-  //arg(0)
-  val config = ConfigFactory.load(ConfigFactory.parseString(configStr))
+  val input = args(0)
+  val ipStr = s"akka.remote.netty.tcp.hostname = \"${java.net.InetAddress.getLocalHost}\""
+  val config = ConfigFactory.load(ConfigFactory.parseString(configStr + ipStr))
   val appName = config.getString("app.name")
   // constant that prefixes all bitcoins to be hashed
   val prefix = config.getString("app.prefix")
@@ -133,7 +132,7 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
   // List of visible ASCII chars
   workAssigner ! false
 
-  def MD5(s: String): String = {
+  def SHA256(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
     m.map("%02x".format(_)).mkString
   }
@@ -146,7 +145,7 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
       var postFix = ""
       while (postFix != StringIterator.startString * (workUnit + 1)) {
         val coin = prefix + postFix
-        val hash = MD5(coin)
+        val hash = SHA256(coin)
         if (hash.substring(0, k).count(_ == '0') == k) {
           findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
         }
@@ -155,8 +154,8 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
     case seed: String =>
       var postFix = StringIterator.startString
       while (postFix != StringIterator.startString * (workUnit + 1)) {
-        val coin = prefix + postFix
-        val hash = MD5(coin)
+        val coin = prefix + seed + postFix
+        val hash = SHA256(coin)
         if (hash.substring(0, k).count(_ == '0') == k) {
           findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
         }
@@ -169,18 +168,10 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
 class FindIndicator extends Actor {
   def receive = {
     // Print all valid bitcoin returned from Worker
-    case bitcoin: Bitcoin => println(bitcoin)
+    case bitcoin: Bitcoin => println(sender + "_-_" + bitcoin)
   }
 }
 
 case class Bitcoin(bitcoinString: String, bitcoinHash: String) {
   override def toString: String = bitcoinString + "  " + bitcoinHash
 }
-
-sealed trait BitcoinMessage
-
-case object Calculate extends BitcoinMessage
-
-case class Work(potentialBitcoins: List[String]) extends BitcoinMessage
-
-case class Result(bitcoins: List[Bitcoin]) extends BitcoinMessage
