@@ -34,23 +34,24 @@ object project1 extends App {
   val port = config.getInt("akka.remote.netty.tcp.port")
   val workUnit = config.getInt("app.work_unit")
   val numOfWorkers = config.getInt("app.number_of_workers")
-  val system = ActorSystem(name = appName, config = config)
 
   // Changed from NUMBER_OF_COINS to WORK_UNIT, actually, work unit is not the number of strings being sent to each
   // worker, but some indication of where that workers assigment of work starts and ends
-  // the reader class needs to be changed to be a WorkAssigner
-  // This realization came one you see how the workers and reader interacts, they send each other messages
-  // If reader is expected to generate the string, there may be times, where other workers are idle
-  // Each worker should be given enough work without keeping the reader class too busy/ too relaxed is the ideal
+  // the workAssigner class needs to be changed to be a WorkAssigner
+  // This realization came one you see how the workers and workAssigner interacts, they send each other messages
+  // If workAssigner is expected to generate the string, there may be times, where other workers are idle
+  // Each worker should be given enough work without keeping the workAssigner class too busy/ too relaxed is the ideal
   // work unit.
-  val (reader, findIndicator) = if (input.matches("^\\d+$")) {
+
+  val system = ActorSystem(name = appName, config = config)
+  val (workAssigner, findIndicator) = if (input.matches("^\\d+$")) {
     val k = input.toInt
-    (system.actorOf(Props(new WorkAssigner(k = k)), name = "reader"),
+    (system.actorOf(Props(new WorkAssigner(k = k)), name = "workAssigner"),
       system.actorOf(Props[FindIndicator], name = "findIndicator"))
   } else {
     //TODO: throw exception in case the master actors are not found
     implicit val timeout = Timeout(5 seconds)
-    (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/reader").
+    (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/workAssigner").
       resolveOne(), timeout.duration),
       Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/findIndicator").
         resolveOne(), timeout.duration))
@@ -58,12 +59,45 @@ object project1 extends App {
 
   // Set up Workers
   (1 to numOfWorkers).foreach { idx =>
-    system.actorOf(Props(new Worker(reader = reader, findIndicator = findIndicator,
+    system.actorOf(Props(new Worker(workAssigner = workAssigner, findIndicator = findIndicator,
       prefix = prefix, workUnit = workUnit)), name = s"worker$idx")
   }
 
-  Thread.sleep(10000)
+  Thread.sleep(180000)
   system.shutdown()
+}
+
+object StringIterator {
+  val startIdx = 32
+  val stopIdx = 126
+
+  @inline def startChar = startIdx.toChar
+
+  @inline def startString = startChar.toString
+
+  @inline def stopChar = stopIdx.toChar
+
+  @inline def stopString = stopChar.toString
+
+  def plus(a: String): String = {
+    if (a.last == stopChar) {
+      plus(a.substring(0, a.length - 1)) + startChar
+    } else {
+      a.substring(0, a.length - 1) + (a.last + 1).toChar
+    }
+  }
+
+  def getNextCombo(a: String) = {
+    if (a.isEmpty) {
+      startString
+    } else {
+      if (a.forall(_ == stopChar)) {
+        startString * (a.length + 1)
+      } else {
+        plus(a)
+      }
+    }
+  }
 }
 
 class WorkAssigner(k: Int) extends Actor {
@@ -72,6 +106,7 @@ class WorkAssigner(k: Int) extends Actor {
   var strLength: Long = 0
   var charIdx = 0
   val numberOfCoins = 5
+  var seed = ""
 
   def receive = {
     case x: String =>
@@ -88,25 +123,15 @@ class WorkAssigner(k: Int) extends Actor {
 
       //We need to see which work unit i.e. number of combinations(2,3,4, or more) should
       // each worker try, and which is most efficient.
-
-      val coins = (0 until numberOfCoins).foldLeft(List[String]()) { (op, idx) =>
-        val str = (0 to 52).foldLeft("") { (opStr, sIdx) =>
-          opStr + random.nextPrintableChar()
-        }
-        str :: op
-      }
-
-      println(sender)
-      sender ! Work(coins)
+      sender ! seed
+      seed = StringIterator.getNextCombo(seed)
   }
 }
 
-class Worker(reader: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
+class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
   var k: Int = _
   // List of visible ASCII chars
-  val charList = (33 until 126).toList
-
-  reader ! false
+  workAssigner ! false
 
   def MD5(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
@@ -116,21 +141,27 @@ class Worker(reader: ActorRef, findIndicator: ActorRef, prefix: String, workUnit
   def receive = {
     case setK: Int => k = setK
       sender ! true
-    // Receive some strings to hash from Reader
-    case seed: String =>
-    //
-    case Work(bitcoins) =>
-      val validCoins = bitcoins.foldLeft(List[Bitcoin]()) { (op, coin) =>
+    // Receive some strings to hash from workAssigner
+    case "" =>
+      var postFix = ""
+      while (postFix != StringIterator.startString * (workUnit + 1)) {
+        val coin = prefix + postFix
         val hash = MD5(coin)
         if (hash.substring(0, k).count(_ == '0') == k) {
-          Bitcoin(bitcoinString = coin, bitcoinHash = hash) :: op
-        } else {
-          op
+          findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
         }
+        postFix = StringIterator.getNextCombo(postFix)
       }
-
-      // Send any valid coins to the Listener
-      if (validCoins.nonEmpty) findIndicator ! Result(validCoins)
+    case seed: String =>
+      var postFix = StringIterator.startString
+      while (postFix != StringIterator.startString * (workUnit + 1)) {
+        val coin = prefix + postFix
+        val hash = MD5(coin)
+        if (hash.substring(0, k).count(_ == '0') == k) {
+          findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
+        }
+        postFix = StringIterator.getNextCombo(postFix)
+      }
       sender ! true
   }
 }
@@ -138,7 +169,7 @@ class Worker(reader: ActorRef, findIndicator: ActorRef, prefix: String, workUnit
 class FindIndicator extends Actor {
   def receive = {
     // Print all valid bitcoin returned from Worker
-    case Result(bitcoins) => bitcoins.foreach(println)
+    case bitcoin: Bitcoin => println(bitcoin)
   }
 }
 
