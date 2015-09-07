@@ -23,7 +23,7 @@
 |                     |WorkerN|                        |
 |                     |_______|                        |
 +______________________________________________________+
-       </pre>
+</pre>
 
   Work unit is not the number of strings being sent to each
   worker, but some indication of where that workers assigment of work starts and ends
@@ -47,7 +47,15 @@ each worker try, and which is most efficient.
 
 - Work unit that resulted in best performance:
 
+	Each work unit in this implementation means how large of a space each worker is assigned
+	to hash through at a time. The WorkAssigner actor is responsible for generating "seed" strings that are
+	sent to each worker along with the work unit value. This combination tells the worker what space
+	to search and when it's work is done. 
+
+	For example, the work assigner could send one worker a seed = "aa" with a work unit of 2. That means the worker is responsible for hashing all strings from "aa", "aaa", "aab", "aac"... to "aazz". This example assumes that the entire ASCII range is from "a" to "z", however each worker actually considers characters from ASCII value 32 (space) to 126 (~).
+
 - Result of: scala project1.scala 4 (running for 1 minute)
+<pre>
 	snair &bj  00003299f3f28037590620546771c256ba66f33fa38c9df9a7fbddbd396c0c97
 	snair )f]  0000ac7ffe5f92bade15a58f3e100b81fbd220c183ba46151903effa573fdf6b
 	snair!.U@  0000c68fc44909148cbb8f2a95966d0885c586e0dc087f8c5016f92747fa8818
@@ -133,6 +141,7 @@ each worker try, and which is most efficient.
 	snair%Cxv  000011cc2c94925ff35d29540f86efc08bf8d533b68cb3f81c0a169c66069eb8
 	snair(A?6  00007571106e95553f33becf0deb406d684511183cc457e1c678bde7046dc6ab
 	snair(AVm  0000be7e1c78c83f86f4430844a5614b1270b976ffbf7e3e0c5a6a661b39f9c5
+</pre>
 
 - Result of: time scala project1.scala 4
 			 time scala project1.scala 5
