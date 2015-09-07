@@ -57,7 +57,7 @@ object project1 extends App {
   }
 
   // Run for some amount of time
-  Thread.sleep(180000)
+  Thread.sleep(60000)
   system.shutdown()
 }
 
