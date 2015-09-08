@@ -115,6 +115,7 @@ class WorkAssigner(k: Int) extends Actor {
 
 class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
   var k: Int = _
+  var maxPrefix Int = _
   workAssigner ! false
 
   // Bitcoin hash function
@@ -135,8 +136,11 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
           if (hash.substring(0, k).count(_ == '0') == k) {
             findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
           }
+        } else {
+/* compare with local max first */
+            findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
         }
-        else{findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)}
+
         postFix = StringIterator.getNextCombo(postFix)
       }
       sender ! true
@@ -154,15 +158,15 @@ class FindIndicator(largest : Boolean) extends Actor {
           largestNumZeroes = numZeroes
           println(bitcoin)
         }
+      } else {
+          println(/*sender + "_-_" + */bitcoin)
       }
-      else{println(/*sender + "_-_" + */bitcoin)}
   }
 
   def countNumLeadingZeroes(input : String) : Integer = {
     if(input.charAt(0) != '0'){
       0
-    }
-    else{
+    } else {
       1 + countNumLeadingZeroes(input.substring(1,input.length))
     }
   }
