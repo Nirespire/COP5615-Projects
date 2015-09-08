@@ -144,7 +144,9 @@ each worker try, and which is most efficient.
 	snair(A?6  00007571106e95553f33becf0deb406d684511183cc457e1c678bde7046dc6ab
 	snair(AVm  0000be7e1c78c83f86f4430844a5614b1270b976ffbf7e3e0c5a6a661b39f9c5
 </pre>
+
 3. Result of:
+
   CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
   Memory: 3895492K/4096180K available
   - time scala project1.scala 4
@@ -157,5 +159,9 @@ each worker try, and which is most efficient.
     real    1m40.175s
     user    5m59.172s
     sys     0m1.240s
+
 4. Coin with most zeroes found:
+
+	snair!y.X	000000e4b266f273eaeb60344eff841e2140c88c90cc7779a5269fdc5e264fd7
+
 5. Largest number of working machines used:

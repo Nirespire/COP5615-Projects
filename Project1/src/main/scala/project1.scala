@@ -115,13 +115,22 @@ class WorkAssigner(k: Int) extends Actor {
 
 class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
   var k: Int = _
-  var maxPrefix Int = _
+  var maxPrefix: Int = _
+  var largestNumZeroes = 0
   workAssigner ! false
 
   // Bitcoin hash function
   @inline def SHA256(s: String): String = {
     val m = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
     m.map("%02x".format(_)).mkString
+  }
+
+  def countNumLeadingZeroes(input: String): Integer = {
+    if (input.charAt(0) != '0') {
+      0
+    } else {
+      1 + countNumLeadingZeroes(input.substring(1, input.length))
+    }
   }
 
   def receive = {
@@ -132,13 +141,17 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
       while (postFix != StringIterator.startString * (workUnit + 1)) {
         val coin = prefix + seed + postFix
         val hash = SHA256(coin)
-        if(k > 0) {
+        if (k > 0) {
           if (hash.substring(0, k).count(_ == '0') == k) {
             findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
           }
         } else {
-/* compare with local max first */
+          /* compare with local max first */
+          val numLeadingZeroes = countNumLeadingZeroes(hash)
+          if(numLeadingZeroes > largestNumZeroes) {
+            largestNumZeroes = numLeadingZeroes
             findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
+          }
         }
 
         postFix = StringIterator.getNextCombo(postFix)
@@ -147,27 +160,28 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
   }
 }
 
-class FindIndicator(largest : Boolean) extends Actor {
+class FindIndicator(largest: Boolean) extends Actor {
   var largestNumZeroes = 0
+
   def receive = {
     // Print all valid bitcoin returned from Worker
     case bitcoin: Bitcoin =>
-      if(largest){
+      if (largest) {
         val numZeroes = countNumLeadingZeroes(bitcoin.bitcoinHash)
-        if(numZeroes > largestNumZeroes){
+        if (numZeroes > largestNumZeroes) {
           largestNumZeroes = numZeroes
           println(bitcoin)
         }
       } else {
-          println(/*sender + "_-_" + */bitcoin)
+        println(/*sender + "_-_" + */ bitcoin)
       }
   }
 
-  def countNumLeadingZeroes(input : String) : Integer = {
-    if(input.charAt(0) != '0'){
+  def countNumLeadingZeroes(input: String): Integer = {
+    if (input.charAt(0) != '0') {
       0
     } else {
-      1 + countNumLeadingZeroes(input.substring(1,input.length))
+      1 + countNumLeadingZeroes(input.substring(1, input.length))
     }
   }
 }
