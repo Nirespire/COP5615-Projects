@@ -35,10 +35,10 @@ object project1 extends App {
   val system = ActorSystem(name = appName, config = config)
 
   // If args(0) is a number, start the master system
-  val (workAssigner, findIndicator) = if (input.matches("^\\d+$")) {
+  val (workAssigner, findIndicator) = if (input.matches("^-1$|^\\d+$")) {
     val k = input.toInt
     (system.actorOf(Props(new WorkAssigner(k = k)), name = "workAssigner"),
-      system.actorOf(Props[FindIndicator], name = "findIndicator"))
+      system.actorOf(Props(new FindIndicator(largest = (k == -1))), name = "findIndicator"))
   }
   // Else, it's an IP address, so start a remote worker system and connect to the input IP
   else {
@@ -130,19 +130,40 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
       while (postFix != StringIterator.startString * (workUnit + 1)) {
         val coin = prefix + seed + postFix
         val hash = SHA256(coin)
-        if (hash.substring(0, k).count(_ == '0') == k) {
-          findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
+        if(k > 0) {
+          if (hash.substring(0, k).count(_ == '0') == k) {
+            findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
+          }
         }
+        else{findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)}
         postFix = StringIterator.getNextCombo(postFix)
       }
       sender ! true
   }
 }
 
-class FindIndicator extends Actor {
+class FindIndicator(largest : Boolean) extends Actor {
+  var largestNumZeroes = 0
   def receive = {
     // Print all valid bitcoin returned from Worker
-    case bitcoin: Bitcoin => println(/*sender + "_-_" + */bitcoin)
+    case bitcoin: Bitcoin =>
+      if(largest){
+        val numZeroes = countNumLeadingZeroes(bitcoin.bitcoinHash)
+        if(numZeroes > largestNumZeroes){
+          largestNumZeroes = numZeroes
+          println(bitcoin)
+        }
+      }
+      else{println(/*sender + "_-_" + */bitcoin)}
+  }
+
+  def countNumLeadingZeroes(input : String) : Integer = {
+    if(input.charAt(0) != '0'){
+      0
+    }
+    else{
+      1 + countNumLeadingZeroes(input.substring(1,input.length))
+    }
   }
 }
 
