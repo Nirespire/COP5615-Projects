@@ -1,6 +1,7 @@
 import akka.actor._
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -67,8 +68,11 @@ object StringIterator {
   val stopIdx = 126
 
   @inline def startChar = startIdx.toChar
+
   @inline def startString = startChar.toString
+
   @inline def stopChar = stopIdx.toChar
+
   @inline def stopString = stopChar.toString
 
   /*
@@ -102,11 +106,8 @@ class WorkAssigner(k: Int) extends Actor {
   var seed = ""
 
   def receive = {
-    case x: String =>
-      println(x) //This will be the workers, ip address
     case false => sender ! k
     case true =>
-
       sender ! seed
       seed = StringIterator.getNextCombo(seed)
   }
@@ -168,5 +169,5 @@ class FindIndicator(largest : Boolean) extends Actor {
 }
 
 case class Bitcoin(bitcoinString: String, bitcoinHash: String) {
-  override def toString: String = bitcoinString + "  " + bitcoinHash
+  override def toString: String = s"$bitcoinString\t$bitcoinHash"
 }
