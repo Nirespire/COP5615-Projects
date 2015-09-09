@@ -49,12 +49,22 @@ each worker try, and which is most efficient.
 
 1. Work unit that resulted in best performance:
 
-	Each work unit in this implementation means how large of a space each worker is assigned
-	to hash through at a time. The WorkAssigner actor is responsible for generating "seed" strings that are
-	sent to each worker along with the work unit value. This combination tells the worker what space
-	to search and when it's work is done. 
+    Each work unit in this implementation means how large of a space each worker is assigned to hash through at a time. The WorkAssigner actor is responsible for generating "seed" strings that are sent to each worker along with the work unit value. This combination tells the worker what space to search and when it's work is done. 
+    For example, the work assigner could send one worker a seed = "aa" with a work unit of 2. That means the worker is responsible for hashing all strings from "aa", "aaa", "aab", "aac"... to "aazz". This example assumes that the entire ASCII range is from "a" to "z", however each worker actually considers characters from ASCII value 32 (space) to 126 (~).
 
-	For example, the work assigner could send one worker a seed = "aa" with a work unit of 2. That means the worker is responsible for hashing all strings from "aa", "aaa", "aab", "aac"... to "aazz". This example assumes that the entire ASCII range is from "a" to "z", however each worker actually considers characters from ASCII value 32 (space) to 126 (~).
+    CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
+    Memory: 3895492K/4096180K available
+
+    The below table shows cpu/real time ratio, a larger number shows better CPU utilization; WU - shows work units, the length of string whose combination will be tried by each worker. WRK1, WRK2, ... , WRK10 indicates 1,2,...,10 worker per host respectively.
+    +---------------------------------------------------------------------------+
+    | WU | WRK1 | WRK2 | WRK3 | WRK4 | WRK5 | WRK6 | WRK7 | WRK8 | WRK9 | WRK10 |
+    +---------------------------------------------------------------------------+
+    | 1  | 1.19 | 2.11 | 2.78 | 3.67 | 3.77 | 3.80 | 3.76 | 3.80 | 3.83 | 3.83  |
+    | 2  | 1.17 | 2.08 | 2.99 | 3.83 | 3.83 | 3.84 | 3.84 | 3.82 | 3.85 | 3.84  |
+    | 3  | 1.16 | 2.08 | 2.94 | 3.85 | 3.85 | 3.85 | 3.89 | 3.88 | 3.91 | 3.90  |
+    +---------------------------------------------------------------------------+
+    Irrespective of the number of workers, we can see at 3 the CPU utilization was highest.
+    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (94^4) which is too larger per worker.
 
 2. Result of: scala project1.scala 4 (running for 1 minute)
 <pre>
@@ -147,21 +157,20 @@ each worker try, and which is most efficient.
 
 3. Result of:
 
-  CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
-  Memory: 3895492K/4096180K available
-  - time scala project1.scala 4
-    [preethu@32-laptop Project1]$ time sbt 'run 4' > o
-    real    1m36.378s
-    user    5m48.174s
-    sys     0m1.180s
-  - time scala project1.scala 5
-    [preethu@32-laptop Project1]$ time sbt 'run 5' > o
-    real    1m40.175s
-    user    5m59.172s
-    sys     0m1.240s
+    CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
+    Memory: 3895492K/4096180K available
+    - time scala project1.scala 4
+        [preethu@32-laptop Project1]$ time sbt 'run 4' > o
+        real    1m36.378s
+        user    5m48.174s
+        sys     0m1.180s
+    - time scala project1.scala 5
+        [preethu@32-laptop Project1]$ time sbt 'run 5' > o
+        real    1m40.175s
+        user    5m59.172s
+        sys     0m1.240s
 
 4. Coin with most zeroes found:
-
 	snair!y.X	000000e4b266f273eaeb60344eff841e2140c88c90cc7779a5269fdc5e264fd7
 
 5. Largest number of working machines used:
