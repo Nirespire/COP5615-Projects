@@ -34,21 +34,17 @@ object project1 extends App {
   val numOfWorkers = config.getInt("app.number_of_workers")
 
   val system = ActorSystem(name = appName, config = config)
-
-  // If args(0) is a number, start the master system
-  val (workAssigner, findIndicator) = if (input.matches("^-1$|^\\d+$")) {
+  val (workAssigner, findIndicator) = if (input.matches("^-?\\d+$")) {
+    // If args(0) is a number, start the master system
     val k = input.toInt
     (system.actorOf(Props(new WorkAssigner(k = k)), name = "workAssigner"),
-      system.actorOf(Props(new FindIndicator(largest = (k == -1))), name = "findIndicator"))
-  }
-  // Else, it's an IP address, so start a remote worker system and connect to the input IP
-  else {
-    //TODO: throw exception in case the master actors are not found
+      system.actorOf(Props(new FindIndicator(largest = k < 0)), name = "findIndicator"))
+  } else {
+    // Else, it's an IP address, so start a remote worker system and connect to the input IP
     implicit val timeout = Timeout(5 seconds)
-    (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/workAssigner").
-      resolveOne(), timeout.duration),
-      Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/findIndicator").
-        resolveOne(), timeout.duration))
+    val dur = timeout.duration
+    (Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/workAssigner").resolveOne(), dur),
+      Await.result(system.actorSelection(s"akka.tcp://$appName@$input:$port/user/findIndicator").resolveOne(), dur))
   }
 
   // Set up Workers
@@ -62,18 +58,14 @@ object project1 extends App {
   system.shutdown()
 }
 
-object StringIterator {
+object StringFunctions {
   // Using the visible range of ASCII characters up till DEL 127
   val startIdx = 32
   val stopIdx = 126
-
-  @inline def startChar = startIdx.toChar
-
-  @inline def startString = startChar.toString
-
-  @inline def stopChar = stopIdx.toChar
-
-  @inline def stopString = stopChar.toString
+  val startChar = startIdx.toChar
+  val startString = startChar.toString
+  val stopChar = stopIdx.toChar
+  val stopString = stopChar.toString
 
   /*
    * Provided any string 'a', will return the ascii equivalent of adding 1 to the last character
@@ -92,12 +84,18 @@ object StringIterator {
   def getNextCombo(a: String) = {
     if (a.isEmpty) {
       startString
+    } else if (a.forall(_ == stopChar)) {
+      startString * (a.length + 1)
     } else {
-      if (a.forall(_ == stopChar)) {
-        startString * (a.length + 1)
-      } else {
-        plus(a)
-      }
+      plus(a)
+    }
+  }
+
+  def countNumLeadingZeroes(input: String): Integer = {
+    if (input.charAt(0) != '0') {
+      0
+    } else {
+      1 + countNumLeadingZeroes(input.substring(1, input.length))
     }
   }
 }
@@ -109,13 +107,12 @@ class WorkAssigner(k: Int) extends Actor {
     case false => sender ! k
     case true =>
       sender ! seed
-      seed = StringIterator.getNextCombo(seed)
+      seed = StringFunctions.getNextCombo(seed)
   }
 }
 
 class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, workUnit: Int) extends Actor {
-  var k: Int = _
-  var maxPrefix: Int = _
+  var k: Int = 0
   var largestNumZeroes = 0
   workAssigner ! false
 
@@ -125,37 +122,31 @@ class Worker(workAssigner: ActorRef, findIndicator: ActorRef, prefix: String, wo
     m.map("%02x".format(_)).mkString
   }
 
-  def countNumLeadingZeroes(input: String): Integer = {
-    if (input.charAt(0) != '0') {
-      0
-    } else {
-      1 + countNumLeadingZeroes(input.substring(1, input.length))
-    }
-  }
-
   def receive = {
-    case setK: Int => k = setK
+    case setK: Int =>
+      k = setK
       sender ! true
     case seed: String =>
-      var postFix = if (seed.isEmpty) "" else StringIterator.startString * workUnit
-      while (postFix != StringIterator.startString * (workUnit + 1)) {
+      var postFix = if (seed.isEmpty) "" else StringFunctions.startString * workUnit
+      while (postFix != StringFunctions.startString * (workUnit + 1)) {
         val coin = prefix + seed + postFix
         val hash = SHA256(coin)
-        if (k > 0) {
+        if (k >= 0) {
           if (hash.substring(0, k).count(_ == '0') == k) {
             findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
           }
         } else {
           /* compare with local max first */
-          val numLeadingZeroes = countNumLeadingZeroes(hash)
-          if(numLeadingZeroes > largestNumZeroes) {
+          val numLeadingZeroes = StringFunctions.countNumLeadingZeroes(hash)
+          if (numLeadingZeroes > largestNumZeroes) {
             largestNumZeroes = numLeadingZeroes
             findIndicator ! Bitcoin(bitcoinString = coin, bitcoinHash = hash)
           }
         }
 
-        postFix = StringIterator.getNextCombo(postFix)
+        postFix = StringFunctions.getNextCombo(postFix)
       }
+
       sender ! true
   }
 }
@@ -167,22 +158,14 @@ class FindIndicator(largest: Boolean) extends Actor {
     // Print all valid bitcoin returned from Worker
     case bitcoin: Bitcoin =>
       if (largest) {
-        val numZeroes = countNumLeadingZeroes(bitcoin.bitcoinHash)
+        val numZeroes = StringFunctions.countNumLeadingZeroes(bitcoin.bitcoinHash)
         if (numZeroes > largestNumZeroes) {
           largestNumZeroes = numZeroes
-          println(bitcoin)
+          println(/*sender + "\t" + */bitcoin)
         }
       } else {
-        println(/*sender + "_-_" + */ bitcoin)
+        println(/*sender + "\t" + */bitcoin)
       }
-  }
-
-  def countNumLeadingZeroes(input: String): Integer = {
-    if (input.charAt(0) != '0') {
-      0
-    } else {
-      1 + countNumLeadingZeroes(input.substring(1, input.length))
-    }
   }
 }
 

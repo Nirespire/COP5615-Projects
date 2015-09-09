@@ -68,7 +68,8 @@ each worker try, and which is most efficient.
 </pre>
 
     Irrespective of the number of workers, we can see at 3 the CPU utilization was highest.
-    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (94^4) which is too larger per worker.
+    Time taken to iterate through one work unit of size 3 (95^3) was approximately 2 minutes.
+    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (95^4) which is too larger per worker.
 
 2. Result of: scala project1.scala 4 (running for 1 minute)
 
@@ -176,6 +177,7 @@ each worker try, and which is most efficient.
         sys     0m1.240s
 
 4. Coin with most zeroes found:
+
 	snair!y.X	000000e4b266f273eaeb60344eff841e2140c88c90cc7779a5269fdc5e264fd7
 
 5. Largest number of working machines used:
