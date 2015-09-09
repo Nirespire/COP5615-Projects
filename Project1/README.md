@@ -56,6 +56,8 @@ each worker try, and which is most efficient.
     Memory: 3895492K/4096180K available
 
     The below table shows cpu/real time ratio, a larger number shows better CPU utilization; WU - shows work units, the length of string whose combination will be tried by each worker. WRK1, WRK2, ... , WRK10 indicates 1,2,...,10 worker per host respectively.
+
+<pre>
     +---------------------------------------------------------------------------+
     | WU | WRK1 | WRK2 | WRK3 | WRK4 | WRK5 | WRK6 | WRK7 | WRK8 | WRK9 | WRK10 |
     +---------------------------------------------------------------------------+
@@ -63,10 +65,13 @@ each worker try, and which is most efficient.
     | 2  | 1.17 | 2.08 | 2.99 | 3.83 | 3.83 | 3.84 | 3.84 | 3.82 | 3.85 | 3.84  |
     | 3  | 1.16 | 2.08 | 2.94 | 3.85 | 3.85 | 3.85 | 3.89 | 3.88 | 3.91 | 3.90  |
     +---------------------------------------------------------------------------+
+</pre>
+
     Irrespective of the number of workers, we can see at 3 the CPU utilization was highest.
     A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (94^4) which is too larger per worker.
 
 2. Result of: scala project1.scala 4 (running for 1 minute)
+
 <pre>
 	snair &bj  00003299f3f28037590620546771c256ba66f33fa38c9df9a7fbddbd396c0c97
 	snair )f]  0000ac7ffe5f92bade15a58f3e100b81fbd220c183ba46151903effa573fdf6b
