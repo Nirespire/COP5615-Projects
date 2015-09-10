@@ -178,6 +178,6 @@ each worker try, and which is most efficient.
 
 4. Coin with most zeroes found:
 
-	snair!y.X	000000e4b266f273eaeb60344eff841e2140c88c90cc7779a5269fdc5e264fd7
+    snair)|g7Z	000000089f87eef1c3fa529968e7f3c4e16a70aa45359fb51250c9bf85ea95fe
 
 5. Largest number of working machines used:
