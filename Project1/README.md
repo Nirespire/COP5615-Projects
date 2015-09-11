@@ -7,12 +7,12 @@
 
 ## How to Run
 
-	- Execute "sbt run k" in the root directory of the project with "k" being the number of 0's you would like a valid bitcoin to have. 
-	This will begin running the master system that prints any valid bitcoins found.
-	Worker systems may execute "sbt run ip" where ip should be the IP address of the running master system.
-	
-	- You may run the master system with k = -1 and the program will only output the bitcoins with the largest number of leading zeroes it has found so far. 
-	Workers may still join the system in the same manner as above.
+- Execute "sbt run k" in the root directory of the project with "k" being the number of 0's you would like a valid bitcoin to have. 
+This will begin running the master system that prints any valid bitcoins found.
+Worker systems may execute "sbt run ip" where ip should be the IP address of the running master system.
+
+- You may run the master system with k = -1 and the program will only output the bitcoins with the largest number of leading zeroes it has found so far. 
+Workers may still join the system in the same manner as above.
 
 
 ## Structure
@@ -65,9 +65,9 @@
     +---------------------------------------------------------------------------+
 </pre>
 
-    Irrespective of the number of workers, we can see at a work unit of 3 the CPU utilization was highest.
-    Time taken to iterate through a work unit of size 3 (95^3) was approximately 2 minutes.
-    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (95^4) which is too large per worker.
+Irrespective of the number of workers, we can see at a work unit of 3 the CPU utilization was highest.
+Time taken to iterate through a work unit of size 3 (95^3) was approximately 2 minutes.
+A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (95^4) which is too large per worker.
 
 2. Result of: "scala project1.scala 4" (running for 1 minute)
 
