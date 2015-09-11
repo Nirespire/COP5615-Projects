@@ -4,7 +4,19 @@
   1. Sanjay Nair
   2. Preethu Thomas
 
+
+## How to Run
+
+	- Execute "sbt run k" in the root directory of the project with "k" being the number of 0's you would like a valid bitcoin to have. 
+	This will begin running the master system that prints any valid bitcoins found.
+	Worker systems may execute "sbt run ip" where ip should be the IP address of the running master system.
+	
+	- You may run the master system with k = -1 and the program will only output the bitcoins with the largest number of leading zeroes it has found so far. 
+	Workers may still join the system in the same manner as above.
+
+
 ## Structure
+
 <pre>
 +______________________________________________________+
 |                      _______                         |
@@ -27,35 +39,21 @@
 +______________________________________________________+
 </pre>
 
-  Work unit is not the number of strings being sent to each
-  worker, but some indication of where that workers assigment of work starts and ends
-  the workAssigner class needs to be changed to be a WorkAssigner
-  This realization came one you see how the workers and workAssigner interacts, they send each other messages
-  If workAssigner is expected to generate the string, there may be times, where other workers are idle
-  Each worker should be given enough work without keeping the workAssigner class too busy/ too relaxed is the ideal
-  work unit.
-
-Instead send a seed string, and each worker will have to try say adding all combinations
-of three chars appended to given seed,
-example,if WORK_UNIT is 3 and the seed send to the worker is "a", worker is expected to try everything
-from snairaaaa to sanirazzz, in this way we are assigning each worker a unique set of stuff to try
-among themselves.
-The only exception is when a blank seed ("") is  sent to a worker, that work will try all
-0 to 3 length string combinations , e.g. snair, snaira, sanirb,... sanirzzz.
-We need to see which work unit i.e. number of combinations(2,3,4, or more) should
-each worker try, and which is most efficient.
-
-## Submission README
+## Project Questions
 
 1. Work unit that resulted in best performance:
 
-    Each work unit in this implementation means how large of a space each worker is assigned to hash through at a time. The WorkAssigner actor is responsible for generating "seed" strings that are sent to each worker along with the work unit value. This combination tells the worker what space to search and when it's work is done. 
-    For example, the work assigner could send one worker a seed = "aa" with a work unit of 2. That means the worker is responsible for hashing all strings from "aa", "aaa", "aab", "aac"... to "aazz". This example assumes that the entire ASCII range is from "a" to "z", however each worker actually considers characters from ASCII value 32 (space) to 126 (~).
+    Each work unit in this implementation means how large of a space each worker is assigned to hash through at a time. 
+    The WorkAssigner actor is responsible for generating "seed" strings that are sent to each worker along with the work unit value. 
+    This combination tells the worker what space to search and when it's work is done. 
+    For example, the work assigner could send one worker a seed = "aa" with a work unit of 2. 
+    That means the worker is responsible for hashing all strings from "aa", "aaa", "aab", "aac"... to "aazz". 
+    This example assumes that the entire ASCII range is from "a" to "z", however each worker actually considers characters from ASCII value 32 (space) to 126 (~).
+
+    The below table shows cpu/real time ratio, a larger number shows better CPU utilization; WU - shows work units, the length of string whose combination will be tried by each worker. WRK1, WRK2, ... , WRK10 indicates 1,2,...,10 worker per host respectively.
 
     CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
     Memory: 3895492K/4096180K available
-
-    The below table shows cpu/real time ratio, a larger number shows better CPU utilization; WU - shows work units, the length of string whose combination will be tried by each worker. WRK1, WRK2, ... , WRK10 indicates 1,2,...,10 worker per host respectively.
 
 <pre>
     +---------------------------------------------------------------------------+
@@ -67,11 +65,11 @@ each worker try, and which is most efficient.
     +---------------------------------------------------------------------------+
 </pre>
 
-    Irrespective of the number of workers, we can see at 3 the CPU utilization was highest.
-    Time taken to iterate through one work unit of size 3 (95^3) was approximately 2 minutes.
-    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (95^4) which is too larger per worker.
+    Irrespective of the number of workers, we can see at a work unit of 3 the CPU utilization was highest.
+    Time taken to iterate through a work unit of size 3 (95^3) was approximately 2 minutes.
+    A work unit of more than 3 is not feasible, as at 4 the number of combinations per worker is (95^4) which is too large per worker.
 
-2. Result of: scala project1.scala 4 (running for 1 minute)
+2. Result of: "scala project1.scala 4" (running for 1 minute)
 
 <pre>
 	snair &bj  00003299f3f28037590620546771c256ba66f33fa38c9df9a7fbddbd396c0c97
@@ -161,10 +159,12 @@ each worker try, and which is most efficient.
 	snair(AVm  0000be7e1c78c83f86f4430844a5614b1270b976ffbf7e3e0c5a6a661b39f9c5
 </pre>
 
-3. Result of:
+3. 	Using:  
+		CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
+   		Memory: 3895492K/4096180K available
+	
+	Result of:
 
-    CPU: Intel(R) Core(TM) i3-4030U CPU @ 1.90GHz (fam: 06, model: 45, stepping: 01)
-    Memory: 3895492K/4096180K available
     - time scala project1.scala 4
         [preethu@32-laptop Project1]$ time sbt 'run 4' > o
         real    1m36.378s
@@ -181,3 +181,5 @@ each worker try, and which is most efficient.
     snair)|g7Z	000000089f87eef1c3fa529968e7f3c4e16a70aa45359fb51250c9bf85ea95fe
 
 5. Largest number of working machines used:
+	
+	7 machines
