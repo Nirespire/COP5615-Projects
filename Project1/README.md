@@ -7,9 +7,9 @@
 
 ## How to Run
 
-- Execute "sbt run k" in the root directory of the project with "k" being the number of 0's you would like a valid bitcoin to have. 
+- Execute ' sbt "run k" ' in the root directory of the project with "k" being the number of 0's you would like a valid bitcoin to have. 
 This will begin running the master system that prints any valid bitcoins found.
-Worker systems may execute "sbt run ip" where ip should be the IP address of the running master system.
+Worker systems may execute ' sbt "run ip" ' where "ip" should be the IP address of the running master system.
 
 - You may run the master system with k = -1 and the program will only output the bitcoins with the largest number of leading zeroes it has found so far. 
 Workers may still join the system in the same manner as above.
