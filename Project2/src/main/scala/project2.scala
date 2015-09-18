@@ -1,7 +1,15 @@
-import akka.actor._
+import messages.Topology
 
 object project2 extends App {
 
-  val input = args(0)
+  val n = args(0).toInt
+  val topology = args(1) match {
+    case "3D" => Topology.threeD
+    case _ => Topology.withName(args(1))
+  }
+
+  val  algorithm = args(1) match {
+    case "push-sum" =>
+  }
 
 }
