@@ -1,5 +1,5 @@
 import akka.actor.{ActorSelection, ActorRef, Actor}
-import messages.{Start, Setup, Topology}
+import messages.{StartPushSum, Setup, Topology}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -24,7 +24,7 @@ class Node(id: Int, topology: Topology.Value, n: Int) extends Actor {
 
   def sOverWCalc = Math.round(s / w * tenDigitConst) / tenDigitConst
 
-  def pushSumAlgo(newS: Double = 0, newW: Double = 0) = {
+  def pushSumAlgo(newS: Double, newW: Double) = {
     println(self + "-_- (" + s + "/" + w + ") = " + sOverWCalc + " conver" + convergenceCounter)
     if (!done) {
       pushSum(0) = (s + newS) / 2
@@ -39,9 +39,10 @@ class Node(id: Int, topology: Topology.Value, n: Int) extends Actor {
         sOverW = sOverWCalc
         convergenceCounter = 0
       }
-      neighbors(random.nextInt(numOfNeighbors)) !(s, w)
+
+      neighbors(random.nextInt(numOfNeighbors)) ! StartPushSum(s, w)
     } else {
-      neighbors(random.nextInt(numOfNeighbors)) !(newS, newW)
+      neighbors(random.nextInt(numOfNeighbors)) ! StartPushSum(newS, newW)
     }
   }
 
@@ -60,14 +61,14 @@ class Node(id: Int, topology: Topology.Value, n: Int) extends Actor {
           if (id - 1 > 0) neighborsSet.add(id - 1)
           if (id + 1 <= n) neighborsSet.add(id + 1)
         case Topology.imp3D =>
-        case Topology.full =>
+        case Topology.full => (1 to n).foreach(neighborsSet.add)
       }
       println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
       appendNeighbors(neighborsSet.toSet)
       manager = sender
       manager ! false
-    case Start => /* push-sum algo */ pushSumAlgo()
-    case (addS: Double, addW: Double) => pushSumAlgo(addS, addW)
+    case StartPushSum => pushSumAlgo(0, 0)
+    case StartPushSum(addS: Double, addW: Double) => pushSumAlgo(addS, addW)
     case rumor: String =>
     /* gossip algo */
   }

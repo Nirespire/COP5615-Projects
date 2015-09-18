@@ -1,5 +1,5 @@
 import akka.actor.Actor
-import messages.{Continue, Algorithm, Setup, Start}
+import messages.{StartGossip, Algorithm, Setup, StartPushSum}
 
 import scala.util.Random
 
@@ -13,7 +13,9 @@ class Manager(n: Int, algorithm: Algorithm.Value) extends Actor {
   def setupCompleted = setupCounter == n
 
   def receive = {
-    case false => setupCounter += 1
+    case false =>
+      setupCounter += 1
+      println(sender + "==================" + setupCounter)
     case true => completedCounter += 1
       println(sender + " ---- " + completedCounter)
       if (completed) {
@@ -25,16 +27,20 @@ class Manager(n: Int, algorithm: Algorithm.Value) extends Actor {
         context.actorSelection(s"/user/node$idx") ! Setup
       }
       algorithm match {
-        case Algorithm.pushSum => self ! Start
-        case Algorithm.gossip => self ! Continue
+        case Algorithm.pushSum => self ! StartPushSum
+        case Algorithm.gossip => self ! StartGossip
       }
-    case Start =>
-      if (!setupCompleted) self ! Start
-      val randIdx = random.nextInt(n) + 1
-      context.actorSelection(s"/user/node$randIdx") ! Start
-    case Continue =>
-      if (!setupCompleted) self ! Continue
-      if (!completed) {
+    case StartPushSum =>
+      if (!setupCompleted) {
+        self ! StartPushSum
+      } else {
+        val randIdx = random.nextInt(n) + 1
+        context.actorSelection(s"/user/node$randIdx") ! StartPushSum
+      }
+    case StartGossip =>
+      if (!setupCompleted) {
+        self ! StartGossip
+      } else if (!completed) {
       }
   }
 }
