@@ -161,10 +161,10 @@ class FindIndicator(largest: Boolean) extends Actor {
         val numZeroes = StringFunctions.countNumLeadingZeroes(bitcoin.bitcoinHash)
         if (numZeroes > largestNumZeroes) {
           largestNumZeroes = numZeroes
-          println(/*sender + "\t" + */bitcoin)
+          println(/*sender + "\t" + */ bitcoin)
         }
       } else {
-        println(/*sender + "\t" + */bitcoin)
+        println(/*sender + "\t" + */ bitcoin)
       }
   }
 }

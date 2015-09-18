@@ -1,4 +1,4 @@
-import akka.actor.{ActorRef, Actor}
+import akka.actor.{ActorSelection, ActorRef, Actor}
 import messages.{Start, Setup, Topology}
 
 import scala.collection.mutable
@@ -12,8 +12,9 @@ class Node(id: Int, topology: Topology.Value, n: Int) extends Actor {
 
   var sOverW: Double = sOverWCalc
   var convergenceCounter = 0
-  var neighbors: Vector[ActorRef] = _
+  var neighbors = mutable.ArrayBuffer[ActorSelection]()
   var done = false
+  var manager: ActorRef = _
 
   def s: Double = pushSum(0)
 
@@ -24,28 +25,47 @@ class Node(id: Int, topology: Topology.Value, n: Int) extends Actor {
   def sOverWCalc = Math.round(s / w * tenDigitConst) / tenDigitConst
 
   def pushSumAlgo(newS: Double = 0, newW: Double = 0) = {
+    println(self + "-_- (" + s + "/" + w + ") = " + sOverWCalc + " conver" + convergenceCounter)
     if (!done) {
       pushSum(0) = (s + newS) / 2
       pushSum(1) = (w + newW) / 2
       if (sOverW == sOverWCalc) {
         convergenceCounter += 1
-        if (convergenceCounter == 3) done = true
+        if (convergenceCounter == 3) {
+          done = true
+          manager ! true
+        }
       } else {
         sOverW = sOverWCalc
         convergenceCounter = 0
       }
       neighbors(random.nextInt(numOfNeighbors)) !(s, w)
+    } else {
+      neighbors(random.nextInt(numOfNeighbors)) !(newS, newW)
+    }
+  }
+
+  def appendNeighbors(neighborsSet: Set[Int]) = {
+    neighborsSet.foreach { idx =>
+      neighbors.append(context.actorSelection(s"/user/node$idx"))
     }
   }
 
   def receive = {
-    case Setup => topology match {
-      case Topology.threeD =>
-      case Topology.line =>
-      case Topology.imp3D =>
-      case Topology.full =>
-    }
-
+    case Setup =>
+      val neighborsSet = mutable.Set[Int]()
+      topology match {
+        case Topology.threeD =>
+        case Topology.line =>
+          if (id - 1 > 0) neighborsSet.add(id - 1)
+          if (id + 1 <= n) neighborsSet.add(id + 1)
+        case Topology.imp3D =>
+        case Topology.full =>
+      }
+      println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
+      appendNeighbors(neighborsSet.toSet)
+      manager = sender
+      manager ! false
     case Start => /* push-sum algo */ pushSumAlgo()
     case (addS: Double, addW: Double) => pushSumAlgo(addS, addW)
     case rumor: String =>
