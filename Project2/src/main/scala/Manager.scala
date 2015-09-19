@@ -8,6 +8,8 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
   var setupCounter = 0
   val random = new Random()
 
+  var startTime = -1.toLong
+
   def completed = completedCounter == numNodes
 
   def setupCompleted = setupCounter == numNodes
@@ -19,6 +21,7 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
     case true => completedCounter += 1
       println(sender + " ---- " + completedCounter)
       if (completed) {
+        println("Convergence in " + (System.currentTimeMillis - startTime))
         context.system.shutdown()
       }
     case Setup =>
@@ -40,9 +43,12 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
     case StartGossip =>
       if (!setupCompleted) {
         self ! StartGossip
-      } else if (!completed) {
+      } else {
         val randIdx = random.nextInt(numNodes) + 1
-        context.actorSelection(s"/user/node$randIdx") ! StartGossip
+        val randString = "hotgossip" //random.nextString(5)
+        println("Gossip is: " + randString)
+        startTime = System.currentTimeMillis
+        context.actorSelection(s"/user/node$randIdx") ! StartGossip(randString)
       }
   }
 }
