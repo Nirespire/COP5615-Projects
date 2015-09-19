@@ -42,12 +42,12 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
       }
     case StartGossip =>
       if (!setupCompleted) {
-        startTime = System.currentTimeMillis
         self ! StartGossip
-      } else if (!completed) {
+      } else {
         val randIdx = random.nextInt(numNodes) + 1
         val randString = "hotgossip" //random.nextString(5)
         println("Gossip is: " + randString)
+        startTime = System.currentTimeMillis
         context.actorSelection(s"/user/node$randIdx") ! StartGossip(randString)
       }
   }
