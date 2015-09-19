@@ -1,3 +1,3 @@
 package messages
 
-case class StartGossip()
+case class StartGossip(rumor:String)

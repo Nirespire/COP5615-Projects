@@ -1,11 +1,13 @@
 import akka.actor.{ActorSelection, ActorRef, Actor}
-import messages.{StartPushSum, Setup, Topology}
+import messages.{StartGossip, StartPushSum, Setup, Topology}
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 import scala.util.Random
 
 class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
-  val rumor = mutable.HashMap[String, Int]()
+  val config = ConfigFactory.load()
+  val rumor = mutable.HashMap[String, Int]().withDefaultValue(0)
   val random = new Random()
   val tenDigitConst = Math.pow(10, 10)
   val pushSum = Array[Double](id, 1)
@@ -44,6 +46,21 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     } else {
       neighbors(random.nextInt(numOfNeighbors)) ! StartPushSum(newS, newW)
     }
+  }
+
+  def gossipAlgo(newRumor: String){
+    println(self + rumor.mkString(","))
+
+    if(!done){
+      val rumorUpdate = rumor(newRumor)+1
+      rumor.update(newRumor, rumorUpdate)
+      if(rumorUpdate == config.getInt("app.gossipConvergenceNum")){
+        done = true
+        manager ! true
+      }
+    }
+
+    neighbors(random.nextInt(numOfNeighbors)) ! StartGossip(newRumor)
   }
 
   def appendNeighbors(neighborsSet: Set[Int]) = {
@@ -136,7 +153,6 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       manager ! false
     case StartPushSum => pushSumAlgo(0, 0)
     case StartPushSum(addS: Double, addW: Double) => pushSumAlgo(addS, addW)
-    case rumor: String =>
-    /* gossip algo */
+    case StartGossip(rumor: String) => gossipAlgo(rumor)
   }
 }
