@@ -3,14 +3,14 @@ import messages.{StartGossip, Algorithm, Setup, StartPushSum}
 
 import scala.util.Random
 
-class Manager(n: Int, algorithm: Algorithm.Value) extends Actor {
+class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
   var completedCounter = 0
   var setupCounter = 0
   val random = new Random()
 
-  def completed = completedCounter == n
+  def completed = completedCounter == numNodes
 
-  def setupCompleted = setupCounter == n
+  def setupCompleted = setupCounter == numNodes
 
   def receive = {
     case false =>
@@ -23,7 +23,7 @@ class Manager(n: Int, algorithm: Algorithm.Value) extends Actor {
       }
     case Setup =>
       println("Manager -               ---- START")
-      (1 to n).foreach { idx =>
+      (1 to numNodes).foreach { idx =>
         context.actorSelection(s"/user/node$idx") ! Setup
       }
       algorithm match {
@@ -34,13 +34,15 @@ class Manager(n: Int, algorithm: Algorithm.Value) extends Actor {
       if (!setupCompleted) {
         self ! StartPushSum
       } else {
-        val randIdx = random.nextInt(n) + 1
+        val randIdx = random.nextInt(numNodes) + 1
         context.actorSelection(s"/user/node$randIdx") ! StartPushSum
       }
     case StartGossip =>
       if (!setupCompleted) {
         self ! StartGossip
       } else if (!completed) {
+        val randIdx = random.nextInt(numNodes) + 1
+        context.actorSelection(s"/user/node$randIdx") ! StartGossip
       }
   }
 }

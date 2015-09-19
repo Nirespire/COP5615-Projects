@@ -3,7 +3,11 @@ import messages.{Algorithm, Setup, Topology}
 
 object project2 extends App {
 
-  val n = args(0).toInt
+  val arg0 = args(0).toInt
+
+  // num nodes can be rounded to the nearest perfect square
+  val numNodes = Math.pow(Math.ceil(Math.sqrt(arg0)),2).toInt
+
   val topology = args(1) match {
     case "3D" => Topology.threeD
     case _ => Topology.withName(args(1))
@@ -15,12 +19,16 @@ object project2 extends App {
     case "gossip" => Algorithm.gossip
   }
 
-  val system = ActorSystem(name = algorithmName)
-  val manager = system.actorOf(Props(new Manager(n, algorithm)), name = s"manager")
+  println("Num nodes " + numNodes)
+  println("Topology " + topology)
+  println("Algorithm " + algorithm)
 
-  (1 to n).foreach { idx =>
+  val system = ActorSystem(name = algorithmName)
+  val manager = system.actorOf(Props(new Manager(numNodes, algorithm)), name = s"manager")
+
+  (1 to numNodes).foreach { idx =>
     println(s"Creating $idx node")
-    println(system.actorOf(Props(new Node(idx, topology, n)), name = s"node$idx"))
+    println(system.actorOf(Props(new Node(idx, topology, numNodes)), name = s"node$idx"))
   }
 
   manager ! Setup
