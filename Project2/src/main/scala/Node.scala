@@ -14,9 +14,13 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
 
   val squareRoot = Math.sqrt(numNodes)
   val cubeRoot = Math.cbrt(numNodes)
-  val planeSize = Math.pow(Math.cbrt(numNodes), 2).toInt
+  val (planeSize,rowSize) = topology match{
+    case Topology.threeD | Topology.imp3D => (Math.pow(Math.cbrt(numNodes), 2).toInt, Math.cbrt(numNodes))
+    case _ => (numNodes, Math.sqrt(numNodes))
+  } 
 
   var sOverW: Double = sOverWCalc
+
   var convergenceCounter = 0
   var neighbors = mutable.ArrayBuffer[ActorSelection]()
   var done = false
@@ -74,27 +78,54 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   }
 
   def west(n:Int):Int={
-    return n-1
+    if(id % rowSize == 1){
+      return -1
+    }
+    else{
+      return n-1
+    }
   }
+
   def east(n:Int):Int={
-    return n+1
+    if(id % rowSize == 0){
+      -1
+    }
+    else{
+      n+1
+    }
   }
+
   def south(n:Int):Int={
-    return n + Math.sqrt(numNodes).toInt
+    val newId = id % planeSize
+    if((newId >= planeSize - rowSize + 1 && newId <= planeSize) || newId == 0){
+      -1
+    }
+    else{
+      n + Math.sqrt(planeSize).toInt
+    }
   }
+
   def north(n:Int):Int={
-    return n - Math.sqrt(numNodes).toInt
+    val newId = id % planeSize
+    if(newId >= 1 && newId <= rowSize){
+      -1
+    }
+    else{
+      n - Math.sqrt(planeSize).toInt
+    }
   }
+
+  // 3D cases
   def up(n:Int):Int={
-    return n - Math.pow(Math.cbrt(numNodes),2).toInt
+    return n - planeSize
   }
   def down(n:Int):Int={
-    return n + Math.pow(Math.cbrt(numNodes),2).toInt
+    return n + planeSize
   }
 
 
 
-  def setup3D {
+  def setup3D : mutable.Set[Int] = {
     val neighborsSet = setup2D(true)
 
     // top plane
@@ -113,6 +144,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       neighborsSet.add(up(id))
     }
 
+    return neighborsSet
+
   }
 
   def setup2D(for3D : Boolean = false) : mutable.Set[Int]={
@@ -120,6 +153,27 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
 
     val newId = if (for3D) id % planeSize else id
 
+    println("ID " + id + " newID " + newId)
+
+    val eastVal = east(id)
+    val westVal = west(id)
+    val northVal = north(id)
+    val southVal = south(id)
+
+    if(eastVal != -1){
+      neighborsSet.add(eastVal)
+    }
+    if(westVal != -1){
+      neighborsSet.add(westVal)
+    }
+    if(northVal != -1){
+      neighborsSet.add(northVal)
+    }
+    if(southVal != -1){
+      neighborsSet.add(southVal)
+    }
+
+/*
     // top left corner
     if(newId == 1){
       neighborsSet.add(east(id))
@@ -172,7 +226,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       neighborsSet.add(north(id))
       neighborsSet.add(south(id))
     }
-
+*/
     return neighborsSet
   }
 
@@ -184,7 +238,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
           neighborsSet = setup3D
 
         case Topology.twoD =>
-          neighborsSet = setup2D
+          neighborsSet = setup2D()
           
         case Topology.line =>
           if (id - 1 > 0) neighborsSet.add(west(id))

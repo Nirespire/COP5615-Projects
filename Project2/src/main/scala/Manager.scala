@@ -17,6 +17,8 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
   def receive = {
     case false =>
       setupCounter += 1
+      //debug
+      //completedCounter += 1
       println(sender + "==================" + setupCounter)
     case true => completedCounter += 1
       println(sender + " ---- " + completedCounter)
