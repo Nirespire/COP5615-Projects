@@ -8,7 +8,7 @@ object project2 extends App {
   // num nodes can be rounded to the nearest perfect square
   val (numNodes, topology) = args(1) match {
 
-    case "3D" => (Math.pow(Math.ceil(Math.sqrt(arg0)),3).toInt, Topology.threeD)
+    case "3D" => (Math.pow(Math.ceil(Math.cbrt(arg0)),3).toInt, Topology.threeD)
     case "2D" => (Math.pow(Math.ceil(Math.sqrt(arg0)),2).toInt, Topology.twoD)
     case _ => (arg0, Topology.withName(args(1)))
   }

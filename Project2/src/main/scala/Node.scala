@@ -12,6 +12,10 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   val tenDigitConst = Math.pow(10, 10)
   val pushSum = Array[Double](id, 1)
 
+  val squareRoot = Math.sqrt(numNodes)
+  val cubeRoot = Math.cbrt(numNodes)
+  val planeSize = Math.pow(Math.cbrt(numNodes), 2).toInt
+
   var sOverW: Double = sOverWCalc
   var convergenceCounter = 0
   var neighbors = mutable.ArrayBuffer[ActorSelection]()
@@ -82,203 +86,81 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     return n - Math.sqrt(numNodes).toInt
   }
   def up(n:Int):Int={
-    return n - Math.pow(numNodes,2).toInt
+    return n - Math.pow(Math.cbrt(numNodes),2).toInt
   }
   def down(n:Int):Int={
-    return n + Math.pow(numNodes,2).toInt
+    return n + Math.pow(Math.cbrt(numNodes),2).toInt
   }
 
 
 
   def setup3D {
-    val neighborsSet = mutable.Set[Int]()
+    val neighborsSet = setup2D(true)
 
-    // CORNERS
-    //----------------------------------------
-    // up top left corner
-    if(id == 1){
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
+    // top plane
+    if(id > 0 && id <= planeSize){
       neighborsSet.add(down(id))
     }
 
-    // up top right corner
-    if(id == Math.cbrt(numNodes)){
-      neighborsSet.add(west(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(down(id))
-    }
-
-    // up bottom left corner
-    if(id == Math.pow(Math.cbrt(numNodes),2) - Math.cbrt(numNodes) + 1 ){
-      neighborsSet.add(north(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(down(id))
-    }
-
-    // up bottom right corner
-    if(id == Math.pow(Math.cbrt(numNodes),2)){
-      neighborsSet.add(north(id))
-      neighborsSet.add(west(id))
-      neighborsSet.add(down(id))
-    }
-
-    // down top left corner
-    if(id == numNodes - Math.pow(Math.cbrt(numNodes),2) + 1){
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
+    // bottom plane
+    else if(id > planeSize * (cubeRoot - 1) && id <= numNodes){
       neighborsSet.add(up(id))
     }
 
-    // down top right corner
-    if(id == numNodes - Math.pow(Math.cbrt(numNodes),2) + Math.cbrt(numNodes) - 1){
-      neighborsSet.add(west(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(up(id))
-    }
-
-    // down bottom left corner
-    if(id == numNodes - Math.cbrt(numNodes) + 1){
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(up(id))
-    }
-
-    // down bottom right corner
-    if(id == numNodes){
-      neighborsSet.add(west(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(up(id))
-    }
-
-    // TOP HORIZONTAL EDGES
-    //----------------------------------------
-
-    //up top edge
-    if(id > 1 && id < Math.cbrt(numNodes)){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(down(id))
-    }
-
-    // up right edge
-
-    // up left edge
-
-    // up bottom edge
-    if(id > Math.pow(Math.cbrt(numNodes),2) - Math.cbrt(numNodes + 1) && id < Math.pow(Math.cbrt(numNodes),2)){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(down(id))
-      neighborsSet.add(north(id))
-    }
-
-    // VERTICAL EDGES
-    //------------------------------------------
-
-    // up to down top left edge
-    if(id % (((numNodes)/Math.pow(Math.cbrt(numNodes),2)) - Math.pow(Math.cbrt(numNodes),2) + 1) == 0){
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
+    // else, somewhere in the middle
+    else{
       neighborsSet.add(down(id))
       neighborsSet.add(up(id))
     }
-
-    // up to down top right edge
-    if(id % (numNodes)/Math.pow(Math.cbrt(numNodes),2) == 0){
-      neighborsSet.add(west(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(down(id))
-      neighborsSet.add(up(id))
-    }
-
-    // up to down bottom right edge
-    if(id % Math.pow(Math.cbrt(numNodes),2) == 0){
-      neighborsSet.add(north(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(down(id))
-      neighborsSet.add(up(id))
-    }
-
-    // up to down bottom left edge
-    if((id + Math.pow(Math.cbrt(numNodes),2) - 1) % Math.pow(Math.cbrt(numNodes),2) == 0){
-      neighborsSet.add(north(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(down(id))
-      neighborsSet.add(up(id))
-    }
-
-    // BOTTOM HORIZONTAL EDGES
-    //----------------------------------------
-
-    // down top edge
-    if(id > numNodes - Math.pow(Math.cbrt(numNodes),2) + 1 && id < numNodes - Math.pow(Math.cbrt(numNodes),2) + Math.cbrt(numNodes) - 1){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
-      neighborsSet.add(up(id))
-    }
-
-    // down right edge
-
-    // down bottom edge
-    if(id > numNodes - Math.cbrt(numNodes) + 1 && id < numNodes){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(up(id))
-    }
-
-    // down left edge
-
-
 
   }
 
-  def setup2D : mutable.Set[Int]={
+  def setup2D(for3D : Boolean = false) : mutable.Set[Int]={
     val neighborsSet = mutable.Set[Int]()
+
+    val newId = if (for3D) id % planeSize else id
+
     // top left corner
-    if(id == 1){
+    if(newId == 1){
       neighborsSet.add(east(id))
       neighborsSet.add(south(id))
     }
     // bottom right corner
-    else if(id == numNodes){
+    else if(newId == numNodes){
       neighborsSet.add(west(id))
       neighborsSet.add(north(id))
     }
     // top right corner
-    else if(id == (numNodes/(Math.sqrt(numNodes))).toInt){
+    else if(newId == (numNodes/(Math.sqrt(numNodes))).toInt){
       neighborsSet.add(west(id))
       neighborsSet.add(south(id))
     }
     // bottom left corner
-    else if(id == (numNodes - Math.sqrt(numNodes) + 1).toInt){
+    else if(newId == (numNodes - Math.sqrt(numNodes) + 1).toInt){
       neighborsSet.add(east(id))
       neighborsSet.add(north(id))
     }
 
     // top edge
-    else if(id > 1 && id < numNodes/Math.sqrt(numNodes)){
+    else if(newId > 1 && newId < numNodes/Math.sqrt(numNodes)){
       neighborsSet.add(west(id))
       neighborsSet.add(east(id))
       neighborsSet.add(south(id))
     }
     // bottom edge
-    else if(id > numNodes - Math.sqrt(numNodes) + 1 && id < numNodes){
+    else if(newId > numNodes - Math.sqrt(numNodes) + 1 && newId < numNodes){
       neighborsSet.add(west(id))
       neighborsSet.add(east(id))
       neighborsSet.add(north(id))
     }
     // right edge
-    else if(id % Math.sqrt(numNodes) == 0){
+    else if(newId % Math.sqrt(numNodes) == 0){
       neighborsSet.add(west(id))
       neighborsSet.add(north(id))
       neighborsSet.add(south(id))
     }
     // left edge
-    else if(id % Math.sqrt(numNodes) == 1){
+    else if(newId % Math.sqrt(numNodes) == 1){
       neighborsSet.add(east(id))
       neighborsSet.add(north(id))
       neighborsSet.add(south(id))
@@ -299,6 +181,9 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       var neighborsSet = mutable.Set[Int]()
       topology match {
         case Topology.threeD =>
+          neighborsSet = setup3D
+
+        case Topology.twoD =>
           neighborsSet = setup2D
           
         case Topology.line =>
