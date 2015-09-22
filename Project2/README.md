@@ -10,7 +10,12 @@
 
 ## Structure
 
-3D with 27 nodes
+## Orientation
+   N
+ W   E
+   S
+
+## 3D example with 27 nodes
 
 ----------------------------
             |   01 02 03
@@ -25,6 +30,5 @@ Front View  |   16 17 18
 Bottom View |   22 23 24
             |   25 26 27
 ----------------------------
-
 
 ## Project Questions

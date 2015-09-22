@@ -15,8 +15,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   val squareRoot = Math.sqrt(numNodes)
   val cubeRoot = Math.cbrt(numNodes)
   val (planeSize, rowSize) = topology match {
-    case Topology.threeD | Topology.imp3D => (Math.pow(Math.cbrt(numNodes), 2).toInt, Math.cbrt(numNodes))
-    case _ => (numNodes, Math.sqrt(numNodes))
+    case Topology.threeD | Topology.imp3D => (Math.pow(Math.cbrt(numNodes), 2).toInt, Math.cbrt(numNodes).toInt)
+    case _ => (numNodes, Math.sqrt(numNodes).toInt)
   }
 
   var sOverW: Double = sOverWCalc
@@ -98,7 +98,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     if ((newId >= planeSize - rowSize + 1 && newId <= planeSize) || newId == 0) {
       -1
     } else {
-      n + Math.sqrt(planeSize).toInt
+      n + rowSize
     }
   }
 
@@ -107,22 +107,22 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     if (newId >= 1 && newId <= rowSize) {
       -1
     } else {
-      n - Math.sqrt(planeSize).toInt
+      n - rowSize
     }
   }
 
   // 3D cases
   def up(n: Int): Int = {
-    return n - planeSize
+    n - planeSize
   }
 
   def down(n: Int): Int = {
-    return n + planeSize
+    n + planeSize
   }
 
 
   def setup3D: mutable.Set[Int] = {
-    val neighborsSet = setup2D(true)
+    val neighborsSet = setup2D
 
     if (id > 0 && id <= planeSize) {
       // top plane
@@ -139,12 +139,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     neighborsSet
   }
 
-  def setup2D(for3D: Boolean = false): mutable.Set[Int] = {
+  def setup2D: mutable.Set[Int] = {
     val neighborsSet = mutable.Set[Int]()
-    val newId = if (for3D) id % planeSize else id
-
-    println("ID " + id + " newID " + newId)
-
     val eastVal = east(id)
     val westVal = west(id)
     val northVal = north(id)
@@ -174,12 +170,12 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       var neighborsSet = mutable.Set[Int]()
       topology match {
         case Topology.threeD => neighborsSet = setup3D
-        case Topology.twoD => neighborsSet = setup2D()
+        case Topology.twoD => neighborsSet = setup2D
         case Topology.line =>
           if (id - 1 > 0) neighborsSet.add(west(id))
           if (id + 1 <= numNodes) neighborsSet.add(east(id))
         case Topology.imp2D =>
-          neighborsSet = setup2D()
+          neighborsSet = setup2D
           var randomNeighbor = random.nextInt(numNodes) + 1
           while (randomNeighbor == id || neighborsSet.contains(randomNeighbor)) {
             randomNeighbor = random.nextInt(numNodes) + 1
@@ -196,7 +192,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
       }
       println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
       appendNeighbors(neighborsSet.toSet)
-      manager = sender
+      manager = sender()
       manager ! false
     case StartPushSum => pushSumAlgo(0, 0)
     case StartPushSum(addS: Double, addW: Double) => pushSumAlgo(addS, addW)
