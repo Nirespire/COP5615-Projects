@@ -8,7 +8,9 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
   var setupCounter = 0
   val random = new Random()
 
-  var startTime = -1.toLong
+  var startTime = System.nanoTime()
+
+  def timePassed = (System.nanoTime() - startTime) / Math.pow(10, 9)
 
   def completed = completedCounter == numNodes
 
@@ -23,7 +25,7 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
     case true => completedCounter += 1
       println(sender + " ---- " + completedCounter)
       if (completed) {
-        println("Convergence in " + (System.currentTimeMillis - startTime))
+        println("Convergence in " + timePassed)
         context.system.shutdown()
       }
     case Setup =>
@@ -39,17 +41,20 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
       if (!setupCompleted) {
         self ! StartPushSum
       } else {
+        println("Setup completed in " + timePassed)
         val randIdx = random.nextInt(numNodes) + 1
+        startTime = System.nanoTime()
         context.actorSelection(s"/user/node$randIdx") ! StartPushSum
       }
     case StartGossip =>
       if (!setupCompleted) {
         self ! StartGossip
       } else {
+        println("Setup completed in " + timePassed)
         val randIdx = random.nextInt(numNodes) + 1
         val randString = "hotgossip" //random.nextString(5)
         println("Gossip is: " + randString)
-        startTime = System.currentTimeMillis
+        startTime = System.nanoTime()
         context.actorSelection(s"/user/node$randIdx") ! StartGossip(randString)
       }
   }

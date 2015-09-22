@@ -14,10 +14,10 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
 
   val squareRoot = Math.sqrt(numNodes)
   val cubeRoot = Math.cbrt(numNodes)
-  val (planeSize,rowSize) = topology match{
+  val (planeSize, rowSize) = topology match {
     case Topology.threeD | Topology.imp3D => (Math.pow(Math.cbrt(numNodes), 2).toInt, Math.cbrt(numNodes))
     case _ => (numNodes, Math.sqrt(numNodes))
-  } 
+  }
 
   var sOverW: Double = sOverWCalc
 
@@ -56,13 +56,13 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     }
   }
 
-  def gossipAlgo(newRumor: String){
+  def gossipAlgo(newRumor: String) {
     println(self + rumor.mkString(","))
 
-    if(!done){
-      val rumorUpdate = rumor(newRumor)+1
+    if (!done) {
+      val rumorUpdate = rumor(newRumor) + 1
       rumor.update(newRumor, rumorUpdate)
-      if(rumorUpdate == config.getInt("app.gossipConvergenceNum")){
+      if (rumorUpdate == config.getInt("app.gossipConvergenceNum")) {
         done = true
         manager ! true
       }
@@ -77,80 +77,70 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     }
   }
 
-  def west(n:Int):Int={
-    if(id % rowSize == 1){
-      return -1
-    }
-    else{
-      return n-1
-    }
-  }
-
-  def east(n:Int):Int={
-    if(id % rowSize == 0){
+  def west(n: Int): Int = {
+    if (id % rowSize == 1) {
       -1
-    }
-    else{
-      n+1
+    } else {
+      n - 1
     }
   }
 
-  def south(n:Int):Int={
+  def east(n: Int): Int = {
+    if (id % rowSize == 0) {
+      -1
+    } else {
+      n + 1
+    }
+  }
+
+  def south(n: Int): Int = {
     val newId = id % planeSize
-    if((newId >= planeSize - rowSize + 1 && newId <= planeSize) || newId == 0){
+    if ((newId >= planeSize - rowSize + 1 && newId <= planeSize) || newId == 0) {
       -1
-    }
-    else{
+    } else {
       n + Math.sqrt(planeSize).toInt
     }
   }
 
-  def north(n:Int):Int={
+  def north(n: Int): Int = {
     val newId = id % planeSize
-    if(newId >= 1 && newId <= rowSize){
+    if (newId >= 1 && newId <= rowSize) {
       -1
-    }
-    else{
+    } else {
       n - Math.sqrt(planeSize).toInt
     }
   }
 
   // 3D cases
-  def up(n:Int):Int={
+  def up(n: Int): Int = {
     return n - planeSize
   }
-  def down(n:Int):Int={
+
+  def down(n: Int): Int = {
     return n + planeSize
   }
 
 
-
-  def setup3D : mutable.Set[Int] = {
+  def setup3D: mutable.Set[Int] = {
     val neighborsSet = setup2D(true)
 
-    // top plane
-    if(id > 0 && id <= planeSize){
+    if (id > 0 && id <= planeSize) {
+      // top plane
       neighborsSet.add(down(id))
-    }
-
-    // bottom plane
-    else if(id > planeSize * (cubeRoot - 1) && id <= numNodes){
+    } else if (id > planeSize * (cubeRoot - 1) && id <= numNodes) {
+      // bottom plane
       neighborsSet.add(up(id))
-    }
-
-    // else, somewhere in the middle
-    else{
+    } else {
+      // else, somewhere in the middle
       neighborsSet.add(down(id))
       neighborsSet.add(up(id))
     }
 
-    return neighborsSet
-
+    neighborsSet
   }
 
-  def setup2D(for3D : Boolean = false) : mutable.Set[Int]={
+  def setup2D(for3D: Boolean = false): mutable.Set[Int] = {
     val neighborsSet = mutable.Set[Int]()
-
     val newId = if (for3D) id % planeSize else id
 
     println("ID " + id + " newID " + newId)
@@ -160,90 +150,48 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
     val northVal = north(id)
     val southVal = south(id)
 
-    if(eastVal != -1){
+    if (eastVal != -1) {
       neighborsSet.add(eastVal)
     }
-    if(westVal != -1){
+
+    if (westVal != -1) {
       neighborsSet.add(westVal)
     }
-    if(northVal != -1){
+
+    if (northVal != -1) {
       neighborsSet.add(northVal)
     }
-    if(southVal != -1){
+
+    if (southVal != -1) {
       neighborsSet.add(southVal)
     }
 
-/*
-    // top left corner
-    if(newId == 1){
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
-    }
-    // bottom right corner
-    else if(newId == numNodes){
-      neighborsSet.add(west(id))
-      neighborsSet.add(north(id))
-    }
-    // top right corner
-    else if(newId == (numNodes/(Math.sqrt(numNodes))).toInt){
-      neighborsSet.add(west(id))
-      neighborsSet.add(south(id))
-    }
-    // bottom left corner
-    else if(newId == (numNodes - Math.sqrt(numNodes) + 1).toInt){
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-    }
-
-    // top edge
-    else if(newId > 1 && newId < numNodes/Math.sqrt(numNodes)){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(south(id))
-    }
-    // bottom edge
-    else if(newId > numNodes - Math.sqrt(numNodes) + 1 && newId < numNodes){
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-    }
-    // right edge
-    else if(newId % Math.sqrt(numNodes) == 0){
-      neighborsSet.add(west(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(south(id))
-    }
-    // left edge
-    else if(newId % Math.sqrt(numNodes) == 1){
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(south(id))
-    }
-    // somewhere in the center
-    else{
-      neighborsSet.add(west(id))
-      neighborsSet.add(east(id))
-      neighborsSet.add(north(id))
-      neighborsSet.add(south(id))
-    }
-*/
-    return neighborsSet
+    neighborsSet
   }
 
   def receive = {
     case Setup =>
       var neighborsSet = mutable.Set[Int]()
       topology match {
-        case Topology.threeD =>
-          neighborsSet = setup3D
-
-        case Topology.twoD =>
-          neighborsSet = setup2D()
-          
+        case Topology.threeD => neighborsSet = setup3D
+        case Topology.twoD => neighborsSet = setup2D()
         case Topology.line =>
           if (id - 1 > 0) neighborsSet.add(west(id))
           if (id + 1 <= numNodes) neighborsSet.add(east(id))
+        case Topology.imp2D =>
+          neighborsSet = setup2D()
+          var randomNeighbor = random.nextInt(numNodes) + 1
+          while (randomNeighbor == id || neighborsSet.contains(randomNeighbor)) {
+            randomNeighbor = random.nextInt(numNodes) + 1
+          }
+          neighborsSet.add(randomNeighbor)
         case Topology.imp3D =>
+          neighborsSet = setup3D
+          var randomNeighbor = random.nextInt(numNodes) + 1
+          while (randomNeighbor == id || neighborsSet.contains(randomNeighbor)) {
+            randomNeighbor = random.nextInt(numNodes) + 1
+          }
+          neighborsSet.add(randomNeighbor)
         case Topology.full => (1 to numNodes).foreach(neighborsSet.add)
       }
       println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))

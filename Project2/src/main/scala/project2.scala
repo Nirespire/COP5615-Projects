@@ -7,17 +7,12 @@ object project2 extends App {
 
   // num nodes can be rounded to the nearest perfect square
   val (numNodes, topology) = args(1) match {
-
-    case "3D" => (Math.pow(Math.ceil(Math.cbrt(arg0)),3).toInt, Topology.threeD)
-    case "2D" => (Math.pow(Math.ceil(Math.sqrt(arg0)),2).toInt, Topology.twoD)
+    case "2D" => (Math.pow(Math.ceil(Math.sqrt(arg0)), 2).toInt, Topology.twoD)
+    case "3D" => (Math.pow(Math.ceil(Math.cbrt(arg0)), 3).toInt, Topology.threeD)
+    case "imp2D" => (Math.pow(Math.ceil(Math.sqrt(arg0)), 2).toInt, Topology.imp2D)
+    case "imp3D" => (Math.pow(Math.ceil(Math.cbrt(arg0)), 3).toInt, Topology.imp3D)
     case _ => (arg0, Topology.withName(args(1)))
   }
-
-//  val topology = args(1) match {
-//    case "3D" => Topology.threeD
-//    case "2D" => Topology.twoD
-//    case _ => Topology.withName(args(1))
-//  }
 
   val algorithmName = args(2)
   val algorithm = algorithmName match {
