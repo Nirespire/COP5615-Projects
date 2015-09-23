@@ -20,16 +20,19 @@ object project2 extends App {
     case "gossip" => Algorithm.gossip
   }
 
-  println("Num nodes " + numNodes)
-  println("Topology " + topology)
-  println("Algorithm " + algorithm)
+  // debug
+//  println("Num nodes " + numNodes)
+//  println("Topology " + topology)
+//  println("Algorithm " + algorithm)
 
   val system = ActorSystem(name = algorithmName)
   val manager = system.actorOf(Props(new Manager(numNodes, algorithm)), name = s"manager")
 
   (1 to numNodes).foreach { idx =>
-    println(s"Creating $idx node")
-    println(system.actorOf(Props(new Node(idx, topology, numNodes)), name = s"node$idx"))
+    val node = system.actorOf(Props(new Node(idx, topology, numNodes)), name = s"node$idx")
+    //debug
+    //println(s"Creating $idx node")
+    //println(node)
   }
 
   manager ! Setup

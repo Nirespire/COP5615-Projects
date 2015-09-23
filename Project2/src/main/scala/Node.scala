@@ -1,5 +1,5 @@
 import akka.actor.{ActorSelection, ActorRef, Actor}
-import messages.{StartGossip, StartPushSum, Setup, Topology}
+import messages.{StartGossip, StartPushSum, Setup, Topology, SetupGossip, InitialGossip}
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
@@ -35,7 +35,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   def sOverWCalc = Math.round(s / w * tenDigitConst) / tenDigitConst
 
   def pushSumAlgo(newS: Double, newW: Double) = {
-    println(self + "-_- (" + s + "/" + w + ") = " + sOverWCalc + " conver" + convergenceCounter)
+    //debug
+    //    println(self + "-_- (" + s + "/" + w + ") = " + sOverWCalc + " conver" + convergenceCounter)
     if (!done) {
       pushSum(0) = (s + newS) / 2
       pushSum(1) = (w + newW) / 2
@@ -57,12 +58,16 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   }
 
   def gossipAlgo(newRumor: String) {
-    println(self + rumor.mkString(","))
+    //debug
+//        println(self + rumor.mkString(","))
 
     if (!done) {
+      val convergenceNum = config.getInt("app.gossipConvergenceNum")
       val rumorUpdate = rumor(newRumor) + 1
-      rumor.update(newRumor, rumorUpdate)
-      if (rumorUpdate == config.getInt("app.gossipConvergenceNum")) {
+      if (rumorUpdate <= convergenceNum) {
+        rumor.update(newRumor, rumorUpdate)
+      }
+      if (rumor.values.forall(i => i == convergenceNum)) {
         done = true
         manager ! true
       }
@@ -190,12 +195,20 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
           neighborsSet.add(randomNeighbor)
         case Topology.full => (1 to numNodes).foreach(neighborsSet.add)
       }
-      println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
+      // debug
+      //      println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
       appendNeighbors(neighborsSet.toSet)
       manager = sender()
       manager ! false
     case StartPushSum => pushSumAlgo(0, 0)
     case StartPushSum(addS: Double, addW: Double) => pushSumAlgo(addS, addW)
+    case SetupGossip(initialRumor: String) =>
+      val rumorUpdate = rumor(initialRumor) + 1
+      rumor.update(initialRumor, rumorUpdate)
+    case InitialGossip =>
+      //debug
+      //println(rumor.mkString(","))
+      rumor.keySet.foreach(i => neighbors(random.nextInt(numOfNeighbors)) ! StartGossip(i))
     case StartGossip(rumor: String) => gossipAlgo(rumor)
   }
 }
