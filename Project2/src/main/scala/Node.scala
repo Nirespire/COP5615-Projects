@@ -11,6 +11,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
   val random = new Random()
   val tenDigitConst = Math.pow(10, 10)
   val pushSum = Array[Double](id, 1)
+  val convergenceForRumor = config.getInt("app.gossipConvergenceNum")
 
   val squareRoot = Math.sqrt(numNodes)
   val cubeRoot = Math.cbrt(numNodes)
@@ -59,10 +60,13 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
 
   def gossipAlgo(newRumor: String) {
     //debug
-//        println(self + rumor.mkString(","))
+    //        println(self + rumor.mkString(","))
 
-    if (!done) {
-      val convergenceNum = config.getInt("app.gossipConvergenceNum")
+    if (done && rumor(newRumor) != convergenceForRumor) {
+      manager !(true, 1)
+      done = false
+    } else if (!done) {
+      val convergenceNum = convergenceForRumor
       val rumorUpdate = rumor(newRumor) + 1
       if (rumorUpdate <= convergenceNum) {
         rumor.update(newRumor, rumorUpdate)

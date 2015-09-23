@@ -27,8 +27,15 @@
                     sending the word it receives to a random neighbor until it has seen each word it knows about 10 times 
                     (app.numGossipWords and app.gossipConvergenceNumber can be changed in application.conf). The node
                     will then signal that it has converged. The system continues till every node has converged.
-        - push sum : 
+        - push sum : Each node has "s" initialized to its id, and "w" initialized to 1.
+                     A process push-sum message contains values (newS, newW) which needs to be added the existing (s,w) values of the node.
+                     Once the (s,w) values are updates, half is kept with the node, the remaining is sent randomly to one of the neighbor nodes.
+                     Each node keeps processing the (news, newW) message unless it has converged. A node is said to have converged if its (s/w) value remains
+                     unchanged (up-to 10 decimal digits) while processing three consecutive push-sum messages.
 
+                     The algorithm would have converged once all nodes have converged.
+
+                     The master sends a start push-sum to one of the nodes in the topology. The start message is equivalent to (newS, newW) = (0,0) push-sum process message.
 
 ## Orientation
 

@@ -36,6 +36,7 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
     //debug
     //      completedCounter += 1
     //      println(sender + "==================" + setupCounter)
+    case (true, 1) => completedCounter -= 1
     case true => completedCounter += 1
       //debug
       //      println(sender + " ---- " + completedCounter)
