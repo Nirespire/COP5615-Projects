@@ -12,9 +12,9 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
   var setupCounter = 0
   val random = new Random()
 
-  var startTime = System.currentTimeMillis()
+  var startTime = System.nanoTime()
 
-  def timePassed = (System.currentTimeMillis() - startTime) / Math.pow(10, 9)
+  def timePassed = (System.nanoTime() - startTime) / Math.pow(10, 9)
 
   def completed = completedCounter == numNodes
 
@@ -59,7 +59,7 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
       } else {
         println("Setup completed in " + timePassed)
         val randIdx = random.nextInt(numNodes) + 1
-        startTime = System.currentTimeMillis()
+        startTime = System.nanoTime()
         context.actorSelection(s"/user/node$randIdx") ! StartPushSum
       }
     case StartGossip =>
@@ -82,7 +82,7 @@ class Manager(numNodes: Int, algorithm: Algorithm.Value) extends Actor {
 
         //debug
         //println(randIdxs.mkString(","))
-        startTime = System.currentTimeMillis()
+        startTime = System.nanoTime()
         randIdxs.foreach(i => context.actorSelection(s"/user/node$i") ! InitialGossip)
 
 
