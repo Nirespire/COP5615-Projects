@@ -3,12 +3,12 @@
 ## Contributors
   1. Sanjay Nair
   2. Preethu Thomas
-  
-
-## Concepts
  
+## What is Working
   
-
+  - Can build 2D, 3D, imperfect 2D, imperfect 3D, line and full topologies
+  - Can run gossip and push-sum algorithms on the network
+  - Can receive feedback on how long the system took to set up and converge
 
 ## How to Run
 
@@ -32,9 +32,7 @@
                      Once the (s,w) values are updates, half is kept with the node, the remaining is sent randomly to one of the neighbor nodes.
                      Each node keeps processing the (news, newW) message unless it has converged. A node is said to have converged if its (s/w) value remains
                      unchanged (up-to 10 decimal digits) while processing three consecutive push-sum messages.
-
                      The algorithm would have converged once all nodes have converged.
-
                      The master sends a start push-sum to one of the nodes in the topology. The start message is equivalent to (newS, newW) = (0,0) push-sum process message.
 
 ## Orientation
@@ -61,6 +59,11 @@ Bottom View |   22 23 24
             |   25 26 27
 ----------------------------
 
-## Project Questions
+## Largest Network For Each Topology
 
-NA
+- Line :
+- 2D :
+- 3D :
+- Imperfect 2D :
+- Imperfect 3D :
+- Full :

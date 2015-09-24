@@ -60,18 +60,19 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
 
   def gossipAlgo(newRumor: String) {
     //debug
-    //        println(self + rumor.mkString(","))
+    //println(self + rumor.mkString(","))
 
     if (done && rumor(newRumor) != convergenceForRumor) {
       manager !(true, 1)
       done = false
-    } else if (!done) {
-      val convergenceNum = convergenceForRumor
+    }
+    else if (!done) {
       val rumorUpdate = rumor(newRumor) + 1
-      if (rumorUpdate <= convergenceNum) {
+      if (rumorUpdate <= convergenceForRumor) {
         rumor.update(newRumor, rumorUpdate)
       }
-      if (rumor.values.forall(i => i == convergenceNum)) {
+
+      if (rumor.values.forall(i => i == convergenceForRumor)) {
         done = true
         manager ! true
       }
@@ -181,8 +182,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
         case Topology.threeD => neighborsSet = setup3D
         case Topology.twoD => neighborsSet = setup2D
         case Topology.line =>
-          if (id - 1 > 0) neighborsSet.add(west(id))
-          if (id + 1 <= numNodes) neighborsSet.add(east(id))
+          if (id - 1 > 0) neighborsSet.add(id - 1)
+          if (id + 1 <= numNodes) neighborsSet.add(id + 1)
         case Topology.imp2D =>
           neighborsSet = setup2D
           var randomNeighbor = random.nextInt(numNodes) + 1
@@ -200,7 +201,7 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
         case Topology.full => (1 to numNodes).foreach(neighborsSet.add)
       }
       // debug
-      //      println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
+      // println(self + "^^^^^^^^^^^SETUP with neighbors " + neighborsSet.mkString(","))
       appendNeighbors(neighborsSet.toSet)
       manager = sender()
       manager ! false

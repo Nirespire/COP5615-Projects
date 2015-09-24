@@ -21,7 +21,7 @@ object project2 extends App {
   }
 
   // debug
-//  println("Num nodes " + numNodes)
+  println("Num nodes " + numNodes)
 //  println("Topology " + topology)
 //  println("Algorithm " + algorithm)
 
