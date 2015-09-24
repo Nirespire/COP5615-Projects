@@ -181,8 +181,8 @@ class Node(id: Int, topology: Topology.Value, numNodes: Int) extends Actor {
         case Topology.threeD => neighborsSet = setup3D
         case Topology.twoD => neighborsSet = setup2D
         case Topology.line =>
-          if (id - 1 > 0) neighborsSet.add(west(id))
-          if (id + 1 <= numNodes) neighborsSet.add(east(id))
+          if (id - 1 > 0) neighborsSet.add(id - 1)
+          if (id + 1 <= numNodes) neighborsSet.add(id + 1)
         case Topology.imp2D =>
           neighborsSet = setup2D
           var randomNeighbor = random.nextInt(numNodes) + 1
