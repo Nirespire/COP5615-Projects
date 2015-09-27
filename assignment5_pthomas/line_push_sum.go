@@ -17,6 +17,7 @@ type PushSum struct {
   done int8
 }
 
+// https://gist.github.com/DavidVaini/10308388
 func tenDigitRounded(pushSum PushSum) (rounded float64) {
   var round float64
   digit := pushSum.s/pushSum.w*tenDigitConst
