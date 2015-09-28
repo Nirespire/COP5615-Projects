@@ -59,6 +59,14 @@ Bottom View |   22 23 24
             |   25 26 27
 ----------------------------
 
+## Runtime for each algorithm, num_nodes, and topology
+
+- The results of running the system with different parameters are compiled into the included report
+- NOTE: the push-sum and gossip runtimes were recorded on two different computers. Although their performance
+might not correspond well between algorithms, each algorithm's performance remains consistent with that computer's performance.
+	Computer 1 (running push-sum): CPU: Intel Core i3-4030U @ 1.90GHz, 4GB RAM
+	Computer 2 (running gossip): CPU: Intel Core i5-4670 @ 3.4GHz, 8GB RAM
+
 ## Largest Network For Each Topology
 
 - Line :
