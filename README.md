@@ -6,4 +6,12 @@
 
 ## Project 1
 
-### Bitcoin mining
+### Bitcoin Mining System
+
+## Project 2
+
+### Push-Sum and Gossip Network Algorithm Simulators
+
+## Project 3
+
+### Chord Distributed Hash Table
