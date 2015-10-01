@@ -34,6 +34,11 @@
                      unchanged (up-to 10 decimal digits) while processing three consecutive push-sum messages.
                      The algorithm would have converged once all nodes have converged.
                      The master sends a start push-sum to one of the nodes in the topology. The start message is equivalent to (newS, newW) = (0,0) push-sum process message.
+	
+	- If you would like to run multiple tests automatically, reference the scripts folder that contains a bash
+	script that can be configured to run the same algorithm and topology for multiple numbers of nodes.
+	These scripts were used to automate collection of metrics for the report. NOTE: make sure the scripts are
+	run from the same directory where build.sbt resides and can be run.
 
 ## Orientation
 
@@ -67,11 +72,11 @@ might not correspond well between algorithms, each algorithm's performance remai
 	Computer 1 (running push-sum): CPU: Intel Core i3-4030U @ 1.90GHz, 4GB RAM
 	Computer 2 (running gossip): CPU: Intel Core i5-4670 @ 3.4GHz, 8GB RAM
 
-## Largest Network For Each Topology
+## Largest Network For Each Topology (running on computer 2)
 
-- Line :
-- 2D :
-- 3D :
-- Imperfect 2D :
-- Imperfect 3D :
-- Full :
+- Line : 20000
+- 2D : 250000
+- 3D : 103000
+- Imperfect 2D : 205000
+- Imperfect 3D : 102000
+- Full : 1000
