@@ -1,25 +1,15 @@
-# Assignment 3
+# Assignment 5
+
+Token ring algorithm simulation.
 
 ## Description
 
-Implementing a 10 node, line topology executing push-sum algorithm.
+The program accepts the number of nodes as an argument. The program creates a ring of all nodes, and a token is passed around the ring. The main routine chooses 10 random nodes out of all in the ring. Each choosen node then randomly select a destination to send a message.
+
+Once a message passes through the ring and reaches the source node again, it passes the token again.
 
 ## Output
 
-<pre>
-[preethu@32-laptop ~]$ time /usr/local/go/bin/go run line_push_sum.go  
-id=1,newS=4.090909,newW=0.909091,done=3
-id=2,newS=4.090909,newW=0.909091,done=3
-id=3,newS=4.090909,newW=0.909091,done=3
-id=0,newS=4.090909,newW=0.909091,done=3
-id=4,newS=4.090909,newW=0.909091,done=3
-id=5,newS=4.090909,newW=0.909091,done=3
-id=6,newS=4.090909,newW=0.909091,done=3
-id=7,newS=4.090909,newW=0.909091,done=3
-id=8,newS=4.090909,newW=0.909091,done=3
-id=9,newS=4.090909,newW=0.909091,done=3
+The maximum time taken by a node, which decides to send a message, waits to encounter the token, send the message, and for the message to pass through the ring is the latency across such a network.
 
-real    0m0.422s
-user    0m0.546s
-sys     0m0.046s
-</pre>
+For an increasing number of nodes, the latency will increase. This can be see in the nodes_op.txt
