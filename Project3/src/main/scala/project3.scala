@@ -1,4 +1,4 @@
-import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.actor.{ActorSystem, Props}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -9,20 +9,16 @@ object project3 extends App {
   val numRequests = args(1).toInt
 
   val m = 10
-  val system = ActorSystem(name = "ChordSimulation")
+  val system = ActorSystem(name = "Chord")
+
+  val manager = system.actorOf(Props(new Manager(m = m)), name = "manager")
   var nodeHash = Random.nextInt(1024)
-  val firstNode = system.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node${nodeHash}")
-  val createdNodes = mutable.ArrayBuffer[ActorRef](firstNode)
+  manager ! nodeHash
+  val createdNodesSet = mutable.Set[Int](nodeHash)
   (0 until numNodes - 1).foreach { idx =>
-    val knownNodeIdx = Random.nextInt(createdNodes.size)
-    while (createdNodes.contains(nodeHash)) {
+    while (createdNodesSet.contains(nodeHash)) {
       nodeHash = Random.nextInt(1024)
     }
-
-    val knownNode = createdNodes(knownNodeIdx)
-    val newNode = system.actorOf(Props(new Node(knownNode = knownNode, id = nodeHash)), name = s"Node${nodeHash}")
-    createdNodes.append(newNode)
+    manager ! nodeHash
   }
-
-
 }
