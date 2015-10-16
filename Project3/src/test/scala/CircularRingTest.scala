@@ -10,4 +10,9 @@ class CircularRingTest extends FunSuite {
     assert(CircularRing.inbetween(99, 0, 1, 100))
   }
 
+  test("between2 test") {
+    assert(CircularRing.inbetween2(1,3,5))
+    assert(CircularRing.inbetween2(2,0,2))
+  }
+
 }

@@ -12,10 +12,14 @@ object project3 extends App {
   val system = ActorSystem(name = "Chord")
 
   val manager = system.actorOf(Props(new Manager(m = m)), name = "manager")
+
+  // Create the first node
   var nodeHash = Random.nextInt(Math.pow(2,m).toInt)
   manager ! nodeHash
+
   val createdNodesSet = mutable.Set[Int](nodeHash)
   (0 until numNodes - 1).foreach { idx =>
+    createdNodesSet.add(nodeHash)
     while (createdNodesSet.contains(nodeHash)) {
       nodeHash = Random.nextInt(1024)
     }
