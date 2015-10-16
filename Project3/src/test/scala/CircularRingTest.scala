@@ -1,9 +1,6 @@
 
 import org.scalatest.FunSuite
 
-/**
- * Created by Sanjay on 10/13/2015.
- */
 class CircularRingTest extends FunSuite {
   test("between idx test") {
     assert(CircularRing.inbetween(0, 45, 50, 100))

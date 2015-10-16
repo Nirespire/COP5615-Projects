@@ -1,4 +1,4 @@
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Props, Actor, ActorRef}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -8,9 +8,16 @@ class Manager(m: Integer) extends Actor {
 
   def receive = {
     case nodeHash: Int => {
+
+      // First node in the ring
       val newNode = if (createdNodes.isEmpty) {
-        context.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node$nodeHash")
-      } else {
+        val n = context.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node$nodeHash")
+        n ! Message.InitialNode
+        n
+      }
+
+      // New node joining the ring
+      else {
         val knownNodeIdx = Random.nextInt(createdNodes.size)
         val knownNode = createdNodes(knownNodeIdx)
         val newNode = context.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node$nodeHash")
