@@ -1,8 +1,7 @@
 import akka.actor.{Actor, ActorRef}
 import scala.collection.mutable
 
-class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
-  val maxM = Math.pow(2, m.toDouble).toInt
+class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor {
 
   // Finger table to hold at most m entries
   val fingerTable = new Array[FingerEntry](m + 1)
@@ -12,10 +11,10 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
   val keyValues = mutable.Map[Integer,String]()
 
   (0 until m).foreach { i =>
-    fingerTable(i) = FingerEntry(nodeId = (id + Math.pow(2, i).toInt) % maxM, successorId = id, successor = self)
+    fingerTable(i) = FingerEntry(nodeId = (id + Math.pow(2, i).toInt) % hashSpace, successorId = id, successor = self)
   }
 
-  fingerTable(m) = FingerEntry(nodeId = (id + maxM - 1) % maxM, successorId = id, successor = self)
+  fingerTable(m) = FingerEntry(nodeId = (id + hashSpace - 1) % hashSpace, successorId = id, successor = self)
 
   // Pointer to predecessor for quick access
   def predecessor = fingerTable(m).successor
@@ -74,10 +73,9 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
     case Message.InitialNode => {
       println("Node: initial node setting up")
       println("Finger Table:")
-      print(fingerTable.mkString("\n"))
+      println(fingerTable.mkString("\n"))
       manager ! Message.Done
     }
-
 
     case key: Int => {
       //received a key to lookup
@@ -170,10 +168,11 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
 
       fingerTable(m).updateSuccessor(id, sender)
       //      fingerTable = ft
-      println("Got my successor: " + ft(0))
-      print(fingerTable.mkString("\n"))
+      (0 to m ).foreach { idx =>
+        println(fingerTable(idx) + "____" + ft(idx))
+      }
       manager ! Message.Done
+      //Send message to update the new node in finger
     }
-
   }
 }

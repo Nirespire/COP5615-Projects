@@ -3,42 +3,48 @@ import akka.actor.{Props, Actor, ActorRef}
 import scala.collection.mutable
 import scala.util.Random
 
-class Manager(m: Integer) extends Actor {
+class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
   var numNodesDone = 0
+  var createdNodeCnt = 0
 
   def receive = {
     case nodeHash: Int => {
+      if (createdNodeCnt == numNodesDone) {
 
-      // First node in the ring
-      val newNode = if (createdNodes.isEmpty) {
+        // First node in the ring
+        val newNode = if (createdNodes.isEmpty) {
 
-        //debug
-        println("Manager: creating initial node")
+          //debug
+          println("Manager: creating initial node")
 
-        val n = context.actorOf(Props(new Node(self, m = m, id = nodeHash)), name = s"Node$nodeHash")
-        n ! Message.InitialNode
-        n
+          val n = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash)), name = s"Node$nodeHash")
+          n ! Message.InitialNode
+          n
+        }
+        // New node joining the ring
+        else {
+
+          //debug
+          println("Manager: creating node")
+
+          val knownNodeIdx = Random.nextInt(createdNodes.size)
+          val knownNode = createdNodes(knownNodeIdx)
+          val newNode = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash)), name = s"Node$nodeHash")
+          newNode ! knownNode
+          newNode
+        }
+
+        createdNodes.append(newNode)
+        createdNodeCnt = createdNodeCnt + 1
+      } else {
+        self ! nodeHash
       }
-      // New node joining the ring
-      else {
-
-        //debug
-        println("Manager: creating node")
-
-        val knownNodeIdx = Random.nextInt(createdNodes.size)
-        val knownNode = createdNodes(knownNodeIdx)
-        val newNode = context.actorOf(Props(new Node(self, m = m, id = nodeHash)), name = s"Node$nodeHash")
-        newNode ! knownNode
-        newNode
-      }
-
-      createdNodes.append(newNode)
     }
 
     case Message.Done => {
       numNodesDone = numNodesDone + 1
-      if (numNodesDone == createdNodes.size) {
+      if (numNodesDone == numNodes) {
         Thread.sleep(1000)
         context.system.shutdown()
       }

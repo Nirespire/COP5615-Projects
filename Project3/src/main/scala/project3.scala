@@ -7,11 +7,11 @@ object project3 extends App {
   val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
-  val hashSpace = Math.pow(2, m).toInt
   val m = 10
+  val hashSpace = Math.pow(2, m).toInt
   val system = ActorSystem(name = "Chord")
 
-  val manager = system.actorOf(Props(new Manager(m = m)), name = "manager")
+  val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes)), name = "manager")
 
   // Create the first node
   var nodeHash = Random.nextInt(hashSpace)
