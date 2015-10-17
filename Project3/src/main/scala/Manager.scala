@@ -16,7 +16,7 @@ class Manager(m: Integer) extends Actor {
         //debug
         println("Manager: creating initial node")
 
-        val n = context.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node$nodeHash")
+        val n = context.actorOf(Props(new Node(self, m = m, id = nodeHash)), name = s"Node$nodeHash")
         n ! Message.InitialNode
         n
       }
@@ -28,7 +28,7 @@ class Manager(m: Integer) extends Actor {
 
         val knownNodeIdx = Random.nextInt(createdNodes.size)
         val knownNode = createdNodes(knownNodeIdx)
-        val newNode = context.actorOf(Props(new Node(m = m, id = nodeHash)), name = s"Node$nodeHash")
+        val newNode = context.actorOf(Props(new Node(self, m = m, id = nodeHash)), name = s"Node$nodeHash")
         newNode ! knownNode
         newNode
       }
@@ -36,12 +36,12 @@ class Manager(m: Integer) extends Actor {
       createdNodes.append(newNode)
     }
 
-    case Message.Done =>{
+    case Message.Done => {
       numNodesDone = numNodesDone + 1
-      if(numNodesDone == createdNodes.size){
+      if (numNodesDone == createdNodes.size) {
+        Thread.sleep(1000)
         context.system.shutdown()
       }
     }
-
   }
 }
