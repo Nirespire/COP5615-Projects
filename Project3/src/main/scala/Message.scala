@@ -1,10 +1,16 @@
 import akka.actor.ActorRef
 
-object Message{
+object Message {
+
   case class InitialNode()
-  case class GetNodeSuccessor(node:ActorRef, nodeId:Int)
-  case class YourSuccessor(fingerTable:Array[FingerEntry])
+
+  case class GetNodeSuccessor(node: ActorRef, nodeId: Int)
+
+  case class YourSuccessor(id: Int, fingerTable: Array[FingerEntry])
+
   case class Done()
-  case class QueryMessage(numHops:Int)
+
+  case class QueryMessage(numHops: Int)
+
 }
 

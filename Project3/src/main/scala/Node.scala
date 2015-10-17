@@ -11,9 +11,11 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
   // Hold values at this node
   val keyValues = mutable.Map[Integer,String]()
 
-  (0 to m).foreach { i =>
-    fingerTable(i) = new FingerEntry(nodeId = (id + Math.pow(2, i).toInt) % maxM, successorId = id, successor = self)
+  (0 until m).foreach { i =>
+    fingerTable(i) = FingerEntry(nodeId = (id + Math.pow(2, i).toInt) % maxM, successorId = id, successor = self)
   }
+
+  fingerTable(m) = FingerEntry(nodeId = (id + maxM - 1) % maxM, successorId = id, successor = self)
 
   // Pointer to predecessor for quick access
   def predecessor = fingerTable(m).successor
@@ -72,7 +74,7 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
     case Message.InitialNode => {
       println("Node: initial node setting up")
       println("Finger Table:")
-      print(fingerTable.mkString(","))
+      print(fingerTable.mkString("\n"))
       manager ! Message.Done
     }
 
@@ -117,7 +119,7 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
       val fingerEntry = lookup(nodeId)
 
       if (fingerEntry.successorId == id) {
-        sender ! Message.YourSuccessor(fingerTable)
+        sender ! Message.YourSuccessor(id, fingerTable)
       } else {
         fingerEntry.successor ! sender.forward(Message.GetNodeSuccessor(node, nodeId))
       }
@@ -162,11 +164,14 @@ class Node(manager: ActorRef, m: Integer, id: Int) extends Actor {
     }
 
     // Do something once you get your successor
-    case Message.YourSuccessor(ft) => {
+    case Message.YourSuccessor(id, ft) => {
       //fingerTable.update(0, ft(0))
       //loop through ft while updating fingerTable
+
+      fingerTable(m).updateSuccessor(id, sender)
       //      fingerTable = ft
       println("Got my successor: " + ft(0))
+      print(fingerTable.mkString("\n"))
       manager ! Message.Done
     }
 
