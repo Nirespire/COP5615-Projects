@@ -5,7 +5,10 @@ object CircularRing {
   }
 
   def inbetween2(start:Int, query:Int, end:Int) ={
-    if(start <= end){
+    if(start == end){
+      true
+    }
+    else if(start < end){
       query >= start && query <= end
     }
     else{

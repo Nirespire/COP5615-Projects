@@ -3,14 +3,50 @@ import scala.collection.mutable
 
 class Node(m: Integer, id: Int) extends Actor {
   val maxM = Math.pow(2,m.toDouble).toInt
+
   // Finger table to hold at most m entries
   var fingerTable = new Array[FingerEntry](m)
+
   // Hold values at this node
-  var keyValues = mutable.Map[Integer,String]();
+  var keyValues = mutable.Map[Integer,String]()
+
+  // Pointer to predecessor for quick access
+  var predecessor:ActorRef = null
+  var predecessorId = -1
 
   def lookup(key: Int) = {
-
+    fingerTable.foreach{entry =>
+      if(entry.nodeId > key){entry}
+    }
   }
+
+
+  /// Taken from Chord paper
+
+  def findSuccessor(key:Int){
+    var (predId,pred) = findPredecessor(key)
+    // need to somehow get pred.successor
+  }
+
+  def findPredecessor(key:Int):(Int,ActorRef)={
+    var predId = (id,self)
+    while(!CircularRing.inbetween2(id,key,fingerTable(0).successorId)){
+      predId = closestPrecedingFinger(key)
+    }
+    predId
+  }
+
+  def closestPrecedingFinger(key:Int):(Int,ActorRef)= {
+    var output = (id,self)
+    (fingerTable.length-1 to 1 by -1).foreach{ i=>
+      if(CircularRing.inbetween2(this.id, key, fingerTable(i).nodeId)) {
+        output = (fingerTable(i).successorId, fingerTable(0).successor)
+      }
+    }
+    output
+  }
+
+  ///
 
   def receive = {
 
@@ -20,9 +56,13 @@ class Node(m: Integer, id: Int) extends Actor {
       //debug
       println("Node: initial node setting up")
 
-      (0 to fingerTable.length - 1).foreach { i =>
-        fingerTable(i) = new FingerEntry(node = self, nodeId = Math.pow(id, i).toInt, successorId = id, successor=self)
+      (0 to fingerTable.size - 1).foreach { i =>
+        val startId = if(id+Math.pow(2,i).toInt > maxM) id+Math.pow(2,i).toInt % maxM else id+Math.pow(2,i).toInt
+        fingerTable(i) = new FingerEntry(nodeId = startId, successorId = id, successor = self)
       }
+
+      predecessor = self
+      predecessorId = id
 
       //debug
       println("Finger Table:")
@@ -33,13 +73,16 @@ class Node(m: Integer, id: Int) extends Actor {
     case key: Int => {
       //received a key to lookup
 
+
     }
 
     // New node joining is given a ref to known node in the system
+    // This is called by the new node
     case knownNode: ActorRef => {
       //debug
-      println("Node: setting up node")
+      println("Node: setting up new node")
 
+      // Find my successor
       knownNode ! Message.GetNodeSuccessor(self, id)
     }
 
@@ -68,14 +111,22 @@ class Node(m: Integer, id: Int) extends Actor {
       println("Trying to find successor for new node: " + nodeId)
 
       // Second node entering the system
-      if(fingerTable(0).nodeId == this.id){
-        node ! Message.YourSuccessor(fingerTable(0).node, fingerTable(0).nodeId)
-      }
+//      if(fingerTable(0).nodeId == this.id){
+//        node ! Message.YourSuccessor(fingerTable(0).node, fingerTable(0).nodeId)
+//      }
+      println(this.id)
+      println(nodeId)
+      println(fingerTable.size)
+      println(fingerTable(0))
+
       // If the node lies within the range of this node's successor
-      else if(CircularRing.inbetween(this.id,nodeId,fingerTable(0).nodeId, maxM)){
+      if(CircularRing.inbetween2(this.id,nodeId,fingerTable(0).successorId)){
         //debug
         println("First successor case")
-        node ! Message.YourSuccessor(fingerTable(0).node, fingerTable(0).nodeId)
+        node ! Message.YourSuccessor(fingerTable)
+
+        // Need to modify self's finger table
+
       }
       // Else search through finger table for closest preceding entry
       else{
@@ -84,8 +135,8 @@ class Node(m: Integer, id: Int) extends Actor {
         var closestPrecedingNode:ActorRef = null
 
         (fingerTable.length-1 to 1 by -1).foreach{ i=>
-          if(CircularRing.inbetween(this.id,fingerTable(i).nodeId,nodeId,maxM)){
-            closestPrecedingNode = fingerTable(i).node
+          if(CircularRing.inbetween2(this.id, nodeId, fingerTable(i).successorId)){
+            closestPrecedingNode = fingerTable(i).successor
           }
         }
 
@@ -94,17 +145,13 @@ class Node(m: Integer, id: Int) extends Actor {
         closestPrecedingNode ! Message.GetNodeSuccessor(node, nodeId)
       }
 
-
-      fingerTable.foreach{entry =>
-        if(CircularRing.inbetween(entry.nodeId,nodeId,entry.successorId,maxM)){
-
-        }
-      }
     }
 
     // Do something once you get your successor
-    case Message.YourSuccessor(node, nodeId) => {
-      println("Got my successor: " + nodeId)
+    case Message.YourSuccessor(ft) => {
+      //fingerTable.update(0, ft(0))
+      fingerTable = ft
+      println("Got my successor: " + ft(0))
       context.actorSelection(s"/user/manager") ! Message.Done
     }
 
