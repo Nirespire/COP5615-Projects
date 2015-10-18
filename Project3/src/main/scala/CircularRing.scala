@@ -1,17 +1,17 @@
 object CircularRing {
 
-  def inbetween(start:Int, testIdx:Int, stopIdx:Int, m:Int) ={
-    testIdx < stopIdx  &&  (testIdx > start || start > stopIdx)
+  def inbetween(start: Int, testIdx: Int, stopIdx: Int, m: Int) = {
+    testIdx <= stopIdx && (testIdx >= start || start >= stopIdx)
   }
 
-  def inbetween2(start:Int, query:Int, end:Int) ={
-    if(start == end){
+  def inbetween2(start: Int, query: Int, end: Int) = {
+    if (start == end) {
       true
     }
-    else if(start < end){
+    else if (start < end) {
       query >= start && query <= end
     }
-    else{
+    else {
       query >= start || query <= end
     }
   }

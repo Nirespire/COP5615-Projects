@@ -35,8 +35,13 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
       }
     }
     */
-    //TODO: dummy code, need to think out lookup
-    fingerTable(0)
+    (0 until m - 1).reverse.foldLeft(fingerTable(m - 1)) { case (found, idx) =>
+      if (CircularRing.inbetween(id, key, fingerTable(idx).nodeId, hashSpace)) {
+        fingerTable(idx)
+      } else {
+        found
+      }
+    }
   }
 
 
@@ -112,7 +117,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
     // Find finger entry whose id lies between nodeId
     case Message.GetNodeSuccessor(node, nodeId) => {
       //debug
-      println("Trying to find successor for new node: " + nodeId)
+      println("Trying to find successor for new node: " + nodeId + " using existing node " + id)
 
       val fingerEntry = lookup(nodeId)
 
@@ -162,15 +167,19 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
     }
 
     // Do something once you get your successor
-    case Message.YourSuccessor(id, ft) => {
+    case Message.YourSuccessor(senderId, ft) => {
       //fingerTable.update(0, ft(0))
       //loop through ft while updating fingerTable
 
-      fingerTable(m).updateSuccessor(id, sender)
+      fingerTable(m) = fingerTable(m).updateSuccessor(ft(m).successorId, ft(m).successor)
       //      fingerTable = ft
-      (0 to m ).foreach { idx =>
+      var selfIdx = 0
+      var newIdx = 0
+      (0 until m).foreach { idx =>
+
         println(fingerTable(idx) + "____" + ft(idx))
       }
+
       manager ! Message.Done
       //Send message to update the new node in finger
     }
