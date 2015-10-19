@@ -3,7 +3,7 @@ import akka.actor.{Props, Actor, ActorRef}
 import scala.collection.mutable
 import scala.util.Random
 
-class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
+class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends Actor {
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
   var numNodesDone = 0
   var createdNodeCnt = 0
@@ -19,7 +19,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
           //debug
           println("Manager: creating initial node")
 
-          val n = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash)), name = s"Node$nodeHash")
+          val n = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
           n ! Message.InitialNode
           n
         }
@@ -31,7 +31,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
 
           val knownNodeIdx = Random.nextInt(createdNodes.size)
           val knownNode = createdNodes(knownNodeIdx)
-          val newNode = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash)), name = s"Node$nodeHash")
+          val newNode = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, id = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
           newNode ! knownNode
           newNode
         }
@@ -44,11 +44,16 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
     }
 
     case Message.Done => {
-      numNodesDone = numNodesDone + 1
+      numNodesDone += 1
       if (numNodesDone == numNodes) {
         Thread.sleep(1000)
         context.system.shutdown()
       }
+    }
+
+    case Message.QueryMessage(queryVal, numHops) => {
+      println("Node just finished: ")
+      println("Num hops: " + numHops)
     }
   }
 }

@@ -1,11 +1,16 @@
 import akka.actor.{Actor, ActorRef}
 
-class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor {
+import scala.util.Random
+
+class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int, numRequests: Int) extends Actor {
 
   // Finger table to hold at most m entries
   val fingerTable = new Array[FingerEntry](m + 2)
   val predecessorIdx = 0
   val successorIdx = 2
+
+  var numRequestsSent = 0
+  val done = numRequestsSent == numRequests
 
   (2 to m + 1).foreach { i =>
     fingerTable(i) = FingerEntry(nodeId = (id + Math.pow(2, i - 2).toInt) % hashSpace, successorId = id, successor = self)
@@ -128,5 +133,34 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
 
       println(fingerTable.mkString("\n"))
     }
+
+    case Message.SendQueryMessage =>{
+      if(done){
+        manager ! Message.Done
+      }
+      else {
+        numRequestsSent += 1
+        // generate random hash
+        val query = Random.nextInt(hashSpace)
+        // query system
+        self ! Message.QueryMessage(query, 0)
+      }
+      // Send a query every 1 second
+      Thread.sleep(1000)
+      self ! Message.SendQueryMessage
+    }
+
+    case Message.QueryMessage(queryVal, numHops) => {
+      // This node is responsible for the queryVal hash
+      if(CircularRing.inbetween(predecessorId, id, queryVal, hashSpace)){
+        manager ! Message.QueryMessage(queryVal, numHops)
+      }
+      // This node is not responsible, pass on the request
+      else{
+        val fingerIdx = lookup(queryVal)
+        fingerTable(fingerIdx).successor ! Message.QueryMessage(queryVal, numHops + 1)
+      }
+    }
+
   }
 }

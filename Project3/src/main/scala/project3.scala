@@ -11,7 +11,7 @@ object project3 extends App {
   val hashSpace = Math.pow(2, m).toInt
   val system = ActorSystem(name = "Chord")
 
-  val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes)), name = "manager")
+  val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes, numRequests = numRequests)), name = "manager")
 
   // Create the first node
   var nodeHash = Random.nextInt(hashSpace)
@@ -24,5 +24,7 @@ object project3 extends App {
       nodeHash = Random.nextInt(1024)
     }
     manager ! nodeHash
+    Thread.sleep(1000)
   }
+
 }

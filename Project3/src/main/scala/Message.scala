@@ -14,7 +14,9 @@ object Message {
 
   case class Done()
 
-  case class QueryMessage(numHops: Int)
+  case class QueryMessage(queryVal: Int, numHops: Int)
+
+  case class SendQueryMessage()
 
 }
 
