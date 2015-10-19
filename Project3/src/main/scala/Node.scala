@@ -1,5 +1,4 @@
 import akka.actor.{Actor, ActorRef}
-import scala.collection.mutable
 
 class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor {
 

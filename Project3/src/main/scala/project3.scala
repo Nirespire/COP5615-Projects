@@ -4,8 +4,7 @@ import scala.collection.mutable
 import scala.util.Random
 
 object project3 extends App {
-  val numNodes = 4
-  //args(0).toInt
+  val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
   val m = 10
@@ -14,7 +13,6 @@ object project3 extends App {
 
   val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes)), name = "manager")
 
-  /*
   // Create the first node
   var nodeHash = Random.nextInt(hashSpace)
   manager ! nodeHash
@@ -27,8 +25,4 @@ object project3 extends App {
     }
     manager ! nodeHash
   }
-  */
-  List(80, 641, 585, 0).foreach(nodeHash =>
-    manager ! nodeHash
-  )
 }
