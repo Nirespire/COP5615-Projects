@@ -16,9 +16,13 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
   fingerTable(1) = FingerEntry(nodeId = id, successorId = id, successor = self)
 
   // Pointer to predecessor for quick access
-  def predecessor = fingerTable(m).successor
+  def predecessor = fingerTable(predecessorIdx).successor
 
-  def predecessorId = fingerTable(m).successorId
+  def predecessorId = fingerTable(predecessorIdx).successorId
+
+  def successor = fingerTable(successorIdx).successor
+
+  def successorId = fingerTable(successorIdx).successorId
 
   def lookup(key: Int): Int = {
     (0 to m).foreach { idx =>
@@ -80,7 +84,6 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
     case Message.YourSuccessor(senderId, ft) => {
       fingerTable(0) = fingerTable(0).updateSuccessor(ft(0).successorId, ft(0).successorId, ft(0).successor)
 
-      sender ! Message.UpdatePredecessor(id)
       var jIdx = 2
       var kIdx = 3
 
@@ -104,17 +107,18 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int) extends Actor
         println(fingerTable(idx) + "____" + ft(idx))
       }
 
-      sender ! Message.UpdateFingers(id, fingerTable(successorIdx).successorId)
+      sender ! Message.UpdatePredecessor(id)
+      predecessor ! Message.UpdateFingers(id, successorId)
       //      Thread.sleep(1000)
       manager ! Message.Done
       //Send message to update the new node in finger
     }
 
     case Message.UpdatePredecessor(pid) => fingerTable(0) = fingerTable(0).updateSuccessor(pid, pid, sender)
+
     case Message.UpdateFingers(pid, spid) => {
-      val successorId = fingerTable(successorIdx).successorId
-      if (pid != successorId && CircularRing.inbetween(successorId, pid, spid, hashSpace)) {
-        fingerTable(successorIdx).successor ! Message.UpdateFingers(pid, spid)
+      if (pid != predecessorId && CircularRing.inbetween(predecessorId, pid, spid, hashSpace)) {
+        predecessor ! Message.UpdateFingers(pid, spid)
       }
 
       (2 to m + 1).foreach { idx =>

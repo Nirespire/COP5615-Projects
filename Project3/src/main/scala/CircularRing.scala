@@ -13,7 +13,7 @@ object CircularRing {
       ipTestIdx
     }
 
-    testIdx < stopIdx && testIdx >= startIdx
+    startIdx == stopIdx || testIdx < stopIdx && testIdx >= startIdx
   }
 
   def inbetween2(start: Int, query: Int, end: Int) = {
