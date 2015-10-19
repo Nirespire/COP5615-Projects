@@ -12,6 +12,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int) extends Actor {
     case nodeHash: Int => {
       if (createdNodeCnt == numNodesDone) {
 
+        println("Manager is trying to create nodeHash : " + nodeHash)
         // First node in the ring
         val newNode = if (createdNodes.isEmpty) {
 

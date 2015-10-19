@@ -1,7 +1,19 @@
 object CircularRing {
 
-  def inbetween(start: Int, testIdx: Int, stopIdx: Int, m: Int) = {
-    testIdx <= stopIdx && (testIdx >= start || start >= stopIdx)
+  def inbetween(startIdx: Int, ipTestIdx: Int, ipStopIdx: Int, m: Int) = {
+    val stopIdx = if (startIdx > ipStopIdx) {
+      ipStopIdx + m
+    } else {
+      ipStopIdx
+    }
+
+    val testIdx = if (ipTestIdx < ipStopIdx && startIdx > ipStopIdx) {
+      ipTestIdx + m
+    } else {
+      ipTestIdx
+    }
+
+    testIdx < stopIdx && testIdx >= startIdx
   }
 
   def inbetween2(start: Int, query: Int, end: Int) = {
