@@ -50,7 +50,7 @@ Trying to find successor for new node: 188 using existing node 589
 for 188 at id 589 we found it at 11 FE::77(350)
 Trying to find successor for new node: 188 using existing node 350
 for 188 at id 350 we found it at 1 FE::350(350)
-FE::589(589)____FE::589(589)   												//  predecessor of 350 should be 188 now? //
+FE::589(589)____FE::589(589)   	//  predecessor of 350 should be 188 now? //
 FE::188(188)____FE::350(350)
 FE::189(350)____FE::351(589)
 FE::190(350)____FE::352(589)
@@ -89,8 +89,8 @@ FE::369(589)____FE::605(188)
 FE::385(589)____FE::621(188)
 FE::417(589)____FE::653(188)
 FE::481(589)____FE::717(188)
-FE::609(353)____FE::845(188)												// the successor of this should be 188
-FE::865(353)____FE::77(188)													// the successor of this should be 188 -> entries in the ft it is referencing look right though...
+FE::609(353)____FE::845(188)	// the successor of this should be 188
+FE::865(353)____FE::77(188)		// the successor of this should be 188 -> entries in the ft it is referencing look right though...
 FE::188(188)
 FE::350(350)
 FE::351(353)
@@ -101,8 +101,8 @@ FE::366(589)
 FE::382(589)
 FE::414(589)
 FE::478(589)
-FE::606(350)																// the successor of this should be 188
-FE::862(350)____  															// the successor of this should be 188
+FE::606(350)					// the successor of this should be 188
+FE::862(350)____  				// the successor of this should be 188
 FE::589(589)
 FE::188(188)
 FE::189(350)
@@ -122,7 +122,7 @@ Trying to find successor for new node: 704 using existing node 589
 for 704 at id 589 we found it at 9 FE::717(188)
 Trying to find successor for new node: 704 using existing node 188
 for 704 at id 188 we found it at 1 FE::188(188)
-FE::589(589)____FE::589(589)
+FE::589(589)____FE::589(589)	// predecessor of 188 should be 704 now (fixed below)
 FE::704(704)____FE::188(188)
 FE::705(188)____FE::189(350)
 FE::706(188)____FE::190(350)
@@ -133,7 +133,7 @@ FE::736(188)____FE::220(350)
 FE::768(188)____FE::252(350)
 FE::832(188)____FE::316(350)
 FE::960(188)____FE::444(589)
-FE::192(350)____FE::700(188)
+FE::192(350)____FE::700(188)	// successor of 700 should be 704 now
 FE::350(350)
 FE::353(353)
 FE::354(589)
@@ -145,7 +145,7 @@ FE::385(589)
 FE::417(589)
 FE::481(589)
 FE::609(704)
-FE::865(353)
+FE::865(353)____
 FE::353(353)
 FE::589(589)
 FE::590(704)
@@ -157,8 +157,8 @@ FE::621(704)
 FE::653(704)
 FE::717(188)
 FE::845(188)
-FE::77(188)
-FE::188(188)
+FE::77(188)_____
+FE::188(188)					// Node 188's ft isnt updated in this set, needs to be to fix above error
 FE::350(350)
 FE::351(353)
 FE::352(353)
@@ -175,7 +175,7 @@ Manager: creating node
 Node: setting up new node
 Trying to find successor for new node: 41 using existing node 188
 for 41 at id 188 we found it at 1 FE::188(188)
-FE::704(704)____FE::704(704)
+FE::704(704)____FE::704(704)	// Ok this fixes 188's predecessor error
 FE::41(41)____FE::188(188)
 FE::42(188)____FE::189(350)
 FE::43(188)____FE::190(350)
@@ -186,7 +186,7 @@ FE::73(188)____FE::220(350)
 FE::105(188)____FE::252(350)
 FE::169(188)____FE::316(350)
 FE::297(350)____FE::444(589)
-FE::553(41)____FE::700(188)
+FE::553(41)____FE::700(188)		// Again, for 188's ft, successor of 700 should be 704 based on previous join
 FE::589(589)
 FE::704(704)
 FE::705(41)
@@ -198,7 +198,7 @@ FE::736(41)
 FE::768(41)
 FE::832(41)
 FE::960(41)
-FE::192(350)
+FE::192(350)____
 FE::353(353)
 FE::589(589)
 FE::590(704)
@@ -210,7 +210,7 @@ FE::621(704)
 FE::653(704)
 FE::717(41)
 FE::845(41)
-FE::77(188)
+FE::77(188)_____
 FE::350(350)
 FE::353(353)
 FE::354(589)
@@ -222,7 +222,7 @@ FE::385(589)
 FE::417(589)
 FE::481(589)
 FE::609(704)
-FE::865(41)
+FE::865(41)_____
 FE::188(188)
 FE::350(350)
 FE::351(353)
@@ -232,7 +232,7 @@ FE::358(589)
 FE::366(589)
 FE::382(589)
 FE::414(589)
-FE::478(589)
+FE::478(589)					// This and previous 3 updates are all correct
 FE::606(704)
 FE::862(41)
 Manager is trying to create nodeHash : 381									-> 41 -> 188 -> 350 -> 353 -> 381 -> 589 -> 704 ->
@@ -253,7 +253,7 @@ FE::413(589)____FE::621(704)
 FE::445(589)____FE::653(704)
 FE::509(589)____FE::717(41)
 FE::637(704)____FE::845(41)
-FE::893(381)____FE::77(188)
+FE::893(381)____FE::77(188)		// successor of 893 should be 41
 FE::350(350)
 FE::353(353)
 FE::354(381)
@@ -265,7 +265,7 @@ FE::385(589)
 FE::417(589)
 FE::481(589)
 FE::609(704)
-FE::865(41)
+FE::865(41)_____
 FE::188(188)
 FE::350(350)
 FE::351(353)
@@ -277,7 +277,7 @@ FE::382(589)
 FE::414(589)
 FE::478(589)
 FE::606(704)
-FE::862(41)
+FE::862(41)_____
 FE::41(41)
 FE::188(188)
 FE::189(350)
@@ -289,7 +289,7 @@ FE::220(350)
 FE::252(350)
 FE::316(350)
 FE::444(589)
-FE::700(188)
+FE::700(188)_____ 				// AGAIN, successor should be 41 NOT 188
 FE::589(589)
 FE::704(704)
 FE::705(41)
@@ -301,7 +301,7 @@ FE::736(41)
 FE::768(41)
 FE::832(41)
 FE::960(41)
-FE::192(350)
+FE::192(350)____
 FE::704(704)
 FE::41(41)
 FE::42(188)
@@ -319,19 +319,19 @@ Manager: creating node
 Node: setting up new node
 Trying to find successor for new node: 741 using existing node 188
 for 741 at id 188 we found it at 11 FE::700(188)
-FE::41(41)____FE::41(41)
+FE::41(41)____FE::41(41)		// Predecessor of 741 should be 704 not 41
 FE::741(741)____FE::188(188)
-FE::742(188)____FE::189(350)
-FE::743(188)____FE::190(350)
-FE::745(188)____FE::192(350)
-FE::749(188)____FE::196(350)
-FE::757(188)____FE::204(350)
-FE::773(188)____FE::220(350)
-FE::805(188)____FE::252(350)
-FE::869(188)____FE::316(350)
-FE::997(188)____FE::444(589)
+FE::742(188)____FE::189(350)	// Successor should be 41 not 188
+FE::743(188)____FE::190(350)	// Successor should be 41 not 188
+FE::745(188)____FE::192(350)	// Successor should be 41 not 188
+FE::749(188)____FE::196(350)	// Successor should be 41 not 188
+FE::757(188)____FE::204(350)	// Successor should be 41 not 188
+FE::773(188)____FE::220(350)	// Successor should be 41 not 188
+FE::805(188)____FE::252(350)	// Successor should be 41 not 188
+FE::869(188)____FE::316(350)	// Successor should be 41 not 188
+FE::997(188)____FE::444(589)	// Successor should be 41 not 188
 FE::229(350)____FE::700(188)
-FE::704(704)
+FE::704(704)					// 41's new predecessor should be 741
 FE::41(41)
 FE::42(188)
 FE::43(188)
@@ -342,7 +342,7 @@ FE::73(188)
 FE::105(188)
 FE::169(188)
 FE::297(350)
-FE::553(741)
+FE::553(741)_____ 				// Successor should be 589 not 741
 FE::381(381)
 FE::589(589)
 FE::590(704)
@@ -354,7 +354,7 @@ FE::621(704)
 FE::653(704)
 FE::717(741)
 FE::845(41)
-FE::77(188)
+FE::77(188)_____
 FE::589(589)
 FE::704(704)
 FE::705(741)
@@ -366,7 +366,7 @@ FE::736(741)
 FE::768(41)
 FE::832(41)
 FE::960(41)
-FE::192(350)
+FE::192(350)____
 FE::353(353)
 FE::381(381)
 FE::382(589)
@@ -378,7 +378,7 @@ FE::413(589)
 FE::445(589)
 FE::509(589)
 FE::637(704)
-FE::893(381)
+FE::893(381)_____ 				// Successor should be 41 not 381
 FE::188(188)
 FE::350(350)
 FE::351(353)
@@ -390,7 +390,7 @@ FE::382(589)
 FE::414(589)
 FE::478(589)
 FE::606(704)
-FE::862(41)
+FE::862(41)_____
 FE::350(350)
 FE::353(353)
 FE::354(381)
