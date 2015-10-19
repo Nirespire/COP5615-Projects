@@ -118,7 +118,10 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int, numRequests: 
       //Send message to update the new node in finger
     }
 
-    case Message.UpdatePredecessor(pid) => fingerTable(0) = fingerTable(0).updateSuccessor(pid, pid, sender)
+    case Message.UpdatePredecessor(pid) => {
+      fingerTable(0) = fingerTable(0).updateSuccessor(pid, pid, sender)
+      println("After pred update - " + fingerTable.mkString("-"))
+    }
 
     case Message.UpdateFingers(pid, spid) => {
       if (pid != predecessorId && CircularRing.inbetween(predecessorId, pid, spid, hashSpace)) {
@@ -131,7 +134,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, id: Int, numRequests: 
         }
       }
 
-      println(fingerTable.mkString("\n"))
+      println("fingers updation using new node : " + pid + " = " + fingerTable.mkString("-"))
     }
 
     case Message.SendQueryMessage =>{
