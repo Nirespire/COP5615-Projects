@@ -1,0 +1,173 @@
+Manager is trying to create nodeHash : 750
+Manager: creating initial node
+Node: initial node setting up
+Finger Table:
+FE::749(750)
+FE::750(750)
+FE::751(750)
+FE::752(750)
+FE::754(750)
+FE::758(750)
+FE::766(750)
+FE::782(750)
+FE::814(750)
+FE::878(750)
+FE::1006(750)
+FE::238(750)
+Manager is trying to create nodeHash : 577
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 577 using existing node 750
+for 577 at id 750 we found it at 11 FE::238(750)
+FE::750(750)____FE::749(750)
+FE::577(577)____FE::750(750)
+FE::578(750)____FE::751(750)
+FE::579(750)____FE::752(750)
+FE::581(750)____FE::754(750)
+FE::585(750)____FE::758(750)
+FE::593(750)____FE::766(750)
+FE::609(750)____FE::782(750)
+FE::641(750)____FE::814(750)
+FE::705(750)____FE::878(750)
+FE::833(577)____FE::1006(750)
+FE::65(750)____FE::238(750)
+After pred update - FE::577(577)-FE::750(750)-FE::751(750)-FE::752(750)-FE::754(750)-FE::758(750)-FE::766(750)-FE::782(750)-FE::814(750)-FE::878(750)-FE::1006(750)-FE::238(750)
+fingers updation using new node : 577 = FE::577(577)-FE::750(750)-FE::751(577)-FE::752(577)-FE::754(577)-FE::758(577)-FE::766(577)-FE::782(577)-FE::814(577)-FE::878(577)-FE::1006(577)-FE::238(577)
+Manager is trying to create nodeHash : 1017
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 1017 using existing node 750
+for 1017 at id 750 we found it at 11 FE::238(577)
+Trying to find successor for new node: 1017 using existing node 577
+for 1017 at id 577 we found it at 1 FE::577(577)
+FE::750(750)____FE::750(750)
+FE::1017(1017)____FE::577(577)
+FE::1018(577)____FE::578(750)
+FE::1019(577)____FE::579(750)
+FE::1021(577)____FE::581(750)
+FE::1(577)____FE::585(750)
+FE::9(577)____FE::593(750)
+FE::25(577)____FE::609(750)
+FE::57(577)____FE::641(750)
+FE::121(577)____FE::705(750)
+FE::249(577)____FE::833(577)
+FE::505(577)____FE::65(750)
+After pred update - FE::1017(1017)-FE::577(577)-FE::578(750)-FE::579(750)-FE::581(750)-FE::585(750)-FE::593(750)-FE::609(750)-FE::641(750)-FE::705(750)-FE::833(577)-FE::65(750)
+fingers updation using new node : 1017 = FE::577(577)-FE::750(750)-FE::751(1017)-FE::752(1017)-FE::754(1017)-FE::758(1017)-FE::766(1017)-FE::782(1017)-FE::814(1017)-FE::878(1017)-FE::1006(1017)-FE::238(577)
+Manager is trying to create nodeHash : 207
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 207 using existing node 1017
+for 207 at id 1017 we found it at 10 FE::249(577)
+Trying to find successor for new node: 207 using existing node 577
+for 207 at id 577 we found it at 1 FE::577(577)
+FE::1017(1017)____FE::1017(1017)
+FE::207(207)____FE::577(577)
+FE::208(577)____FE::578(750)
+FE::209(577)____FE::579(750)
+FE::211(577)____FE::581(750)
+FE::215(577)____FE::585(750)
+FE::223(577)____FE::593(750)
+FE::239(577)____FE::609(750)
+FE::271(577)____FE::641(750)
+FE::335(577)____FE::705(750)
+FE::463(577)____FE::833(577)
+FE::719(750)____FE::65(750)
+After pred update - FE::207(207)-FE::577(577)-FE::578(750)-FE::579(750)-FE::581(750)-FE::585(750)-FE::593(750)-FE::609(750)-FE::641(750)-FE::705(750)-FE::833(577)-FE::65(750)
+fingers updation using new node : 207 = FE::750(750)-FE::1017(1017)-FE::1018(207)-FE::1019(207)-FE::1021(207)-FE::1(207)-FE::9(207)-FE::25(207)-FE::57(207)-FE::121(207)-FE::249(577)-FE::505(577)
+fingers updation using new node : 207 = FE::577(577)-FE::750(750)-FE::751(1017)-FE::752(1017)-FE::754(1017)-FE::758(1017)-FE::766(1017)-FE::782(1017)-FE::814(1017)-FE::878(1017)-FE::1006(1017)-FE::238(577)
+Manager is trying to create nodeHash : 465
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 465 using existing node 577
+for 465 at id 577 we found it at 1 FE::577(577)
+FE::207(207)____FE::207(207)
+FE::465(465)____FE::577(577)
+FE::466(577)____FE::578(750)
+FE::467(577)____FE::579(750)
+FE::469(577)____FE::581(750)
+FE::473(577)____FE::585(750)
+FE::481(577)____FE::593(750)
+FE::497(577)____FE::609(750)
+FE::529(577)____FE::641(750)
+FE::593(750)____FE::705(750)
+FE::721(750)____FE::833(577)
+FE::977(465)____FE::65(750)
+After pred update - FE::465(465)-FE::577(577)-FE::578(750)-FE::579(750)-FE::581(750)-FE::585(750)-FE::593(750)-FE::609(750)-FE::641(750)-FE::705(750)-FE::833(577)-FE::65(750)
+fingers updation using new node : 465 = FE::577(577)-FE::750(750)-FE::751(1017)-FE::752(1017)-FE::754(1017)-FE::758(1017)-FE::766(1017)-FE::782(1017)-FE::814(1017)-FE::878(1017)-FE::1006(1017)-FE::238(465)
+fingers updation using new node : 465 = FE::1017(1017)-FE::207(207)-FE::208(465)-FE::209(465)-FE::211(465)-FE::215(465)-FE::223(465)-FE::239(465)-FE::271(465)-FE::335(465)-FE::463(465)-FE::719(750)
+fingers updation using new node : 465 = FE::750(750)-FE::1017(1017)-FE::1018(207)-FE::1019(207)-FE::1021(207)-FE::1(207)-FE::9(207)-FE::25(207)-FE::57(207)-FE::121(207)-FE::249(465)-FE::505(577)
+Manager is trying to create nodeHash : 345
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 345 using existing node 207
+for 345 at id 207 we found it at 10 FE::463(465)
+Trying to find successor for new node: 345 using existing node 465
+for 345 at id 465 we found it at 1 FE::465(465)
+FE::207(207)____FE::207(207)
+FE::345(345)____FE::465(465)
+FE::346(465)____FE::466(577)
+FE::347(465)____FE::467(577)
+FE::349(465)____FE::469(577)
+FE::353(465)____FE::473(577)
+FE::361(465)____FE::481(577)
+FE::377(465)____FE::497(577)
+FE::409(465)____FE::529(577)
+FE::473(577)____FE::593(750)
+FE::601(345)____FE::721(750)
+FE::857(345)____FE::977(465)
+After pred update - FE::345(345)-FE::465(465)-FE::466(577)-FE::467(577)-FE::469(577)-FE::473(577)-FE::481(577)-FE::497(577)-FE::529(577)-FE::593(750)-FE::721(750)-FE::977(465)
+fingers updation using new node : 345 = FE::577(577)-FE::750(750)-FE::751(1017)-FE::752(1017)-FE::754(1017)-FE::758(1017)-FE::766(1017)-FE::782(1017)-FE::814(1017)-FE::878(1017)-FE::1006(1017)-FE::238(345)
+fingers updation using new node : 345 = FE::1017(1017)-FE::207(207)-FE::208(345)-FE::209(345)-FE::211(345)-FE::215(345)-FE::223(345)-FE::239(345)-FE::271(345)-FE::335(345)-FE::463(465)-FE::719(750)
+fingers updation using new node : 345 = FE::465(465)-FE::577(577)-FE::578(750)-FE::579(750)-FE::581(750)-FE::585(750)-FE::593(750)-FE::609(750)-FE::641(750)-FE::705(750)-FE::833(345)-FE::65(345)
+fingers updation using new node : 345 = FE::750(750)-FE::1017(1017)-FE::1018(207)-FE::1019(207)-FE::1021(207)-FE::1(207)-FE::9(207)-FE::25(207)-FE::57(207)-FE::121(207)-FE::249(345)-FE::505(577)
+Manager is trying to create nodeHash : 247
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 247 using existing node 577
+for 247 at id 577 we found it at 11 FE::65(345)
+Trying to find successor for new node: 247 using existing node 750
+for 247 at id 750 we found it at 11 FE::238(345)
+Trying to find successor for new node: 247 using existing node 1017
+for 247 at id 1017 we found it at 10 FE::249(345)
+Trying to find successor for new node: 247 using existing node 207
+for 247 at id 207 we found it at 8 FE::271(345)
+Trying to find successor for new node: 247 using existing node 345
+for 247 at id 345 we found it at 1 FE::345(345)
+FE::207(207)____FE::207(207)
+FE::247(247)____FE::345(345)
+FE::248(345)____FE::346(465)
+FE::249(345)____FE::347(465)
+FE::251(345)____FE::349(465)
+FE::255(345)____FE::353(465)
+FE::263(345)____FE::361(465)
+FE::279(345)____FE::377(465)
+FE::311(345)____FE::409(465)
+FE::375(465)____FE::473(577)
+FE::503(247)____FE::601(345)
+FE::759(247)____FE::857(345)
+After pred update - FE::247(247)-FE::345(345)-FE::346(465)-FE::347(465)-FE::349(465)-FE::353(465)-FE::361(465)-FE::377(465)-FE::409(465)-FE::473(577)-FE::601(345)-FE::857(345)
+fingers updation using new node : 247 = FE::750(750)-FE::1017(1017)-FE::1018(207)-FE::1019(207)-FE::1021(207)-FE::1(207)-FE::9(207)-FE::25(207)-FE::57(207)-FE::121(207)-FE::249(345)-FE::505(577)
+fingers updation using new node : 247 = FE::465(465)-FE::577(577)-FE::578(750)-FE::579(750)-FE::581(750)-FE::585(750)-FE::593(750)-FE::609(750)-FE::641(750)-FE::705(750)-FE::833(247)-FE::65(247)
+fingers updation using new node : 247 = FE::345(345)-FE::465(465)-FE::466(577)-FE::467(577)-FE::469(577)-FE::473(577)-FE::481(577)-FE::497(577)-FE::529(577)-FE::593(750)-FE::721(750)-FE::977(247)
+fingers updation using new node : 247 = FE::1017(1017)-FE::207(207)-FE::208(247)-FE::209(247)-FE::211(247)-FE::215(247)-FE::223(247)-FE::239(247)-FE::271(345)-FE::335(345)-FE::463(465)-FE::719(750)
+fingers updation using new node : 247 = FE::577(577)-FE::750(750)-FE::751(1017)-FE::752(1017)-FE::754(1017)-FE::758(1017)-FE::766(1017)-FE::782(1017)-FE::814(1017)-FE::878(1017)-FE::1006(1017)-FE::238(247)
+Manager is trying to create nodeHash : 834
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 834 using existing node 247
+for 834 at id 247 we found it at 11 FE::759(247)
+FE::207(207)____FE::207(207)
+FE::834(834)____FE::247(247)
+FE::835(247)____FE::248(345)
+FE::836(247)____FE::249(345)
+FE::838(247)____FE::251(345)
+FE::842(247)____FE::255(345)
+FE::850(247)____FE::263(345)
+FE::866(247)____FE::279(345)
+FE::898(247)____FE::311(345)
+FE::962(247)____FE::375(465)
+FE::66(247)____FE::503(247)
+FE::322(345)____FE::759(247)
+fingers updation using new node : 834 = FE::1017(1017)-FE::207(207)-FE::208(247)-FE::209(247)-FE::211(247)-FE::215(247)-FE::223(247)-FE::239(247)-FE::271(345)-FE::335(345)-FE::463(465)-FE::719(750)
+After pred update - FE::834(834)-FE::247(247)-FE::248(345)-FE::249(345)-FE::251(345)-FE::255(345)-FE::263(345)-FE::279(345)-FE::311(345)-FE::375(465)-FE::503(247)-FE::759(247)

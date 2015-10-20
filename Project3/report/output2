@@ -1,0 +1,166 @@
+Manager is trying to create nodeHash : 494
+Manager: creating initial node
+Node: initial node setting up
+Finger Table:
+FE::493(494)
+FE::494(494)
+FE::495(494)
+FE::496(494)
+FE::498(494)
+FE::502(494)
+FE::510(494)
+FE::526(494)
+FE::558(494)
+FE::622(494)
+FE::750(494)
+FE::1006(494)
+Manager is trying to create nodeHash : 51
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 51 using existing node 494
+for 51 at id 494 we found it at 11 FE::1006(494)
+FE::494(494)____FE::493(494)
+FE::51(51)____FE::494(494)
+FE::52(494)____FE::495(494)
+FE::53(494)____FE::496(494)
+FE::55(494)____FE::498(494)
+FE::59(494)____FE::502(494)
+FE::67(494)____FE::510(494)
+FE::83(494)____FE::526(494)
+FE::115(494)____FE::558(494)
+FE::179(494)____FE::622(494)
+FE::307(494)____FE::750(494)
+FE::563(51)____FE::1006(494)
+After pred update - FE::51(51)-FE::494(494)-FE::495(494)-FE::496(494)-FE::498(494)-FE::502(494)-FE::510(494)-FE::526(494)-FE::558(494)-FE::622(494)-FE::750(494)-FE::1006(494)
+fingers updation using new node : 51 = FE::51(51)-FE::494(494)-FE::495(51)-FE::496(51)-FE::498(51)-FE::502(51)-FE::510(51)-FE::526(51)-FE::558(51)-FE::622(51)-FE::750(51)-FE::1006(51)
+Manager is trying to create nodeHash : 892
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 892 using existing node 51
+for 892 at id 51 we found it at 1 FE::51(51)
+FE::494(494)____FE::494(494)
+FE::892(892)____FE::51(51)
+FE::893(51)____FE::52(494)
+FE::894(51)____FE::53(494)
+FE::896(51)____FE::55(494)
+FE::900(51)____FE::59(494)
+FE::908(51)____FE::67(494)
+FE::924(51)____FE::83(494)
+FE::956(51)____FE::115(494)
+FE::1020(51)____FE::179(494)
+FE::124(494)____FE::307(494)
+FE::380(892)____FE::563(51)
+After pred update - FE::892(892)-FE::51(51)-FE::52(494)-FE::53(494)-FE::55(494)-FE::59(494)-FE::67(494)-FE::83(494)-FE::115(494)-FE::179(494)-FE::307(494)-FE::563(51)
+fingers updation using new node : 892 = FE::51(51)-FE::494(494)-FE::495(892)-FE::496(892)-FE::498(892)-FE::502(892)-FE::510(892)-FE::526(892)-FE::558(892)-FE::622(892)-FE::750(892)-FE::1006(51)
+Manager is trying to create nodeHash : 251
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 251 using existing node 892
+for 251 at id 892 we found it at 11 FE::380(892)
+FE::494(494)____FE::494(494)
+FE::251(251)____FE::892(892)
+FE::252(892)____FE::893(51)
+FE::253(892)____FE::894(51)
+FE::255(892)____FE::896(51)
+FE::259(892)____FE::900(51)
+FE::267(892)____FE::908(51)
+FE::283(892)____FE::924(51)
+FE::315(892)____FE::956(51)
+FE::379(892)____FE::1020(51)
+FE::507(892)____FE::124(494)
+FE::763(892)____FE::380(892)
+After pred update - FE::251(251)-FE::892(892)-FE::893(51)-FE::894(51)-FE::896(51)-FE::900(51)-FE::908(51)-FE::924(51)-FE::956(51)-FE::1020(51)-FE::124(494)-FE::380(892)
+fingers updation using new node : 251 = FE::892(892)-FE::51(51)-FE::52(251)-FE::53(251)-FE::55(251)-FE::59(251)-FE::67(251)-FE::83(251)-FE::115(251)-FE::179(251)-FE::307(494)-FE::563(51)
+fingers updation using new node : 251 = FE::51(51)-FE::494(494)-FE::495(892)-FE::496(892)-FE::498(892)-FE::502(892)-FE::510(892)-FE::526(892)-FE::558(892)-FE::622(892)-FE::750(892)-FE::1006(51)
+Manager is trying to create nodeHash : 402
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 402 using existing node 251
+for 402 at id 251 we found it at 10 FE::507(892)
+Trying to find successor for new node: 402 using existing node 892
+for 402 at id 892 we found it at 1 FE::892(892)
+FE::251(251)____FE::251(251)
+FE::402(402)____FE::892(892)
+FE::403(892)____FE::893(51)
+FE::404(892)____FE::894(51)
+FE::406(892)____FE::896(51)
+FE::410(892)____FE::900(51)
+FE::418(892)____FE::908(51)
+FE::434(892)____FE::924(51)
+FE::466(892)____FE::956(51)
+FE::530(892)____FE::1020(51)
+FE::658(892)____FE::124(494)
+FE::914(402)____FE::380(892)
+After pred update - FE::402(402)-FE::892(892)-FE::893(51)-FE::894(51)-FE::896(51)-FE::900(51)-FE::908(51)-FE::924(51)-FE::956(51)-FE::1020(51)-FE::124(494)-FE::380(892)
+fingers updation using new node : 402 = FE::494(494)-FE::251(251)-FE::252(402)-FE::253(402)-FE::255(402)-FE::259(402)-FE::267(402)-FE::283(402)-FE::315(402)-FE::379(402)-FE::507(892)-FE::763(892)
+Manager is trying to create nodeHash : 853
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 853 using existing node 51
+for 853 at id 51 we found it at 11 FE::563(51)
+FE::892(892)____FE::892(892)
+FE::853(853)____FE::51(51)
+FE::854(51)____FE::52(251)
+FE::855(51)____FE::53(251)
+FE::857(51)____FE::55(251)
+FE::861(51)____FE::59(251)
+FE::869(51)____FE::67(251)
+FE::885(51)____FE::83(251)
+FE::917(51)____FE::115(251)
+FE::981(51)____FE::179(251)
+FE::85(251)____FE::307(494)
+FE::341(853)____FE::563(51)
+After pred update - FE::853(853)-FE::51(51)-FE::52(251)-FE::53(251)-FE::55(251)-FE::59(251)-FE::67(251)-FE::83(251)-FE::115(251)-FE::179(251)-FE::307(494)-FE::563(51)
+fingers updation using new node : 853 = FE::402(402)-FE::892(892)-FE::893(51)-FE::894(51)-FE::896(51)-FE::900(51)-FE::908(51)-FE::924(51)-FE::956(51)-FE::1020(51)-FE::124(494)-FE::380(853)
+fingers updation using new node : 853 = FE::251(251)-FE::402(402)-FE::403(853)-FE::404(853)-FE::406(853)-FE::410(853)-FE::418(853)-FE::434(853)-FE::466(853)-FE::530(853)-FE::658(853)-FE::914(402)
+fingers updation using new node : 853 = FE::494(494)-FE::251(251)-FE::252(402)-FE::253(402)-FE::255(402)-FE::259(402)-FE::267(402)-FE::283(402)-FE::315(402)-FE::379(402)-FE::507(853)-FE::763(853)
+fingers updation using new node : 853 = FE::51(51)-FE::494(494)-FE::495(853)-FE::496(853)-FE::498(853)-FE::502(853)-FE::510(853)-FE::526(853)-FE::558(853)-FE::622(853)-FE::750(853)-FE::1006(51)
+Manager is trying to create nodeHash : 502
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 502 using existing node 402
+for 502 at id 402 we found it at 9 FE::530(853)
+Trying to find successor for new node: 502 using existing node 892
+for 502 at id 892 we found it at 1 FE::892(892)
+FE::402(402)____FE::402(402)
+FE::502(502)____FE::892(892)
+FE::503(892)____FE::893(51)
+FE::504(892)____FE::894(51)
+FE::506(892)____FE::896(51)
+FE::510(892)____FE::900(51)
+FE::518(892)____FE::908(51)
+FE::534(892)____FE::924(51)
+FE::566(892)____FE::956(51)
+FE::630(892)____FE::1020(51)
+FE::758(892)____FE::124(494)
+FE::1014(502)____FE::380(853)
+After pred update - FE::502(502)-FE::892(892)-FE::893(51)-FE::894(51)-FE::896(51)-FE::900(51)-FE::908(51)-FE::924(51)-FE::956(51)-FE::1020(51)-FE::124(494)-FE::380(853)
+fingers updation using new node : 502 = FE::494(494)-FE::251(251)-FE::252(402)-FE::253(402)-FE::255(402)-FE::259(402)-FE::267(402)-FE::283(402)-FE::315(402)-FE::379(402)-FE::507(853)-FE::763(853)
+fingers updation using new node : 502 = FE::51(51)-FE::494(494)-FE::495(502)-FE::496(502)-FE::498(502)-FE::502(502)-FE::510(853)-FE::526(853)-FE::558(853)-FE::622(853)-FE::750(853)-FE::1006(51)
+fingers updation using new node : 502 = FE::853(853)-FE::51(51)-FE::52(251)-FE::53(251)-FE::55(251)-FE::59(251)-FE::67(251)-FE::83(251)-FE::115(251)-FE::179(251)-FE::307(494)-FE::563(51)
+fingers updation using new node : 502 = FE::251(251)-FE::402(402)-FE::403(502)-FE::404(502)-FE::406(502)-FE::410(502)-FE::418(502)-FE::434(502)-FE::466(502)-FE::530(853)-FE::658(853)-FE::914(402)
+Manager is trying to create nodeHash : 531
+Manager: creating node
+Node: setting up new node
+Trying to find successor for new node: 531 using existing node 502
+for 531 at id 502 we found it at 7 FE::534(892)
+Trying to find successor for new node: 531 using existing node 892
+for 531 at id 892 we found it at 1 FE::892(892)
+FE::502(502)____FE::502(502)
+FE::531(531)____FE::892(892)
+FE::532(892)____FE::893(51)
+FE::533(892)____FE::894(51)
+FE::535(892)____FE::896(51)
+FE::539(892)____FE::900(51)
+FE::547(892)____FE::908(51)
+FE::563(892)____FE::924(51)
+FE::595(892)____FE::956(51)
+FE::659(892)____FE::1020(51)
+FE::787(892)____FE::124(494)
+FE::19(51)____FE::380(853)
+After pred update - FE::531(531)-FE::892(892)-FE::893(51)-FE::894(51)-FE::896(51)-FE::900(51)-FE::908(51)-FE::924(51)-FE::956(51)-FE::1020(51)-FE::124(494)-FE::380(853)
+fingers updation using new node : 531 = FE::251(251)-FE::402(402)-FE::403(502)-FE::404(502)-FE::406(502)-FE::410(502)-FE::418(502)-FE::434(502)-FE::466(502)-FE::530(531)-FE::658(853)-FE::914(402)
+fingers updation using new node : 531 = FE::402(402)-FE::502(502)-FE::503(531)-FE::504(531)-FE::506(531)-FE::510(531)-FE::518(531)-FE::534(892)-FE::566(892)-FE::630(892)-FE::758(892)-FE::1014(502)
+fingers updation using new node : 531 = FE::51(51)-FE::494(494)-FE::495(502)-FE::496(502)-FE::498(502)-FE::502(502)-FE::510(531)-FE::526(531)-FE::558(853)-FE::622(853)-FE::750(853)-FE::1006(51)
+fingers updation using new node : 531 = FE::494(494)-FE::251(251)-FE::252(402)-FE::253(402)-FE::255(402)-FE::259(402)-FE::267(402)-FE::283(402)-FE::315(402)-FE::379(402)-FE::507(531)-FE::763(853)
+fingers updation using new node : 531 = FE::853(853)-FE::51(51)-FE::52(251)-FE::53(251)-FE::55(251)-FE::59(251)-FE::67(251)-FE::83(251)-FE::115(251)-FE::179(251)-FE::307(494)-FE::563(51)
