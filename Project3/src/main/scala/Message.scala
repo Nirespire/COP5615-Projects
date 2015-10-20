@@ -4,13 +4,21 @@ object Message {
 
   case class InitialNode()
 
-  case class GetNodeSuccessor(nodeId: Int)
+  case class GetSuccessor(nodeId: Int)
 
-  case class YourSuccessor(id: Int, fingerTable: Array[FingerEntry])
+  case class GetFingerSuccessor(idx: Int, nodeId: Int)
+
+  case class YourSuccessor(id: Int, predecessor: FingerEntry)
+
+  case class YourFingerSuccessor(idx: Int, id: Int)
+
+  case class LookUpForward(key: Int, id: Int, i: Int)
+
+  case class ForwardToPredecessor(id: Int, i: Int)
 
   case class UpdatePredecessor(id: Int)
 
-  case class UpdateFingers(id: Int, successorId: Int)
+  case class UpdateFingers(id: Int, i: Int)
 
   case class Done()
 

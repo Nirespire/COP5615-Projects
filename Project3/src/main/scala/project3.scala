@@ -7,7 +7,7 @@ object project3 extends App {
   val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
-  val m = 10
+  val m = 4
   val hashSpace = Math.pow(2, m).toInt
   val system = ActorSystem(name = "Chord")
 
@@ -21,10 +21,9 @@ object project3 extends App {
   (0 until numNodes - 1).foreach { idx =>
     createdNodesSet.add(nodeHash)
     while (createdNodesSet.contains(nodeHash)) {
-      nodeHash = Random.nextInt(1024)
+      nodeHash = Random.nextInt(hashSpace)
     }
     manager ! nodeHash
-    Thread.sleep(1000)
   }
 
 }
