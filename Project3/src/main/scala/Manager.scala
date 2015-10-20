@@ -11,7 +11,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
   def receive = {
     case nodeHash: Int => {
       if (createdNodeCnt == numNodesDone) {
-        Thread.sleep(1000)
+        Thread.sleep(5000)
 
         println("Manager is trying to create nodeHash : " + nodeHash)
         // First node in the ring

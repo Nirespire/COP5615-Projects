@@ -83,7 +83,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       println("for " + key + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
       if (finger(lookupIdx).node != s) {
         if (lookupResult) {
-          if (CircularRing.inbetweenWithoutStop(n, s, finger(lookupIdx).node, hashSpace)) {
+          if (CircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
             finger(i) = finger(i).updateSuccessor(s, sender)
             println("After finger pred found,  update o finger table - " + finger.mkString("-"))
             if (predecessorId != s) {
