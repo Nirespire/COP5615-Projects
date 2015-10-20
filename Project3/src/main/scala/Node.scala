@@ -11,6 +11,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
   val successorIdx = 2
   val finger = new Array[FingerEntry](m + successorIdx)
 
+  var knownNodeRef: ActorRef = _
   var numRequestsSent = 0
   val done = numRequestsSent == numRequests
 
@@ -30,16 +31,22 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
 
   def successorId = finger(successorIdx).node
 
-
-  def lookup(id: Int): Int = {
-    (predecessorIdx to m).foreach { idx =>
-      val jIdx = idx + 1
-      if (CircularRing.inbetween(finger(idx).start, key, finger(jIdx).start, hashSpace)) {
-        return jIdx
+  def closest_preceding_node(id: Int): Int = {
+    (successorIdx to m + 1).reverse.foreach { i =>
+      if (CircularRing.inbetweenWithoutEnds(n, finger(i).node, id, hashSpace)) {
+        return i
       }
     }
+    return selfIdx
+  }
 
-    return m + 1
+  def lookup(id: Int): (Boolean, Int) = {
+    if (CircularRing.inbetweenWithoutStart(n, id, successorId, hashSpace)) {
+      (true, successorIdx)
+    } else {
+      val nprime = closest_preceding_node(id)
+      (false, nprime)
+    }
   }
 
   def receive = {
@@ -52,137 +59,148 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       manager ! Message.Done
 
     case key: Int =>
-      //received a key to lookup
-      val fingerIdx = lookup(key)
+    //received a key to lookup
+    //      val fingerIdx = lookup(key)
+    //
+    //      if (finger(fingerIdx).node == n) {
+    //        sender ! n
+    //      } else {
+    //        sender ! fingerIdx
+    //      }
 
-      if (finger(fingerIdx).node == n) {
-        sender ! n
-      } else {
-        sender ! fingerIdx
-      }
-
-    // New node joining is given a ref to known node in the system
-    // This is called by the new node
     case knownNode: ActorRef =>
       //debug
       println("Node: setting up new node")
       // Find my successor
       knownNode ! Message.GetSuccessor(n)
+      knownNodeRef = knownNode
+
+    case Message.UpdateFingerPredecessor(key, s, i) =>
+      //debug
+      println("Trying to find predecessor for " + key + " using existing node " + n + " to update " + s)
+
+      val (lookupResult, lookupIdx) = lookup(key)
+      println("for " + key + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
+      if (finger(lookupIdx).node != s) {
+        if (lookupResult) {
+          if (CircularRing.inbetweenWithoutStop(n, s, finger(lookupIdx).node, hashSpace)) {
+            finger(i) = finger(i).updateSuccessor(s, sender)
+            println("After finger pred found,  update o finger table - " + finger.mkString("-"))
+            if (predecessorId != s) {
+              predecessor.forward(Message.UpdateFingerPredecessor(key, s, i))
+            }
+          }
+        } else if (lookupIdx != selfIdx) {
+          finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
+        }
+      }
 
     // Find finger entry whose id lies between nodeId
-    case Message.GetSuccessor(nodeId) =>
+    case Message.GetSuccessor(id) =>
       //debug
-      println("Trying to find successor for new node: " + nodeId + " using existing node " + n)
+      println("Trying to find successor for new node: " + id + " using existing node " + n)
 
-      val fingerIdx = lookup(nodeId)
+      val (lookupResult, lookupIdx) = lookup(id)
+      println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
-      println("for " + nodeId + " at id " + n + " we found it at " + fingerIdx + " " + finger(fingerIdx))
-      if (finger(fingerIdx).node == n) {
-        sender ! Message.YourSuccessor(n, finger(predecessorIdx))
+      if (lookupResult || n == finger(lookupIdx).node) {
+        sender.tell(Message.YourSuccessor(finger(lookupIdx).node, finger(selfIdx)), finger(lookupIdx).nodeRef)
       } else {
-        finger(fingerIdx).nodeRef.forward(Message.GetSuccessor(nodeId))
+        finger(lookupIdx).nodeRef.forward(Message.GetSuccessor(id))
       }
 
     // Do something once you get your successor
     case Message.YourSuccessor(senderId, ft) =>
+      // Set our predecessor based on the predecessor info sent by our successor
       finger(predecessorIdx) = finger(predecessorIdx).updateSuccessor(ft.node, ft.node, ft.nodeRef)
+
+      // Set our successor
       finger(successorIdx) = finger(successorIdx).updateSuccessor(senderId, sender)
       updatedFingers += 1
+      println(finger.mkString("-"))
 
-      println(n + "+++++++++++++++++" + finger(predecessorIdx))
-      println(n + "+++++++++++++++++" + finger(selfIdx))
-      println(n + "+++++++++++++++++" + finger(successorIdx))
+      // Tell our new successor to set us as their new successor
       sender ! Message.UpdatePredecessor(n)
 
-      (successorIdx to m).foreach { idx =>
-        val jIdx = idx + 1
-        if (CircularRing.inbetween(n, finger(jIdx).start, finger(idx).node, hashSpace)) {
-          finger(jIdx) = finger(jIdx).updateSuccessor(finger(idx).node, finger(idx).nodeRef)
-          println(n + "+++++++++++++++++" + finger(jIdx))
+      // Build our finger table
+      (successorIdx to m).foreach { i =>
+        val j = i + 1
+        if (CircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
           updatedFingers += 1
-          updateOthers
+          updateOthers()
+        } else if (CircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
+          finger(j) = finger(j).updateSuccessor(finger(i).node, finger(i).nodeRef)
+          updatedFingers += 1
+          updateOthers()
         } else {
-          sender ! Message.GetFingerSuccessor(jIdx, finger(jIdx).start)
+          knownNodeRef ! Message.GetFingerSuccessor(j, finger(j).start)
         }
       }
 
+    // Tell other nodes to update their fingers
+
 
     // Find finger entry whose id lies between nodeId
-    case Message.GetFingerSuccessor(idx, nodeId) =>
+    case Message.GetFingerSuccessor(i, id) =>
       //debug
-      println("Trying to find successor for new node: " + nodeId + " using existing node " + n)
+      println("Trying to find finger successor for: " + id + " using existing node " + n)
 
-      val fingerIdx = lookup(nodeId)
+      val (lookupResult, lookupIdx) = lookup(id)
+      println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
-      println("for " + nodeId + " at id " + n + " we found it at " + fingerIdx + " " + finger(fingerIdx))
-      if (finger(fingerIdx).node == n) {
-        sender ! Message.YourFingerSuccessor(idx, n)
+
+      if (lookupResult || n == finger(lookupIdx).node) {
+        sender.tell(Message.YourFingerSuccessor(i, finger(successorIdx).node), finger(lookupIdx).nodeRef)
       } else {
-        finger(fingerIdx).nodeRef.forward(Message.GetFingerSuccessor(idx, nodeId))
+        finger(lookupIdx).nodeRef.forward(Message.GetFingerSuccessor(i, id))
       }
 
     // Do something once you get your successor
-    case Message.YourFingerSuccessor(idx, senderId) =>
+    case Message.YourFingerSuccessor(i, senderId) =>
+      finger(i) = finger(i).updateSuccessor(senderId, sender)
       updatedFingers += 1
-      finger(idx) = finger(idx).updateSuccessor(senderId, sender)
-      println(n + "+++++++++++++++++" + finger(idx))
-      updateOthers
+      updateOthers()
 
     case Message.UpdatePredecessor(pid) =>
       finger(predecessorIdx) = finger(predecessorIdx).updateSuccessor(pid, pid, sender)
       println("After pred update - " + finger.mkString("-"))
+    /*
+        case Message.SendQueryMessage =>
+          if (done) {
+            manager ! Message.Done
+          }
 
-    case Message.UpdateFingers(pid, i) =>
-      val str = "on node " + n + " Before Update (" + finger(i) + ") "
-      if (CircularRing.inbetween(n, pid, finger(i).node, hashSpace) && pid != n) {
-        finger(i) = finger(i).updateSuccessor(pid, sender)
-        predecessor.forward(Message.UpdateFingers(pid, i))
-      }
+          else {
+            numRequestsSent += 1
+            // generate random hash
+            val query = Random.nextInt(hashSpace)
+            // query system
+            self ! Message.QueryMessage(query, 0)
+          }
+          // Send a query every 1 second
+          Thread.sleep(1000)
+          self ! Message.SendQueryMessage
 
-      println(str + "Using node _ " + pid + " _ Updating finger : " + i + " to " + finger(i))
+        case Message.QueryMessage(queryVal, numHops) =>
+          // This node is responsible for the queryVal hash
+          if (CircularRing.inbetween(predecessorId, n, queryVal, hashSpace)) {
+            manager ! Message.QueryMessage(queryVal, numHops)
+          }
+          // This node is not responsible, pass on the request
+          else {
+            val fingerIdx = lookup(queryVal)
+            finger(fingerIdx).nodeRef ! Message.QueryMessage(queryVal, numHops + 1)
+          }
+          */
 
-    case Message.SendQueryMessage =>
-      if (done) {
-        manager ! Message.Done
-      }
-
-      else {
-        numRequestsSent += 1
-        // generate random hash
-        val query = Random.nextInt(hashSpace)
-        // query system
-        self ! Message.QueryMessage(query, 0)
-      }
-      // Send a query every 1 second
-      Thread.sleep(1000)
-      self ! Message.SendQueryMessage
-
-    case Message.QueryMessage(queryVal, numHops) =>
-      // This node is responsible for the queryVal hash
-      if (CircularRing.inbetween(predecessorId, n, queryVal, hashSpace)) {
-        manager ! Message.QueryMessage(queryVal, numHops)
-      }
-      // This node is not responsible, pass on the request
-      else {
-        val fingerIdx = lookup(queryVal)
-        finger(fingerIdx).nodeRef ! Message.QueryMessage(queryVal, numHops + 1)
-      }
-
-    case Message.LookUpForward(key, idx, i) =>
-      val fingerIdx = lookup(key)
-      if (finger(fingerIdx).node != n) {
-        finger(fingerIdx).nodeRef.forward(Message.ForwardToPredecessor(n, i))
-      }
-
-    case Message.ForwardToPredecessor(idx, i) => predecessor.forward(Message.UpdateFingers(idx, i))
   }
 
   def updateOthers() = {
-    //TODO:Last thing to fix.
     if (updatedFingers == m) {
+      println(finger.mkString("-"))
       (successorIdx to m + 1).foreach { i =>
-        val key = Math.abs(n - Math.pow(2, i - successorIdx).toInt) % hashSpace
-        self ! Message.LookUpForward(key, n, i)
+        val key = (n + hashSpace - Math.pow(2, i - successorIdx).toInt) % hashSpace
+        self ! Message.UpdateFingerPredecessor(key, n, i)
       }
 
       manager ! Message.Done

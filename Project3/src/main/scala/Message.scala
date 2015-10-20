@@ -6,19 +6,19 @@ object Message {
 
   case class GetSuccessor(nodeId: Int)
 
+  case class UpdateFingerPredecessor(key: Int, s: Int, i: Int)
+
+  case class UpdatePredecessor(i: Int)
+
   case class GetFingerSuccessor(idx: Int, nodeId: Int)
 
   case class YourSuccessor(id: Int, predecessor: FingerEntry)
 
+  case class YourPredecessor(id: Int)
+
   case class YourFingerSuccessor(idx: Int, id: Int)
 
-  case class LookUpForward(key: Int, id: Int, i: Int)
-
   case class ForwardToPredecessor(id: Int, i: Int)
-
-  case class UpdatePredecessor(id: Int)
-
-  case class UpdateFingers(id: Int, i: Int)
 
   case class Done()
 
@@ -27,4 +27,3 @@ object Message {
   case class SendQueryMessage()
 
 }
-
