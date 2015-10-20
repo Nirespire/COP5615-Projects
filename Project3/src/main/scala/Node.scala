@@ -133,7 +133,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
           updatedFingers += 1
           updateOthers()
         } else {
-          knownNodeRef ! Message.GetFingerSuccessor(j, finger(j).start)
+          sender ! Message.GetFingerSuccessor(j, finger(j).start)
         }
       }
 
@@ -193,6 +193,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
           }
           */
 
+    case true => println(finger.mkString("-"))
   }
 
   def updateOthers() = {

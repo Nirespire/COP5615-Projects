@@ -47,6 +47,9 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
     case Message.Done => {
       numNodesDone += 1
       if (numNodesDone == numNodes) {
+        createdNodes.foreach { node =>
+          node ! true
+        }
         Thread.sleep(1000)
         context.system.shutdown()
       }
