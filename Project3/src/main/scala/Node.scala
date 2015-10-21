@@ -40,6 +40,15 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
     return selfIdx
   }
 
+  def predecessorLookup(id: Int): (Boolean, Int) ={
+    if(!CircularRing.inbetweenWithoutStart(n, id, finger(successorIdx).node, hashSpace)){
+      (false, closest_preceding_node((id)))
+    }
+    else{
+      (true, selfIdx)
+    }
+  }
+
   def lookup(id: Int): (Boolean, Int) = {
     if (CircularRing.inbetweenWithoutStart(n, id, successorId, hashSpace)) {
       (true, successorIdx)
@@ -90,10 +99,28 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
               predecessor.forward(Message.UpdateFingerPredecessor(key, s, i))
             }
           }
-        } else if (lookupIdx != selfIdx) {
+        }
+        else if (lookupIdx != selfIdx) {
           finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
         }
       }
+
+    //    case Message.GetFingerPredecessor(id, s, i) => {
+    //      if(!CircularRing.inbetweenWithoutStart(n, id, finger(successorIdx).node, hashSpace)){
+    //        val closestPredecedingIdx = closest_preceding_node(id)
+    //        finger(closestPredecedingIdx).nodeRef.forward(Message.GetFingerPredecessor(id, s, i))
+    //      }
+    //      else{
+    //        sender forward Message.UpdateFingerEntry(s, i)
+    //      }
+    //    }
+    //
+    //    case Message.UpdateFingerEntry(s, i) => {
+    //      if(CircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)){
+    //        finger(i).updateSuccessor(s, sender)
+    //        predecessor forward Message.UpdateFingerEntry(s, i)
+    //      }
+    //    }
 
     // Find finger entry whose id lies between nodeId
     case Message.GetSuccessor(id) =>
@@ -122,21 +149,23 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       updatedFingers += 1
       println(finger.mkString("-"))
 
-      // Tell our new successor to set us as their new successor
+      // Tell our new successor to set us as their new predecessor
       sender ! Message.UpdatePredecessor(n)
 
       // Build our finger table
       (successorIdx to m).foreach { i =>
         val j = i + 1
-        if (CircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
-          updatedFingers += 1
-          //finger(j).updateSuccessor(predecessorId,predecessor)
-          updateOthers()
-        } else if (CircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
+        if (CircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
           finger(j) = finger(j).updateSuccessor(finger(i).node, finger(i).nodeRef)
           updatedFingers += 1
           updateOthers()
-        } else {
+        }
+        else if (CircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
+          updatedFingers += 1
+          finger(j).updateSuccessor(predecessorId,predecessor)
+          updateOthers()
+        }
+        else {
           sender ! Message.GetFingerSuccessor(j, finger(j).start)
         }
       }
@@ -196,8 +225,22 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
           }
           */
 
-    case true => println("FINAL FINGER TABLE::::" +finger.mkString("-"))
+    case true => println("FINAL FINGER TABLE::::" + finger.mkString("-"))
+
+    case Message.UpdateFingerEntries(s) =>
+      if (s != n) {
+        (successorIdx to m + 1).reverse.foreach { i =>
+          if (CircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
+            finger(i).updateSuccessor(s, sender)
+          }
+        }
+        println("Done updating fingers: " + finger.mkString("-"))
+
+        predecessor forward Message.UpdateFingerEntries(s)
+      }
   }
+
+
 
   def updateOthers() = {
     if (updatedFingers == m) {
@@ -205,6 +248,10 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       (successorIdx to m + 1).foreach { i =>
         val key = (n + hashSpace - Math.pow(2, i - successorIdx).toInt) % hashSpace
         self ! Message.UpdateFingerPredecessor(key, n, i)
+
+//        self ! Message.GetFingerPredecessor(n, n, i)
+//        predecessor ! Message.UpdateFingerEntries(n)
+
       }
 
       manager ! Message.Done
