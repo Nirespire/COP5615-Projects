@@ -101,11 +101,14 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       println("Trying to find successor for new node: " + id + " using existing node " + n)
 
       val (lookupResult, lookupIdx) = lookup(id)
-      println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
       if (lookupResult || n == finger(lookupIdx).node) {
+        println("Got successor for " + id + " at " + finger(selfIdx))
+        println("for " + id + " at node " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
+
         sender.tell(Message.YourSuccessor(finger(lookupIdx).node, finger(selfIdx)), finger(lookupIdx).nodeRef)
       } else {
+        println("Forwarding lookup to: " + finger(lookupIdx))
         finger(lookupIdx).nodeRef.forward(Message.GetSuccessor(id))
       }
 
@@ -127,6 +130,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
         val j = i + 1
         if (CircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
           updatedFingers += 1
+          //finger(j).updateSuccessor(predecessorId,predecessor)
           updateOthers()
         } else if (CircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
           finger(j) = finger(j).updateSuccessor(finger(i).node, finger(i).nodeRef)
@@ -138,7 +142,6 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       }
 
     // Tell other nodes to update their fingers
-
 
     // Find finger entry whose id lies between nodeId
     case Message.GetFingerSuccessor(i, id) =>
@@ -193,12 +196,12 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
           }
           */
 
-    case true => println(finger.mkString("-"))
+    case true => println("FINAL FINGER TABLE::::" +finger.mkString("-"))
   }
 
   def updateOthers() = {
     if (updatedFingers == m) {
-      println(finger.mkString("-"))
+      println("Node " + n + " is done. Update others: " + finger.mkString("-"))
       (successorIdx to m + 1).foreach { i =>
         val key = (n + hashSpace - Math.pow(2, i - successorIdx).toInt) % hashSpace
         self ! Message.UpdateFingerPredecessor(key, n, i)
