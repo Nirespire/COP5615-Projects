@@ -33,7 +33,8 @@ object project3 extends App {
   var numNodesDone = 0
   var createdNodeCnt = 0
 
-  (0 to 15).foreach { nodeHash =>
+  (1 to 16).foreach { i =>
+    val nodeHash = i % 16
     println("Manager is trying to create nodeHash : " + nodeHash)
     // First node in the ring
     val newNode = if (createdNodes.isEmpty) {
@@ -60,7 +61,7 @@ object project3 extends App {
 
     createdNodes.append(newNode)
     println("GOTOSLEEP")
-    Thread.sleep(2000)
+    Thread.sleep(5000)
   }
 
 

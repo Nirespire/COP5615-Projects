@@ -50,9 +50,11 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
   }
 
   def updateFinderEntry(s: Int, i: Int) = {
-    if (n != s && CircularRing.inBetweenWithStartWithoutStop(n, s, finger(i).node)) {
-      finger(i).update(s, sender)
-      println("After finger pred found,  update o finger table - " + finger.mkString("-"))
+    if (CircularRing.inBetweenWithStartWithoutStop(n, s, finger(i).node)) {
+      if (n != s) {
+        finger(i).update(s, sender)
+        println("After finger pred found,  update o finger table - " + finger.mkString("-"))
+      }
       if (predecessorId != s) {
         predecessor.forward(Message.UpdateFingerEntry(s, i))
       }
@@ -95,7 +97,7 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
         if (lookupResult || n == finger(lookupIdx).node) {
           updateFinderEntry(s, i)
         }
-        else if (n  != finger(lookupIdx).node) {
+        else if (n != finger(lookupIdx).node) {
           finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
         }
       }
