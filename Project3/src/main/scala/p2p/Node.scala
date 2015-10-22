@@ -81,6 +81,7 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
       val (result, fingerIdx) = find_predecessor(queryVal)
 
       if (result) {
+        println("Found " + queryVal + " at " + successorId)
         sender ! Message.DoneQueryMessage(numHops + 1)
       }
       else {

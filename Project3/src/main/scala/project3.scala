@@ -9,7 +9,7 @@ object project3 extends App {
   val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
-  val m = 4
+  val m = 10
   CircularRing.setM(m)
   val system = ActorSystem(name = "Chord")
 
@@ -34,7 +34,7 @@ object project3 extends App {
   var createdNodeCnt = 0
   val manager = system.actorOf(Props(new Manager(numNodes = numNodes)))
 
-  (0 until 16).reverse.foreach { nodeHash =>
+  (0 until numNodes).reverse.foreach { nodeHash =>
     println("Manager is trying to create nodeHash : " + nodeHash)
     // First node in the ring
     val newNode = if (createdNodes.isEmpty) {
@@ -61,12 +61,12 @@ object project3 extends App {
 
     createdNodes.append(newNode)
     println("GOTOSLEEP")
-    Thread.sleep(5000)
+    Thread.sleep(25)
   }
 
   createdNodes.foreach { a =>
     a ! true
-    //    a ! Message.StartQuerying
+    a ! Message.StartQuerying
   }
-  system.shutdown()
+  //system.shutdown()
 }
