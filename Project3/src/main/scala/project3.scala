@@ -1,16 +1,19 @@
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import p2p.Node
 
 import scala.collection.mutable
 import scala.util.Random
+import core.CircularRing
 
 object project3 extends App {
   val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
   val m = 4
-  val hashSpace = Math.pow(2, m).toInt
+  CircularRing.setM(m)
   val system = ActorSystem(name = "Chord")
 
+  /*
   val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes, numRequests = numRequests)), name = "manager")
 
   // Create the first node
@@ -25,5 +28,41 @@ object project3 extends App {
     }
     manager ! nodeHash
   }
+  */
+  val createdNodes = mutable.ArrayBuffer[ActorRef]()
+  var numNodesDone = 0
+  var createdNodeCnt = 0
 
+  (0 to 15).foreach { nodeHash =>
+    println("Manager is trying to create nodeHash : " + nodeHash)
+    // First node in the ring
+    val newNode = if (createdNodes.isEmpty) {
+
+      //debug
+      println("Manager: creating initial node")
+
+      val n = system.actorOf(Props(new Node(m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+      n ! Message.InitialNode
+      n
+    }
+    // New node joining the ring
+    else {
+
+      //debug
+      println("Manager: creating node")
+
+      val knownNodeIdx = Random.nextInt(createdNodes.size)
+      val knownNode = createdNodes(knownNodeIdx)
+      val newNode = system.actorOf(Props(new Node(m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+      newNode ! knownNode
+      newNode
+    }
+
+    createdNodes.append(newNode)
+    println("GOTOSLEEP")
+    Thread.sleep(2000)
+  }
+
+
+  createdNodes.foreach { a => a ! true }
 }

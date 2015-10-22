@@ -11,7 +11,6 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
   def receive = {
     case nodeHash: Int => {
       if (createdNodeCnt == numNodesDone) {
-        Thread.sleep(1000)
 
         println("Manager is trying to create nodeHash : " + nodeHash)
         // First node in the ring
@@ -20,7 +19,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
           //debug
           println("Manager: creating initial node")
 
-          val n = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+          val n = context.actorOf(Props(new OldNode(self, hashSpace = hashSpace, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
           n ! Message.InitialNode
           n
         }
@@ -32,7 +31,7 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
 
           val knownNodeIdx = Random.nextInt(createdNodes.size)
           val knownNode = createdNodes(knownNodeIdx)
-          val newNode = context.actorOf(Props(new Node(self, hashSpace = hashSpace, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+          val newNode = context.actorOf(Props(new OldNode(self, hashSpace = hashSpace, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
           newNode ! knownNode
           newNode
         }
@@ -50,7 +49,6 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
         createdNodes.foreach { node =>
           node ! true
         }
-        Thread.sleep(1000)
         context.system.shutdown()
       }
     }

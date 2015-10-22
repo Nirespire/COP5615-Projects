@@ -1,4 +1,4 @@
-object CircularRing {
+object OldCircularRing {
 
   def inbetweenWithoutEnds(startIdx: Int, ipTestIdx: Int, ipStopIdx: Int, hashSpace: Int) = {
     val stopIdx = if (startIdx > ipStopIdx) {

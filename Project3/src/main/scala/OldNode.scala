@@ -2,7 +2,7 @@ import akka.actor.{Actor, ActorRef}
 
 import scala.util.Random
 
-class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: Int) extends Actor {
+class OldNode(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: Int) extends Actor {
 
   // Finger table to hold at most m entries
   var updatedFingers = 0
@@ -33,7 +33,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
 
   def closest_preceding_node(id: Int): Int = {
     (successorIdx to m + 1).reverse.foreach { i =>
-      if (CircularRing.inbetweenWithoutEnds(n, finger(i).node, id, hashSpace)) {
+      if (OldCircularRing.inbetweenWithoutEnds(n, finger(i).node, id, hashSpace)) {
         return i
       }
     }
@@ -41,7 +41,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
   }
 
   def predecessorLookup(id: Int): (Boolean, Int) ={
-    if(!CircularRing.inbetweenWithoutStart(n, id, finger(successorIdx).node, hashSpace)){
+    if(!OldCircularRing.inbetweenWithoutStart(n, id, finger(successorIdx).node, hashSpace)){
       (false, closest_preceding_node((id)))
     }
     else{
@@ -50,7 +50,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
   }
 
   def lookup(id: Int): (Boolean, Int) = {
-    if (CircularRing.inbetweenWithoutStart(n, id, successorId, hashSpace)) {
+    if (OldCircularRing.inbetweenWithoutStart(n, id, successorId, hashSpace)) {
       (true, successorIdx)
     } else {
       val nprime = closest_preceding_node(id)
@@ -81,7 +81,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       //debug
       println("Node: setting up new node")
       // Find my successor
-      knownNode ! Message.GetSuccessor(n)
+      knownNode ! Message.GetSuccessor(finger(successorIdx).start)
       knownNodeRef = knownNode
 
     case Message.UpdateFingerPredecessor(key, s, i) =>
@@ -92,7 +92,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       println("for " + key + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
       if (finger(lookupIdx).node != s) {
         if (lookupResult) {
-          if (CircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
+          if (OldCircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
             finger(i) = finger(i).updateSuccessor(s, sender)
             println("After finger pred found,  update o finger table - " + finger.mkString("-"))
             if (predecessorId != s) {
@@ -155,12 +155,12 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
       // Build our finger table
       (successorIdx to m).foreach { i =>
         val j = i + 1
-        if (CircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
+        if (OldCircularRing.inbetweenWithoutStop(n, finger(j).start, finger(i).node, hashSpace)) {
           finger(j) = finger(j).updateSuccessor(finger(i).node, finger(i).nodeRef)
           updatedFingers += 1
           updateOthers()
         }
-        else if (CircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
+        else if (OldCircularRing.inbetweenWithoutStop(predecessorId, finger(j).start, n, hashSpace)) {
           updatedFingers += 1
           finger(j).updateSuccessor(predecessorId,predecessor)
           updateOthers()
@@ -230,7 +230,7 @@ class Node(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: I
     case Message.UpdateFingerEntries(s) =>
       if (s != n) {
         (successorIdx to m + 1).reverse.foreach { i =>
-          if (CircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
+          if (OldCircularRing.inbetweenWithoutStop(n, s, finger(i).node, hashSpace)) {
             finger(i).updateSuccessor(s, sender)
           }
         }
