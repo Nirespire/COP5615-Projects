@@ -1,5 +1,7 @@
 package core
 
+import akka.actor.ActorRef
+
 object Message {
 
   case class InitialNode()
@@ -22,7 +24,7 @@ object Message {
 
   case class YourPredecessor(id: Int)
 
-  case class YourFingerSuccessor(idx: Int, id: Int)
+  case class YourFingerSuccessor(nRef: ActorRef, n: Int, i: Int)
 
   case class ForwardToPredecessor(id: Int, i: Int)
 

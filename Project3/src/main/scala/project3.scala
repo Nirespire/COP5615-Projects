@@ -66,4 +66,5 @@ object project3 extends App {
 
 
   createdNodes.foreach { a => a ! true }
+  system.shutdown()
 }

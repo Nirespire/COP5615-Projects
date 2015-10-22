@@ -1,12 +1,17 @@
 package p2p
 
 import akka.actor.{Actor, ActorRef}
-import core.{Message, CircularRing, FingerEntry}
+import akka.pattern.ask
+import akka.util.Timeout
+import core.{CircularRing, FingerEntry, Message}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
 
   // Finger table to hold at most m entries
-  var updatedFingers = 0
+  implicit val timeout = Timeout(5 seconds)
   val predecessorIdx = 0
   val selfIdx = 1
   val successorIdx = 2
@@ -126,7 +131,6 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
 
       // Set our successor
       finger(successorIdx).update(senderId, sender)
-      updatedFingers += 1
       println(finger.mkString("-"))
 
       // Tell our new successor to set us as their new predecessor
@@ -137,20 +141,15 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
         val j = i + 1
         if (CircularRing.inBetweenWithStartWithoutStop(n, finger(j).start, finger(i).node)) {
           finger(j).update(finger(i).node, finger(i).nodeRef)
-          updatedFingers += 1
-          updateOthers()
-        }
-        else if (CircularRing.inBetweenWithStartWithoutStop(predecessorId, finger(j).start, n)) {
-          updatedFingers += 1
-          finger(j).update(predecessorId, predecessor)
-          updateOthers()
-        }
-        else {
-          sender ! Message.GetFingerSuccessor(j, finger(j).start)
+        } else {
+          val future = sender ? Message.GetFingerSuccessor(j, finger(j).start)
+          val result = Await.result(future, timeout.duration).asInstanceOf[Message.YourFingerSuccessor]
+          //          (i, senderId)]
+          finger(result.i).update(result.n, result.nRef)
         }
       }
-
-    // Tell other nodes to update their fingers
+      // Tell other nodes to update their fingers
+      updateOthers()
 
     // Find finger entry whose id lies between nodeId
     case Message.GetFingerSuccessor(i, id) =>
@@ -161,16 +160,13 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
       println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
       if (lookupResult || n == finger(lookupIdx).node) {
-        sender.tell(Message.YourFingerSuccessor(i, finger(successorIdx).node), finger(lookupIdx).nodeRef)
+        sender ! Message.YourFingerSuccessor(nRef = finger(lookupIdx).nodeRef, n = finger(lookupIdx).node,
+          i = i)
       } else {
         finger(lookupIdx).nodeRef.forward(Message.GetFingerSuccessor(i, id))
       }
 
     // Do something once you get your successor
-    case Message.YourFingerSuccessor(i, senderId) =>
-      finger(i).update(senderId, sender)
-      updatedFingers += 1
-      updateOthers()
 
     case Message.UpdatePredecessor(pid) => finger(predecessorIdx).update(pid, sender, pid)
       println("After pred update - " + finger.mkString("-"))
@@ -208,12 +204,10 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
   }
 
   def updateOthers() = {
-    if (updatedFingers == m) {
-      println("Node " + n + " is done. Update others: " + finger.mkString("-"))
-      (successorIdx to m + 1).foreach { i =>
-        val key = CircularRing.subtractI(n, i - successorIdx)
-        self ! Message.UpdateFingerPredecessor(key, n, i)
-      }
+    println("Node " + n + " is done. Update others: " + finger.mkString("-"))
+    (successorIdx to m + 1).foreach { i =>
+      val key = CircularRing.subtractI(n, i - successorIdx)
+      self ! Message.UpdateFingerPredecessor(key, n, i)
     }
   }
 }
