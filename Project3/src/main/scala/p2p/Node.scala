@@ -6,9 +6,11 @@ import akka.util.Timeout
 import core.{CircularRing, FingerEntry, Message}
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.util.Random
 
-class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
+class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Actor {
 
   // Finger table to hold at most m entries
   implicit val timeout = Timeout(5 seconds)
@@ -18,7 +20,9 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
   val finger = new Array[FingerEntry](m + successorIdx)
 
   var numRequestsSent = 0
-  val done = numRequestsSent == numRequests
+  var totalHops = 0
+
+  def done = numRequestsSent == numRequests
 
   (successorIdx to m + 1).foreach { i =>
     finger(i) = FingerEntry(start = CircularRing.addI(n, i - successorIdx), node = n, nodeRef = self)
@@ -45,29 +49,19 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
     return selfIdx
   }
 
-  def predecessorLookup(id: Int): (Boolean, Int) = {
-    if (!CircularRing.inBetweenWithoutStartWithStop(n, id, finger(successorIdx).node)) {
-      (false, closest_preceding_node((id)))
-    }
-    else {
-      (true, selfIdx)
-    }
-  }
-
-  def updateFinderEntry(s: Int, i: Int) = {
+  def updateFingerEntry(s: Int, i: Int) = {
+    println(s"at $n with update $s for index $i(${finger(i).node} ")
     if (CircularRing.inBetweenWithStartWithoutStop(n, s, finger(i).node)) {
       if (n != s) {
         finger(i).update(s, sender)
         println("After finger pred found,  update o finger table - " + finger.mkString("-"))
       }
-      if (predecessorId != s) {
-        predecessor.forward(Message.UpdateFingerEntry(s, i))
-      }
+      predecessor.forward(Message.UpdateFingerEntry(s, i))
     }
   }
 
 
-  def lookup(id: Int): (Boolean, Int) = {
+  def find_predecessor(id: Int): (Boolean, Int) = {
     if (CircularRing.inBetweenWithoutStartWithStop(n, id, successorId)) {
       (true, successorIdx)
     } else {
@@ -83,8 +77,32 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
       println("Node: initial node setting up")
       println("Finger Table:")
       println(finger.mkString("-"))
+    case Message.QueryMessage(queryVal, numHops) =>
+      val (result, fingerIdx) = find_predecessor(queryVal)
 
-    case key: Int =>
+      if (result) {
+        sender ! Message.DoneQueryMessage(numHops + 1)
+      }
+      else {
+        finger(fingerIdx).nodeRef forward Message.QueryMessage(queryVal, numHops + 1)
+      }
+
+    // Nodes have finished setting up, start querying every second
+    case Message.StartQuerying => {
+      if (!done) {
+        self ! Message.QueryMessage(Random.nextInt(CircularRing.hashSpace), 0)
+        context.system.scheduler.scheduleOnce(1.second, self, Message.StartQuerying)
+      }
+      else {
+        manager ! Message.QueryingDone(n, totalHops / numRequestsSent)
+      }
+    }
+
+    // Our query was fulfilled
+    case Message.DoneQueryMessage(numHops) => {
+      numRequestsSent += 1
+      totalHops += numHops
+    }
 
     case knownNode: ActorRef =>
       //debug
@@ -96,29 +114,32 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
       //debug
       println("Trying to find predecessor for " + key + " using existing node " + n + " to update " + s)
 
-      val (lookupResult, lookupIdx) = lookup(key)
-      println("for " + key + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
-      if (finger(lookupIdx).node != s) {
-        if (lookupResult || n == finger(lookupIdx).node) {
-          updateFinderEntry(s, i)
-        }
-        else if (n != finger(lookupIdx).node) {
-          finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
-        }
+      val (lookupResult, lookupIdx) = find_predecessor(key)
+      println(s"for $key($i) at id $n we found it at $lookupIdx ${finger(lookupIdx)}")
+      if (lookupResult) {
+        updateFingerEntry(s, i)
+        //      } else if (n == finger(lookupIdx).node) {
+        //        predecessor.forward(Message.UpdateFingerEntry(s, i))
+        //        successor.forward(Message.UpdateFingerEntry(s, i))
+      } else {
+        finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
       }
+
+    case Message.UpdateFingerEntry(s, i) => updateFingerEntry(s, i)
 
     // Find finger entry whose id lies between nodeId
     case Message.GetSuccessor(id) =>
       //debug
       println("Trying to find successor for new node: " + id + " using existing node " + n)
 
-      val (lookupResult, lookupIdx) = lookup(id)
+      val (lookupResult, lookupIdx) = find_predecessor(id)
 
-      if (lookupResult || n == finger(lookupIdx).node) {
+      if (lookupResult) {
         println("Got successor for " + id + " at " + finger(selfIdx))
         println("for " + id + " at node " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
-
         sender.tell(Message.YourSuccessor(finger(lookupIdx).node, finger(selfIdx)), finger(lookupIdx).nodeRef)
+      } else if (n == finger(lookupIdx).node) {
+        sender ! Message.YourSuccessor(n, finger(predecessorIdx))
       } else {
         println("Forwarding lookup to: " + finger(lookupIdx))
         finger(lookupIdx).nodeRef.forward(Message.GetSuccessor(id))
@@ -141,6 +162,8 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
         val j = i + 1
         if (CircularRing.inBetweenWithStartWithoutStop(n, finger(j).start, finger(i).node)) {
           finger(j).update(finger(i).node, finger(i).nodeRef)
+        } else if (CircularRing.inBetweenWithStartWithoutStop(predecessorId, finger(j).start, n)) {
+          finger(j).update(predecessorId, predecessor)
         } else {
           val future = sender ? Message.GetFingerSuccessor(j, finger(j).start)
           val result = Await.result(future, timeout.duration).asInstanceOf[Message.YourFingerSuccessor]
@@ -156,12 +179,13 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
       //debug
       println("Trying to find finger successor for: " + id + " using existing node " + n)
 
-      val (lookupResult, lookupIdx) = lookup(id)
+      val (lookupResult, lookupIdx) = find_predecessor(id)
       println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
-      if (lookupResult || n == finger(lookupIdx).node) {
-        sender ! Message.YourFingerSuccessor(nRef = finger(lookupIdx).nodeRef, n = finger(lookupIdx).node,
-          i = i)
+      if (lookupResult) {
+        sender ! Message.YourFingerSuccessor(nRef = successor, n = successorId, i = i)
+      } else if (n == finger(lookupIdx).node) {
+        sender ! Message.YourFingerSuccessor(nRef = self, n = n, i = i)
       } else {
         finger(lookupIdx).nodeRef.forward(Message.GetFingerSuccessor(i, id))
       }
@@ -199,8 +223,7 @@ class Node(m: Integer, n: Int, numRequests: Int) extends Actor {
           }
           */
 
-    case true => println("FINAL FINGER TABLE::::" + finger.mkString("-"))
-
+    case true => println("FINAL FINGER TABLE ::: " + finger.mkString("-"))
   }
 
   def updateOthers() = {

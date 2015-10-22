@@ -16,18 +16,18 @@ object CircularRing {
   def inBetweenWithoutStartWithoutStop(start: Int, ipId: Int, ipStop: Int) = {
     val stop = if (start >= ipStop) ipStop + hashSpace else ipStop
     val id = if (ipId <= ipStop && start >= ipStop) ipId + hashSpace else ipId
-    start < id && id < stop
+    start == ipStop || start < id && id < stop
   }
 
   def inBetweenWithStartWithoutStop(start: Int, ipId: Int, ipStop: Int) = {
     val stop = if (start >= ipStop) ipStop + hashSpace else ipStop
     val id = if (ipId <= ipStop && start >= ipStop) ipId + hashSpace else ipId
-    start <= id && id < stop
+    start == ipStop || start <= id && id < stop
   }
 
   def inBetweenWithoutStartWithStop(start: Int, ipId: Int, ipStop: Int) = {
     val stop = if (start >= ipStop) ipStop + hashSpace else ipStop
     val id = if (ipId <= ipStop && start >= ipStop) ipId + hashSpace else ipId
-    start < id && id <= stop
+    start == ipStop ||  start < id && id <= stop
   }
 }

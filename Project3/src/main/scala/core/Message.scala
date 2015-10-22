@@ -28,10 +28,14 @@ object Message {
 
   case class ForwardToPredecessor(id: Int, i: Int)
 
-  case class Done()
+  case class SetupDone()
+
+  case class StartQuerying()
 
   case class QueryMessage(queryVal: Int, numHops: Int)
 
-  case class SendQueryMessage()
+  case class DoneQueryMessage(numHops: Int)
+
+  case class QueryingDone(nodeId: Int, avgNumHops: Int)
 
 }

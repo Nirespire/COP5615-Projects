@@ -3,7 +3,7 @@ import p2p.Node
 
 import scala.collection.mutable
 import scala.util.Random
-import core.CircularRing
+import core.{Message, Manager, CircularRing}
 
 object project3 extends App {
   val numNodes = args(0).toInt
@@ -32,9 +32,9 @@ object project3 extends App {
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
   var numNodesDone = 0
   var createdNodeCnt = 0
+  val manager = system.actorOf(Props(new Manager(numNodes = numNodes)))
 
-  (1 to 16).foreach { i =>
-    val nodeHash = i % 16
+  (0 until 16).reverse.foreach { nodeHash =>
     println("Manager is trying to create nodeHash : " + nodeHash)
     // First node in the ring
     val newNode = if (createdNodes.isEmpty) {
@@ -42,7 +42,7 @@ object project3 extends App {
       //debug
       println("Manager: creating initial node")
 
-      val n = system.actorOf(Props(new Node(m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+      val n = system.actorOf(Props(new Node(manager = manager, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
       n ! Message.InitialNode
       n
     }
@@ -54,7 +54,7 @@ object project3 extends App {
 
       val knownNodeIdx = Random.nextInt(createdNodes.size)
       val knownNode = createdNodes(knownNodeIdx)
-      val newNode = system.actorOf(Props(new Node(m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
+      val newNode = system.actorOf(Props(new Node(manager = manager, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
       newNode ! knownNode
       newNode
     }
@@ -64,7 +64,9 @@ object project3 extends App {
     Thread.sleep(5000)
   }
 
-
-  createdNodes.foreach { a => a ! true }
+  createdNodes.foreach { a =>
+    a ! true
+    //    a ! Message.StartQuerying
+  }
   system.shutdown()
 }
