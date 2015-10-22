@@ -162,8 +162,8 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
         val j = i + 1
         if (CircularRing.inBetweenWithStartWithoutStop(n, finger(j).start, finger(i).node)) {
           finger(j).update(finger(i).node, finger(i).nodeRef)
-        } else if (CircularRing.inBetweenWithStartWithoutStop(predecessorId, finger(j).start, n)) {
-          finger(j).update(predecessorId, predecessor)
+          //        } else if (CircularRing.inBetweenWithStartWithoutStop(predecessorId, finger(j).start, n)) {
+          //          finger(j).update(predecessorId, predecessor)
         } else {
           val future = sender ? Message.GetFingerSuccessor(j, finger(j).start)
           val result = Await.result(future, timeout.duration).asInstanceOf[Message.YourFingerSuccessor]
@@ -194,34 +194,6 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
 
     case Message.UpdatePredecessor(pid) => finger(predecessorIdx).update(pid, sender, pid)
       println("After pred update - " + finger.mkString("-"))
-    /*
-        case Message.SendQueryMessage =>
-          if (done) {
-            manager ! Message.Done
-          }
-
-          else {
-            numRequestsSent += 1
-            // generate random hash
-            val query = Random.nextInt(hashSpace)
-            // query system
-            self ! Message.QueryMessage(query, 0)
-          }
-          // Send a query every 1 second
-          Thread.sleep(1000)
-          self ! Message.SendQueryMessage
-
-        case Message.QueryMessage(queryVal, numHops) =>
-          // This node is responsible for the queryVal hash
-          if (CircularRing.inbetween(predecessorId, n, queryVal)) {
-            manager ! Message.QueryMessage(queryVal, numHops)
-          }
-          // This node is not responsible, pass on the request
-          else {
-            val fingerIdx = lookup(queryVal)
-            finger(fingerIdx).nodeRef ! Message.QueryMessage(queryVal, numHops + 1)
-          }
-          */
 
     case true => println("FINAL FINGER TABLE ::: " + finger.mkString("-"))
   }

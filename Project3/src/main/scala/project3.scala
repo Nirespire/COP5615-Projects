@@ -12,29 +12,16 @@ object project3 extends App {
   val m = 10
   CircularRing.setM(m)
   val system = ActorSystem(name = "Chord")
-
-  /*
-  val manager = system.actorOf(Props(new Manager(hashSpace = hashSpace, m = m, numNodes = numNodes, numRequests = numRequests)), name = "manager")
-
-  // Create the first node
-  var nodeHash = Random.nextInt(hashSpace)
-  manager ! nodeHash
-
-  val createdNodesSet = mutable.Set[Int](nodeHash)
-  (0 until numNodes - 1).foreach { idx =>
-    createdNodesSet.add(nodeHash)
-    while (createdNodesSet.contains(nodeHash)) {
-      nodeHash = Random.nextInt(hashSpace)
-    }
-    manager ! nodeHash
-  }
-  */
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
-  var numNodesDone = 0
-  var createdNodeCnt = 0
+  val createdNodesSet = mutable.Set[Int]()
   val manager = system.actorOf(Props(new Manager(numNodes = numNodes)))
 
-  (0 until numNodes).reverse.foreach { nodeHash =>
+  var nodeHash = Random.nextInt(CircularRing.hashSpace)
+  while (createdNodes.size < numNodes) {
+    while (createdNodesSet.contains(nodeHash)) {
+      nodeHash = Random.nextInt(CircularRing.hashSpace)
+    }
+    createdNodesSet.add(nodeHash)
     println("Manager is trying to create nodeHash : " + nodeHash)
     // First node in the ring
     val newNode = if (createdNodes.isEmpty) {
@@ -68,5 +55,4 @@ object project3 extends App {
     a ! true
     a ! Message.StartQuerying
   }
-  //system.shutdown()
 }
