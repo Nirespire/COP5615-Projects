@@ -5,12 +5,14 @@ import scala.util.Random
 
 class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends Actor {
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
-  var numNodesDone = 0
+  var numNodesSetupDone = 0
   var createdNodeCnt = 0
+  var numNodesQueryingDone = 0
+  var totalAvgNumHops = 0
 
   def receive = {
     case nodeHash: Int => {
-      if (createdNodeCnt == numNodesDone) {
+      if (createdNodeCnt == numNodesSetupDone) {
 
         println("Manager is trying to create nodeHash : " + nodeHash)
         // First node in the ring
@@ -43,19 +45,30 @@ class Manager(hashSpace: Int, m: Int, numNodes: Int, numRequests: Int) extends A
       }
     }
 
-    case Message.Done => {
-      numNodesDone += 1
-      if (numNodesDone == numNodes) {
+    case Message.SetupDone => {
+      numNodesSetupDone += 1
+      if (numNodesSetupDone == numNodes) {
         createdNodes.foreach { node =>
           node ! true
         }
+
+        //TODO: swap comments on 2 lines below to enable nodes to query the system
+        //createdNodes ! Message.StartQuerying()
         context.system.shutdown()
       }
     }
 
-    case Message.QueryMessage(queryVal, numHops) => {
-      println("Node just finished: ")
-      println("Num hops: " + numHops)
+    case Message.QueryingDone(nodeId, avgNumHops) => {
+      println("Node " + nodeId + " just finished: ")
+      println("Avg Num hops: " + avgNumHops)
+      numNodesQueryingDone += 1
+      totalAvgNumHops += avgNumHops
+
+      if(numNodesQueryingDone == numNodes){
+        println("All nodes done!")
+        println("Avg num hops for all Nodes: " + totalAvgNumHops/numNodes)
+        context.system.shutdown()
+      }
     }
   }
 }

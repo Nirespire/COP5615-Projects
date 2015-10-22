@@ -1,6 +1,8 @@
 import akka.actor.{Actor, ActorRef}
 
+import scala.concurrent.duration._
 import scala.util.Random
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class OldNode(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests: Int) extends Actor {
 
@@ -13,6 +15,7 @@ class OldNode(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests
 
   var knownNodeRef: ActorRef = _
   var numRequestsSent = 0
+  var totalHops = 0
   val done = numRequestsSent == numRequests
 
   (successorIdx to m + 1).foreach { i =>
@@ -65,18 +68,37 @@ class OldNode(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests
       println("Node: initial node setting up")
       println("Finger Table:")
       println(finger.mkString("-"))
-      manager ! Message.Done
+      manager ! Message.SetupDone
 
-    case key: Int =>
     //received a key to lookup
-    //      val fingerIdx = lookup(key)
-    //
-    //      if (finger(fingerIdx).node == n) {
-    //        sender ! n
-    //      } else {
-    //        sender ! fingerIdx
-    //      }
+    case Message.QueryMessage(queryVal, numHops) =>
+      val (result, fingerIdx) = lookup(queryVal)
 
+      if(result){
+        sender ! Message.DoneQueryMessage(numHops)
+      }
+      else{
+        finger(fingerIdx).nodeRef forward Message.QueryMessage(queryVal, numHops + 1)
+      }
+
+    // Nodes have finished setting up, start querying every second
+    case Message.StartQuerying => {
+      if(!done){
+        self ! Message.QueryMessage(Random.nextInt(hashSpace), 0)
+        context.system.scheduler.scheduleOnce(1.second, self, Message.StartQuerying)
+      }
+      else{
+        manager ! Message.QueryingDone(n, totalHops/numRequestsSent)
+      }
+    }
+
+    // Our query was fulfilled
+    case Message.DoneQueryMessage(numHops) => {
+      numRequestsSent += 1
+      totalHops += numHops
+    }
+
+    //
     case knownNode: ActorRef =>
       //debug
       println("Node: setting up new node")
@@ -254,7 +276,7 @@ class OldNode(manager: ActorRef, hashSpace: Int, m: Integer, n: Int, numRequests
 
       }
 
-      manager ! Message.Done
+      manager ! Message.SetupDone
     }
   }
 }
