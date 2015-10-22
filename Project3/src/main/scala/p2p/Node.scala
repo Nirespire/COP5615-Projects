@@ -54,7 +54,7 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
     if (CircularRing.inBetweenWithStartWithoutStop(n, s, finger(i).node)) {
       if (n != s) {
         finger(i).update(s, sender)
-        println("After finger pred found,  update o finger table - " + finger.mkString("-"))
+        println(s"After finger pred found,  update finger table  $i - " + finger.mkString("-"))
       }
       predecessor.forward(Message.UpdateFingerEntry(s, i))
     }
@@ -118,9 +118,8 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
       println(s"for $key($i) at id $n we found it at $lookupIdx ${finger(lookupIdx)}")
       if (lookupResult) {
         updateFingerEntry(s, i)
-        //      } else if (n == finger(lookupIdx).node) {
-        //        predecessor.forward(Message.UpdateFingerEntry(s, i))
-        //        successor.forward(Message.UpdateFingerEntry(s, i))
+      } else if (n == finger(lookupIdx).node) {
+        updateFingerEntry(s, i)
       } else {
         finger(lookupIdx).nodeRef.forward(Message.UpdateFingerPredecessor(key, s, i))
       }
