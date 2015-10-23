@@ -1,20 +1,26 @@
 # Project 3
 
 ## Contributors
+
 1. Sanjay Nair
 2. Preethu Thomas
 
+
 ## Overview
+
 This project implements a basic version of the Chord distributed hash table protocol using the Akka framework and
 Actor model. The system simulates Chord joins, where nodes are able to dynamically join the system as well as lookup,
 where any node on the Chord ring network could be queried for a key. This implementation takes advantage of the
 theoretical efficiency of building the Chord ring and achieves logarithmic lookup performance as the number of nodes
 increases linearly.
+
  
 ## What is Working
+
 - Can build a Chord ring of n nodes within a 20 bit hash space using the Chord join algorithm
 - Can have the nodes request x number of times into the system
 - Will record the number of hops each request takes to be fulfilled and compute the average number of hops all the messages took to be fulfilled
+
 
 ## How to Run
 
@@ -26,8 +32,11 @@ send and get a result for before that node shuts down. The system shuts down whe
 
 ## Largest Network Run
 
+100,000 nodes. Avg number of hops = 8
+
 
 ## Implementation Details
+
 The Chord system that is being simulated has a 20 bit hash that can simulate a hash space of 2^20 unique values.
 The values in the system are represented as integers ranging from 0 to 1048576.
 
@@ -48,5 +57,9 @@ finished with its requests.
 
 The Manager actor only exists to keep track of the number of nodes that have completed all their requests and compute
 the final number of average hops each message had to make through the system to be fulfilled.
+
+
+
+Please refer to report.pdf for additional analysis of performance.
 
 
