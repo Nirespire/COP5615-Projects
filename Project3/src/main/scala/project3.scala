@@ -17,6 +17,11 @@ object project3 extends App {
   val manager = system.actorOf(Props(new Manager(numNodes = numNodes)))
 
   var nodeHash = Random.nextInt(CircularRing.hashSpace)
+
+  println(numNodes + " Nodes")
+  println("m = " + m)
+  println("Hash space of " + CircularRing.hashSpace)
+
   while (createdNodes.size < numNodes) {
     while (createdNodesSet.contains(nodeHash)) {
       nodeHash = Random.nextInt(CircularRing.hashSpace)
@@ -27,7 +32,7 @@ object project3 extends App {
     val newNode = if (createdNodes.isEmpty) {
 
       //debug
-      println("Manager: creating initial node")
+      //println("Manager: creating initial node")
 
       val n = system.actorOf(Props(new Node(manager = manager, m = m, n = nodeHash, numRequests = numRequests)), name = s"Node$nodeHash")
       n ! Message.InitialNode
@@ -37,7 +42,7 @@ object project3 extends App {
     else {
 
       //debug
-      println("Manager: creating node")
+      //println("Manager: creating node")
 
       val knownNodeIdx = Random.nextInt(createdNodes.size)
       val knownNode = createdNodes(knownNodeIdx)
@@ -51,8 +56,9 @@ object project3 extends App {
     Thread.sleep(100)
   }
 
+  println("Chord ring created, nodes start querying every 1 second")
   createdNodes.foreach { a =>
-    a ! true
+    //a ! true
     a ! Message.StartQuerying
   }
 }

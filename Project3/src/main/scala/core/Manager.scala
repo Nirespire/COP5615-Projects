@@ -8,8 +8,8 @@ class Manager(numNodes: Int) extends Actor {
 
   def receive = {
     case Message.QueryingDone(nodeId, avgNumHops) => {
-      println("Node " + nodeId + " just finished: ")
-      println("Avg Num hops: " + avgNumHops)
+      //println("Node " + nodeId + " just finished: ")
+      //println("Avg Num hops: " + avgNumHops)
       numNodesQueryingDone += 1
       totalAvgNumHops += avgNumHops
 
