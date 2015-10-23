@@ -9,7 +9,7 @@ object project3 extends App {
   val numNodes = args(0).toInt
   val numRequests = args(1).toInt
 
-  val m = 10
+  val m = 20
   CircularRing.setM(m)
   val system = ActorSystem(name = "Chord")
   val createdNodes = mutable.ArrayBuffer[ActorRef]()
@@ -22,7 +22,7 @@ object project3 extends App {
       nodeHash = Random.nextInt(CircularRing.hashSpace)
     }
     createdNodesSet.add(nodeHash)
-    println("Manager is trying to create nodeHash : " + nodeHash)
+    //println("Manager is trying to create nodeHash : " + nodeHash)
     // First node in the ring
     val newNode = if (createdNodes.isEmpty) {
 
@@ -47,8 +47,8 @@ object project3 extends App {
     }
 
     createdNodes.append(newNode)
-    println("GOTOSLEEP")
-    Thread.sleep(25)
+    //println("GOTOSLEEP")
+    Thread.sleep(100)
   }
 
   createdNodes.foreach { a =>

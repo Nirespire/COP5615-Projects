@@ -22,7 +22,7 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
   var numRequestsSent = 0
   var totalHops = 0
 
-  def done = numRequestsSent == numRequests
+  def done = numRequestsSent >= numRequests
 
   (successorIdx to m + 1).foreach { i =>
     finger(i) = FingerEntry(start = CircularRing.addI(n, i - successorIdx), node = n, nodeRef = self)
@@ -50,11 +50,11 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
   }
 
   def updateFingerEntry(s: Int, i: Int) = {
-    println(s"at $n with update $s for index $i(${finger(i).node} ")
+    //println(s"at $n with update $s for index $i(${finger(i).node} ")
     if (CircularRing.inBetweenWithStartWithoutStop(n, s, finger(i).node)) {
       if (n != s) {
         finger(i).update(s, sender)
-        println(s"After finger pred found,  update finger table  $i - " + finger.mkString("-"))
+        //println(s"After finger pred found,  update finger table  $i - " + finger.mkString("-"))
       }
       predecessor.forward(Message.UpdateFingerEntry(s, i))
     }
@@ -74,9 +74,9 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
 
     // initial node will have all its finger entries as itself
     case Message.InitialNode =>
-      println("Node: initial node setting up")
-      println("Finger Table:")
-      println(finger.mkString("-"))
+      //println("Node: initial node setting up")
+      //println("Finger Table:")
+      //println(finger.mkString("-"))
     case Message.QueryMessage(queryVal, numHops) =>
       val (result, fingerIdx) = find_predecessor(queryVal)
 
@@ -107,16 +107,16 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
 
     case knownNode: ActorRef =>
       //debug
-      println("Node: setting up new node")
+      //println("Node: setting up new node")
       // Find my successor
       knownNode ! Message.GetSuccessor(finger(successorIdx).start)
 
     case Message.UpdateFingerPredecessor(key, s, i) =>
       //debug
-      println("Trying to find predecessor for " + key + " using existing node " + n + " to update " + s)
+      //println("Trying to find predecessor for " + key + " using existing node " + n + " to update " + s)
 
       val (lookupResult, lookupIdx) = find_predecessor(key)
-      println(s"for $key($i) at id $n we found it at $lookupIdx ${finger(lookupIdx)}")
+      //println(s"for $key($i) at id $n we found it at $lookupIdx ${finger(lookupIdx)}")
       if (lookupResult) {
         updateFingerEntry(s, i)
       } else if (n == finger(lookupIdx).node) {
@@ -130,18 +130,18 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
     // Find finger entry whose id lies between nodeId
     case Message.GetSuccessor(id) =>
       //debug
-      println("Trying to find successor for new node: " + id + " using existing node " + n)
+      //println("Trying to find successor for new node: " + id + " using existing node " + n)
 
       val (lookupResult, lookupIdx) = find_predecessor(id)
 
       if (lookupResult) {
-        println("Got successor for " + id + " at " + finger(selfIdx))
-        println("for " + id + " at node " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
+        //println("Got successor for " + id + " at " + finger(selfIdx))
+        //println("for " + id + " at node " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
         sender.tell(Message.YourSuccessor(finger(lookupIdx).node, finger(selfIdx)), finger(lookupIdx).nodeRef)
       } else if (n == finger(lookupIdx).node) {
         sender ! Message.YourSuccessor(n, finger(predecessorIdx))
       } else {
-        println("Forwarding lookup to: " + finger(lookupIdx))
+        //println("Forwarding lookup to: " + finger(lookupIdx))
         finger(lookupIdx).nodeRef.forward(Message.GetSuccessor(id))
       }
 
@@ -152,7 +152,7 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
 
       // Set our successor
       finger(successorIdx).update(senderId, sender)
-      println(finger.mkString("-"))
+      //println(finger.mkString("-"))
 
       // Tell our new successor to set us as their new predecessor
       sender ! Message.UpdatePredecessor(n)
@@ -177,10 +177,10 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
     // Find finger entry whose id lies between nodeId
     case Message.GetFingerSuccessor(i, id) =>
       //debug
-      println("Trying to find finger successor for: " + id + " using existing node " + n)
+      //println("Trying to find finger successor for: " + id + " using existing node " + n)
 
       val (lookupResult, lookupIdx) = find_predecessor(id)
-      println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
+      //println("for " + id + " at id " + n + " we found it at " + lookupIdx + " " + finger(lookupIdx))
 
       if (lookupResult) {
         sender ! Message.YourFingerSuccessor(nRef = successor, n = successorId, i = i)
@@ -193,13 +193,13 @@ class Node(m: Integer, n: Int, numRequests: Int, manager: ActorRef) extends Acto
     // Do something once you get your successor
 
     case Message.UpdatePredecessor(pid) => finger(predecessorIdx).update(pid, sender, pid)
-      println("After pred update - " + finger.mkString("-"))
+      //println("After pred update - " + finger.mkString("-"))
 
     case true => println("FINAL FINGER TABLE ::: " + finger.mkString("-"))
   }
 
   def updateOthers() = {
-    println("Node " + n + " is done. Update others: " + finger.mkString("-"))
+    //println("Node " + n + " is done. Update others: " + finger.mkString("-"))
     (successorIdx to m + 1).foreach { i =>
       val key = CircularRing.subtractI(n, i - successorIdx)
       self ! Message.UpdateFingerPredecessor(key, n, i)
