@@ -32,7 +32,7 @@ send and get a result for before that node shuts down. The system shuts down whe
 
 ## Largest Network Run
 
-100,000 nodes. Avg number of hops = 8
+262,144 nodes. Avg number of hops = 8
 
 
 ## Implementation Details
@@ -61,5 +61,4 @@ the final number of average hops each message had to make through the system to 
 
 
 Please refer to report.pdf for additional analysis of performance.
-
 
