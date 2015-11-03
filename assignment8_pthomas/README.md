@@ -34,13 +34,13 @@ writing new private key to 'certificates/pthomas.key'
 
 ```
 [preethu@32-laptop assignment8_pthomas]$ /usr/local/go/bin/go run server.go
-2015/11/02 23:37:58 server -- loadCertificate -- Successful
-2015/11/02 23:37:58 server -- listener -- Successful
-2015/11/02 23:37:59 server -- accept -- from 127.0.0.1:58779
-2015/11/02 23:37:59 server -- handshake -- Successful
-2015/11/02 23:37:59 server -- read --  "Hi, my name is pthomas!"
-2015/11/02 23:37:59 server -- write --  41 bytes
-2015/11/02 23:37:59 server -- read -- EOF
+2015/11/02 23:50:10 server -- loadCertificate -- Successful
+2015/11/02 23:50:10 server -- listener -- Successful
+2015/11/02 23:50:14 server -- accept -- from 127.0.0.1:58943
+2015/11/02 23:50:14 server -- handshake -- Successful
+2015/11/02 23:50:14 server -- read --  "Hi, my name is pthomas!"
+2015/11/02 23:50:14 server -- write --  42 bytes
+2015/11/02 23:50:14 server -- read -- EOF
 exit status 1
 [preethu@32-laptop assignment8_pthomas]$
 ```
@@ -49,11 +49,11 @@ exit status 1
 
 ```
 [preethu@32-laptop assignment8_pthomas]$ /usr/local/go/bin/go run  client.go pthomas
-2015/11/02 23:37:59 client(pthomas) -- LoadCertificate -- Successful
-2015/11/02 23:37:59 client(pthomas) -- connected to server -- 127.0.0.1:30000
-2015/11/02 23:37:59 client(pthomas) -- write -- "Hi, my name is pthomas!" (23 bytes)
-2015/11/02 23:37:59 client(pthomas) -- read  -- "Hello,nice to meet you, my name is server" (41 bytes)
-2015/11/02 23:37:59 client(pthomas) -- exiting --
+2015/11/02 23:50:14 client(pthomas) -- LoadCertificate -- Successful
+2015/11/02 23:50:14 client(pthomas) -- connected to server -- 127.0.0.1:30000
+2015/11/02 23:50:14 client(pthomas) -- write -- "Hi, my name is pthomas!" (23 bytes)
+2015/11/02 23:50:14 client(pthomas) -- read  -- "Hello, nice to meet you, my name is server" (42 bytes)
+2015/11/02 23:50:14 client(pthomas) -- exiting --
 [preethu@32-laptop assignment8_pthomas]$ 
 ```
 
