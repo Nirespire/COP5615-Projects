@@ -21,10 +21,39 @@ class MyServiceActor extends Actor with TestService {
 // this trait defines our service behavior independently from the service actor
 trait TestService extends HttpService {
 
+  def pingRoute = path("ping") {
+    get { complete("pong!") }
+  }
+
+  def pongRoute = path("pong") {
+    get { complete("pong!?") }
+  }
+
+  def rootRoute = pingRoute ~ pongRoute
+
+  val postRoute = {
+    path("testPost"){
+      post {
+        entity(Unmarshaller(MediaTypes.`application/json`) {
+          case httpEntity: HttpEntity =>
+            read[Customer](httpEntity.asString(HttpCharsets.`UTF-8`))
+        }) {
+          customer: Customer =>
+            ctx: RequestContext =>
+              handleRequest(ctx, StatusCodes.Created) {
+                log.debug("Creating customer: %s".format(customer))
+                customerService.create(customer)
+              }
+        }
+      }
+    }
+
+  }
+
   val myRoute =
     path("") {
       get {
-        respondWithMediaType(`text/html`) {
+        respondWithMediaType('text/html') {
           // XML is marshalled to `text/xml` by default, so we simply override here
           complete {
             <html>

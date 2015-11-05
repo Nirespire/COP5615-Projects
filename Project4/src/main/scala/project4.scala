@@ -10,6 +10,9 @@ import scala.concurrent.duration._
 
 object Project4 extends App {
 
+  val config = ConfigFactory.load()
+  lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
+
   // we need an ActorSystem to host our application in
   implicit val serverSystem = ActorSystem("on-spray-can")
 
@@ -18,7 +21,7 @@ object Project4 extends App {
 
   implicit val timeout = Timeout(5.seconds)
   // start a new HTTP server on port 8080 with our service actor as the handler
-  IO(Http) ? Http.Bind(service, interface = "localhost", port = 8080)
+  IO(Http) ? Http.Bind(service, interface = "localhost", port = servicePort)
 
   
 //  implicit val clientSystem = ActorSystem("on-spray-client")
