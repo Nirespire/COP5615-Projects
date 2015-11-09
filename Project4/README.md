@@ -39,42 +39,22 @@
     - Need to be able to communicate via HTTP in JSON
 
 #### Facebook Graph API components
-    
-https://developers.facebook.com/docs/graph-api/reference/v2.5/profile
-- Profile -> abstract
-    - User
-    - Page
-    - Group
-    - Event
-    - Application
 
-https://developers.facebook.com/docs/graph-api/reference/user
-- User
-    - id
-    - about
-    - birthday
-    - first_name
-    - last_name
-    - gender
-    
-https://developers.facebook.com/docs/graph-api/reference/v2.5/post
-- Post
-   - id
-   - from
-   - message
-   - created_time
-   
-- Publish by POST to /{user-id}/feed, /{page-id}/feed, /{event-id}/feed, or /{group-id}/feed
-    
-    
-https://developers.facebook.com/docs/graph-api/reference/v2.5/comment
-- Comment
-    - id
-    - created_time
-    - message
-    - like_count
-    - user_likes
-- Edit via POST to /{comment-id} message=""
-- Delete via DELETE to /{comment-id}
-- Get all comments of an object via /{object-id}/comments
-- Publish via POST to /{object-id}/comments message="" -> returns created comment id
+- Page: https://developers.facebook.com/docs/graph-api/reference/v2.5/page
+    /page/{page-id}
+- Post: https://developers.facebook.com/docs/graph-api/reference/v2.5/post
+    /post/{post-id}
+- Friend List: https://developers.facebook.com/docs/graph-api/reference/v2.5/friendlist
+    /friendlist/{friendlist-id}
+- Profile: https://developers.facebook.com/docs/graph-api/reference/v2.5/profile
+    /profile/{profile-id}
+- Album: https://developers.facebook.com/docs/graph-api/reference/v2.5/album
+    /album/{album-id}
+- Picture: https://developers.facebook.com/docs/graph-api/reference/v2.5/album/picture
+    /album/{album-id}/{picture-id}
+
+For each:
+Create -> PUT
+Read -> GET
+Update -> POST
+Delete -> DELETE
