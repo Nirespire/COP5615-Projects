@@ -4,9 +4,6 @@ import com.typesafe.config.ConfigFactory
 import spray.can.Http
 import akka.pattern.ask
 import akka.util.Timeout
-import spray.http._
-import spray.client.pipelining._
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
 

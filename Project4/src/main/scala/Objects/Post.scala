@@ -1,17 +1,19 @@
 package Objects
 
-import java.util.Date
-
-import Objects.ObjectTypes.PostType
 import Objects.ObjectTypes.PostType.PostType
-import Objects.ObjectTypes.PostType.PostType
-import spray.json.{JsonFormat, DefaultJsonProtocol}
+import spray.httpx.SprayJsonSupport
+import spray.json._
 
 case class Post (
-                  id:Integer,
-                  creator:Profile,
-                  createdTime:Date,
-                  from:Profile,
+                  id:Int,
+                  creator:Int,
+                  createdTime:String,
+                  from:Int,
                   message:String,
                   postType: PostType
-                ) extends Profile
+                )
+
+
+object PostJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val PostJsonFormat = jsonFormat6(Post)
+}
