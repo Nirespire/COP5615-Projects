@@ -1,8 +1,13 @@
 import akka.actor.Actor
+import spray.routing.RequestContext
 
-class WorkerActor () extends Actor{
+
+class WorkerActor (requestContext: RequestContext) extends Actor{
   def receive = {
-    case "" =>
+    case profileId:Integer =>
+      println("receive!")
+      requestContext.complete("GET profile " + profileId)
+      context.stop(self)
   }
 
 }

@@ -2,45 +2,40 @@ import akka.actor.Props
 import akka.util.Timeout
 import spray.routing._
 import spray.http._
-import MediaTypes._
+import MediaTypes.`application/json`
 import scala.concurrent.duration._
 
 trait RootService extends HttpService {
 
-  val worker = actorRefFactory.actorOf(Props[WorkerActor], "worker")
+  val storage = actorRefFactory.actorOf(Props[StorageActor], "storage")
 
   implicit def executionContext = actorRefFactory.dispatcher
+
   implicit val timeout = Timeout(5 seconds)
 
   val myRoute =
-    path("profile"){
-      get{
-        respondWithMediaType(`application/json`){
-          complete{
-            "get profile"
-          }
-        }
-      } ~
+    respondWithMediaType(`application/json`) {
+      path("profile") {
         post {
-          respondWithMediaType(`application/json`) {
-            complete {
-              "post profile"
-            }
+          complete {
+            "Post profile"
           }
         } ~
-        put{
-          respondWithMediaType(`application/json`){
-            complete{
+          put {
+            complete {
               "put profile"
             }
           }
-        } ~
-        delete {
-          respondWithMediaType(`application/json`){
-            complete{
-              "delete profile"
+      } ~
+        path("profile" / IntNumber) { (profileId) =>
+          get {
+            requestContext =>
+              val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext)))
+              workerService ! profileId
+          } ~
+            delete {
+              requestContext =>
             }
-          }
         }
     }
 }
