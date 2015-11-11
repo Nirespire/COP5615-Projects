@@ -30,15 +30,14 @@ trait RootService extends HttpService {
           }
         }
       } ~
-      // Create a new Post
+        // Create a new Post
         put {
           entity(as[Post]) { post =>
             requestContext =>
               val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext, storageService)))
               workerService ! CreatePost(post)
           }
-        }
-    } ~
+        } ~
       path("post" / IntNumber) { (postId) =>
         // Get an existing post
         get {
@@ -52,6 +51,7 @@ trait RootService extends HttpService {
               workerService ! DeletePost(postId)
           }
       }
+    }
 
 
 }
