@@ -21,12 +21,12 @@ trait RootService extends HttpService {
 
   val myRoute =
     respondWithMediaType(`application/json`) {
+
       path("post") {
         post {
           entity(as[Post]) { post =>
             requestContext =>
-              val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext, storageService)))
-              workerService ! UpdatePost(post)
+              storageService ! UpdatePost(requestContext, post)
           }
         }
       } ~
@@ -34,21 +34,18 @@ trait RootService extends HttpService {
         put {
           entity(as[Post]) { post =>
             requestContext =>
-              val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext, storageService)))
-              workerService ! CreatePost(post)
+              storageService ! CreatePost(requestContext, post)
           }
         } ~
       path("post" / IntNumber) { (postId) =>
         // Get an existing post
         get {
           requestContext =>
-            val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext, storageService)))
-            workerService ! GetPost(postId)
+            storageService ! GetPost(requestContext, postId)
         } ~
           delete {
             requestContext =>
-              val workerService = actorRefFactory.actorOf(Props(new WorkerActor(requestContext, storageService)))
-              workerService ! DeletePost(postId)
+              storageService ! DeletePost(requestContext, postId)
           }
       }
     }

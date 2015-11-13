@@ -1,5 +1,6 @@
 package Messages
 
 import Objects.Post
+import spray.routing.RequestContext
 
-case class UpdatePost(post: Post)
+case class UpdatePost(requestContext:RequestContext, post: Post)

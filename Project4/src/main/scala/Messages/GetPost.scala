@@ -1,3 +1,5 @@
 package Messages
 
-case class GetPost(id:Int)
+import spray.routing.RequestContext
+
+case class GetPost(requestContext: RequestContext, id:Int)

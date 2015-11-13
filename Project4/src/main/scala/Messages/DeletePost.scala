@@ -1,3 +1,5 @@
 package Messages
 
-case class DeletePost(id:Int)
+import spray.routing.RequestContext
+
+case class DeletePost(requestContext:RequestContext, id:Int)
