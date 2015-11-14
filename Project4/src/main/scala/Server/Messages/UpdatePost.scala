@@ -1,4 +1,4 @@
-package Messages
+package Server.Messages
 
 import Objects.Post
 import spray.routing.RequestContext

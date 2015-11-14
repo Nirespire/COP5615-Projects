@@ -1,6 +1,6 @@
 package Server
 
-import Messages.{CreatePost, DeletePost, GetPost, UpdatePost}
+import Server.Messages.{CreatePost, DeletePost, GetPost, UpdatePost}
 import Objects.ObjectJsonSupport._
 import Objects.Post
 import akka.actor.Props

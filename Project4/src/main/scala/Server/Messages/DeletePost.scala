@@ -1,4 +1,4 @@
-package Messages
+package Server.Messages
 
 import spray.routing.RequestContext
 

@@ -1,6 +1,6 @@
 package Server
 
-import Messages._
+import Server.Messages._
 import Objects.Post
 import akka.actor.Actor
 import spray.json._

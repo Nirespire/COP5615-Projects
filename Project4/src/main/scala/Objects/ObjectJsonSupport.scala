@@ -1,6 +1,6 @@
 package Objects
 
-import Messages.ResponseMessage
+import Server.Messages.ResponseMessage
 import spray.httpx.SprayJsonSupport
 import spray.json.DefaultJsonProtocol
 

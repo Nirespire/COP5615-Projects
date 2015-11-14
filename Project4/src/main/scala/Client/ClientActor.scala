@@ -2,9 +2,11 @@ package Client
 
 import java.io.InputStream
 
+import Client.Messages.MakePost
 import Objects._
 import akka.actor.Actor
 import com.typesafe.config.ConfigFactory
+import scala.concurrent.duration._
 import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
@@ -31,7 +33,12 @@ class ClientActor(id: Int) extends Actor {
   import context.dispatcher
 
   def receive = {
+    // Create a user profile for self
     case true =>
+//      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
+//      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
+//
+//    case MakePost =>
       putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,statuses(Random.nextInt(statuses.length)),status),true)
 
   }
