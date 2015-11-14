@@ -1,9 +1,16 @@
 package Objects
 
+import spray.httpx.SprayJsonSupport
+import spray.json._
 
-class Picture(
-               id:Integer,
-               from:Profile,
-               album:Album,
+
+case class Picture(
+               id:Int,
+               from:Int,
+               album:Int,
                filename:String
              )
+
+object PictureJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val PictureJsonFormat = jsonFormat4(Picture)
+}

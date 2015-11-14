@@ -1,26 +1,24 @@
 package Objects
 
-import spray.httpx.SprayJsonSupport
-import spray.json.{JsValue, RootJsonFormat, DefaultJsonProtocol}
+import spray.json._
+import Objects.PageJsonSupport._
+import Objects.UserJsonSupport._
 
+abstract class Profile
 
-abstract class Profile {
-  def id: Integer
+object ProfileJsonSupport extends DefaultJsonProtocol{
+  implicit object ProfileJsonFormat extends RootJsonFormat[Profile]{
+    def write(p:Profile) = p match{
+      case user:User => user.toJson
+      case page:Page => page.toJson
+    }
 
-  override def toString(): String ={
-    "Profile id " + id
+    def read(value:JsValue) = value match{
+      case obj:JsObject if (obj.fields.size == 6) => value.convertTo[User]
+      case obj:JsObject if (obj.fields.size == 5) =>  value.convertTo[Page]
+    }
   }
-}
 
-//object PostJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-//
 //  implicit val userFormat = jsonFormat6(User)
 //  implicit val pageFormat = jsonFormat5(Page)
-//
-//  implicit val animalFormat = new RootJsonFormat[Profile] {
-//    def write(obj: Profile) = obj match {
-//      case x: Page => userFormat.write(x)
-//      case x: User => pageFormat.write(x)
-//    }
-//  }
-//}
+}
