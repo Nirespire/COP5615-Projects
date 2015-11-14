@@ -24,10 +24,10 @@ object Project4 extends App {
 
 //  // Start up actor system of clients
 //  val clientSystem = ActorSystem("fb-spray-system")
-//  //val client = clientSystem.actorOf(Props[ClientActor], "client-actor")
+//  //val client = clientSystem.actorOf(Props[Client.ClientActor], "client-actor")
 //
 //  (1 to 1000).foreach { idx =>
-//    clientSystem.actorOf(Props(new ClientActor(idx)), "client"+idx) ! true
+//    clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client"+idx) ! true
 //  }
 
 }

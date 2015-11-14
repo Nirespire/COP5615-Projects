@@ -1,8 +1,7 @@
 package Objects
 
 import spray.json._
-import Objects.PageJsonSupport._
-import Objects.UserJsonSupport._
+import ObjectJsonSupport._
 
 abstract class Profile
 

@@ -7,7 +7,7 @@ import spray.http._
 import MediaTypes.`application/json`
 import scala.concurrent.duration._
 
-import Objects.PostJsonSupport._
+import Objects.ObjectJsonSupport._
 
 trait RootService extends HttpService {
 

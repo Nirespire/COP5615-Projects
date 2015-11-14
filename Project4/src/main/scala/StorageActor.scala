@@ -3,8 +3,7 @@ import Objects.Post
 import akka.actor.Actor
 import spray.json._
 import scala.collection.mutable
-import Objects.PostJsonSupport._
-import Messages.StorageErrorJsonSupport._
+import Objects.ObjectJsonSupport._
 
 class StorageActor extends Actor {
 
@@ -16,7 +15,7 @@ class StorageActor extends Actor {
         rc.complete(posts.get(id).get.toJson.compactPrint)
       }
       else{
-        rc.complete(StorageError("post does not exist").toJson.compactPrint)
+        rc.complete(ResponseMessage("post does not exist").toJson.compactPrint)
       }
 
     case CreatePost(rc,post) =>
@@ -30,16 +29,16 @@ class StorageActor extends Actor {
         rc.complete(post.toJson.compactPrint)
       }
       else{
-        rc.complete(StorageError("post does not exist").toJson.compactPrint)
+        rc.complete(ResponseMessage("post does not exist").toJson.compactPrint)
       }
 
     case DeletePost(rc,id) =>
       if(posts.contains(id)){
         posts.remove(id)
-        rc.complete(StorageError("post deleted").toJson.compactPrint)
+        rc.complete(ResponseMessage("post deleted").toJson.compactPrint)
       }
       else{
-        rc.complete(StorageError("post does not exist").toJson.compactPrint)
+        rc.complete(ResponseMessage("post does not exist").toJson.compactPrint)
       }
   }
 }

@@ -10,7 +10,3 @@ case class FriendList(
                        profiles:Array[Int],
                        list_type:ListType
                      )
-
-object FriendListJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val FriendListJsonFormat = jsonFormat4(FriendList)
-}

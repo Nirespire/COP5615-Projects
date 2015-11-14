@@ -10,7 +10,3 @@ case class Picture(
                album:Int,
                filename:String
              )
-
-object PictureJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val PictureJsonFormat = jsonFormat4(Picture)
-}

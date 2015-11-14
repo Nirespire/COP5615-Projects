@@ -29,9 +29,9 @@ case class Album (
 //  }
 //}
 
-object AlbumJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val AlbumJsonFormat = jsonFormat7(Album)
-}
+//object AlbumJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
+//  implicit val AlbumJsonFormat = jsonFormat7(Album)
+//}
 
 
 

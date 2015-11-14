@@ -11,7 +11,3 @@ case class Page (
                  cover:Int,
                  likes:Int
                ) extends Profile
-
-object PageJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val PageJsonFormat = jsonFormat5(Page)
-}

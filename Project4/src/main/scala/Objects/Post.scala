@@ -12,8 +12,3 @@ case class Post (
                   message:String,
                   postType: PostType
                 )
-
-
-object PostJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val PostJsonFormat = jsonFormat6(Post)
-}

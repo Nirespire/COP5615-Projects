@@ -13,6 +13,3 @@ case class User(
                  last_name:String
                ) extends Profile
 
-object UserJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val UserJsonFormat = jsonFormat6(User)
-}
