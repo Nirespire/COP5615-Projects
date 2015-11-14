@@ -3,6 +3,7 @@ package Client
 import Objects._
 import akka.actor.Actor
 import com.typesafe.config.ConfigFactory
+import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
 import scala.collection.mutable
@@ -10,63 +11,31 @@ import scala.util.{Try, Failure, Success}
 import ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 
-class ClientActor(id:Int) extends Actor {
+class ClientActor(id: Int) extends Actor {
 
-  var myPosts = mutable.HashMap[Int,Post]()
-  var myPictures = mutable.HashMap[Int,Picture]()
-  var myAlbums = mutable.HashMap[Int,Album]()
-  var myFriendLists = mutable.HashMap[Int,FriendList]()
-  var myPages = mutable.HashMap[Int,Page]()
+  var myPosts = mutable.HashMap[Int, Post]()
+  var myPictures = mutable.HashMap[Int, Picture]()
+  var myAlbums = mutable.HashMap[Int, Album]()
+  var myFriendLists = mutable.HashMap[Int, FriendList]()
+  var myPages = mutable.HashMap[Int, Page]()
+
+  var me:User = _
 
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
-  lazy val serviceHost = Try(config.getInt("service.host")).getOrElse("localhost")
+  lazy val serviceHost = Try(config.getString("service.host")).getOrElse("localhost")
 
   import context.dispatcher
 
   def receive = {
     case true =>
-      val pipeline = sendReceive ~> unmarshal[Post]
+      putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,"message"+id,link),true)
 
-      val postFuture = pipeline{
-        val newPost = Objects.Post(id=id, creator=456, createdTime="now", from=456, message="testpost", postType=link)
-        pipelining.Put("http://localhost:8080/post", newPost)
-      }
-
-      postFuture onComplete{
-        case Success(post:Post) =>
-          println("Posted the post", post)
-
-          val getFuture = pipeline {
-            pipelining.Get("http://localhost:8080/post/"+id)
-          }
-
-          getFuture onComplete {
-            case Success(post:Post) =>
-              println("Get post", post)
-
-
-            case Success(somethingUnexpected) =>
-              println("Unexpected return", somethingUnexpected)
-
-
-            case Failure(error) =>
-              println(error, "Couldn't get post")
-          }
-
-
-        case Success(somethingUnexpected) =>
-          println("Unexpected return", somethingUnexpected)
-
-
-        case Failure(error) =>
-          println(error, "Couldn't post post")
-      }
   }
 
 
-  def getObject(objType:String, id:Int){
-    val pipeline = objType match{
+  def getOrDeleteObject(objType: String, id: Int, getOrDelete: Boolean) {
+    val pipeline = objType match {
       case "Post" =>
         sendReceive ~> unmarshal[Objects.Post]
       case "Album" =>
@@ -81,28 +50,139 @@ class ClientActor(id:Int) extends Actor {
         sendReceive ~> unmarshal[Page]
     }
 
-    val getFuture = pipeline {
-      pipelining.Get("http://" + serviceHost + ":" + servicePort + "/"+ objType.toLowerCase +"/"+id)
+    val future = getOrDelete match {
+      case true =>
+        pipeline {
+          pipelining.Get("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase + "/" + id)
+        }
+      case false =>
+        pipeline {
+          pipelining.Delete("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase + "/" + id)
+        }
     }
 
-    getFuture onComplete {
-      case Success(obj:Object) =>
-        println("Get " + objType, obj)
+    future onComplete {
+      case Success(obj: Object) =>
+        //println(if (getOrDelete) "Get " else "Delete" + objType, obj)
 
       case Success(somethingUnexpected) =>
         println("Unexpected return", somethingUnexpected)
 
       case Failure(error) =>
-        println(error, "Couldn't get " + objType)
+        println(error, "Couldn't " + (if (getOrDelete) "get " else "delete ") + objType)
     }
   }
 
-  def deleteObject(objType:String, id:Int){
+  def putOrPostObject(obj: Any, putOrPost: Boolean) {
+    val (pipeline, objType) = obj match {
+      case obj: Post =>
+        (sendReceive ~> unmarshal[Objects.Post], "Post")
+      case obj: Album =>
+        (sendReceive ~> unmarshal[Objects.Album], "Album")
+      case obj: Picture =>
+        (sendReceive ~> unmarshal[Objects.Picture], "Picture")
+      case obj: FriendList =>
+        (sendReceive ~> unmarshal[Objects.FriendList], "FriendList")
+      case obj: User =>
+        (sendReceive ~> unmarshal[Objects.User], "User")
+      case obj: Page =>
+        (sendReceive ~> unmarshal[Page], "Page")
+    }
 
+    // TODO: Uglyness. Is there way to determine type outside case?
+    val future = obj match{
+      case obj: Post =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+
+      case obj: Album =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+      case obj: Picture =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+      case obj: FriendList =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+      case obj: User =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+      case obj: Page =>
+        putOrPost match {
+          case true =>
+            pipeline {
+              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+          case false =>
+            pipeline {
+              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
+            }
+        }
+    }
+
+    future onComplete {
+      case Success(obj: Object) =>
+//        println(if (putOrPost) "Put " else "Post " + objType, obj)
+
+        if(obj.isInstanceOf[Post])
+          myPosts.put(obj.asInstanceOf[Post].id, obj.asInstanceOf[Post])
+        else if(obj.isInstanceOf[Album])
+          myAlbums.put(obj.asInstanceOf[Album].id, obj.asInstanceOf[Album])
+        else if(obj.isInstanceOf[FriendList])
+          myFriendLists.put(obj.asInstanceOf[FriendList].id, obj.asInstanceOf[FriendList])
+        else if(obj.isInstanceOf[Page])
+          myPages.put(obj.asInstanceOf[Page].id, obj.asInstanceOf[Page])
+        else if(obj.isInstanceOf[Picture])
+          myPictures.put(obj.asInstanceOf[Picture].id, obj.asInstanceOf[Picture])
+        else if(obj.isInstanceOf[User])
+          me = obj.asInstanceOf[User]
+
+      case Success(somethingUnexpected) =>
+        println("Unexpected return", somethingUnexpected)
+
+      case Failure(error) =>
+        println(error, "Couldn't " + (if (putOrPost) "put " else "post ") + objType)
+    }
   }
-
-  def postObject(obj:Object, id:Int){
-
-  }
-
 }
+

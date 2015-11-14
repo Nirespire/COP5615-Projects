@@ -1,13 +1,18 @@
+package Server
+
 import Messages._
 import Objects.Post
 import akka.actor.Actor
 import spray.json._
-import scala.collection.mutable
 import Objects.ObjectJsonSupport._
 
-class StorageActor extends Actor {
+import scala.collection.mutable
+
+class PostStorageActor extends Actor {
 
   var posts = mutable.HashMap[Int,Post]()
+
+  var numPosts = 0
 
   def receive = {
     case GetPost(rc, id) =>
@@ -19,8 +24,10 @@ class StorageActor extends Actor {
       }
 
     case CreatePost(rc,post) =>
-      posts.put(post.id, post)
-      rc.complete(post.toJson.compactPrint)
+      val newPost = Post(numPosts, post.creator,post.createdTime,post.from,post.message,post.postType)
+      posts.put(numPosts, newPost)
+      numPosts += 1
+      rc.complete(newPost.toJson.compactPrint)
 
     case UpdatePost(rc,post) =>
       if(posts.contains(post.id)) {

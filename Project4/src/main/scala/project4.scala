@@ -1,3 +1,4 @@
+import Server.RootService
 import akka.actor.{ActorLogging, Actor, ActorSystem, Props}
 import akka.io.IO
 import com.typesafe.config.ConfigFactory
@@ -11,6 +12,7 @@ object Project4 extends App {
 
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
+  lazy val serviceHost = Try(config.getString("service.host")).getOrElse("localhost")
 
   // Start up actor system for server
   implicit val serverSystem = ActorSystem("fb-spray-system")
@@ -18,17 +20,20 @@ object Project4 extends App {
   implicit val timeout = Timeout(5.seconds)
 
   // start a new HTTP server on port 8080 with our service actor as the handler
-  IO(Http) ? Http.Bind(service, interface = "localhost", port = servicePort)
+  IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
   Thread.sleep(5000)
 
-//  // Start up actor system of clients
-//  val clientSystem = ActorSystem("fb-spray-system")
-//  //val client = clientSystem.actorOf(Props[Client.ClientActor], "client-actor")
-//
-//  (1 to 1000).foreach { idx =>
-//    clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client"+idx) ! true
-//  }
+  println("Start clients!")
+
+  // Start up actor system of clients
+  val clientSystem = ActorSystem("client-spray-system")
+
+  (1 to 100000).foreach { idx =>
+    clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client"+idx) ! true
+  }
+
+  println("End Loop")
 
 }
 
