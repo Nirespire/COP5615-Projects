@@ -1,5 +1,7 @@
 package Client
 
+import java.io.InputStream
+
 import Objects._
 import akka.actor.Actor
 import com.typesafe.config.ConfigFactory
@@ -7,9 +9,10 @@ import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
 import scala.collection.mutable
-import scala.util.{Try, Failure, Success}
+import scala.util.{Random, Try, Failure, Success}
 import ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
+import Client.Resources.statuses
 
 class ClientActor(id: Int) extends Actor {
 
@@ -29,7 +32,7 @@ class ClientActor(id: Int) extends Actor {
 
   def receive = {
     case true =>
-      putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,"message"+id,link),true)
+      putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,statuses(Random.nextInt(statuses.length)),status),true)
 
   }
 
