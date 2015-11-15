@@ -1,13 +1,16 @@
 package Objects
 
-import spray.httpx.SprayJsonSupport
-import spray.json._
+import akka.actor.Actor
 
 
-case class Page (
-                 id:Int,
-                 about:String,
-                 category:String,
-                 cover:Int,
-                 likes:Int
-               ) extends Profile
+case class Page(
+                 id: Int,
+                 about: String,
+                 category: String,
+                 cover: Int,
+                 likes: Int
+                 ) extends Actor {
+  def receive = {
+    case _ =>
+  }
+}

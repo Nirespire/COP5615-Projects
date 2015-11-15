@@ -1,12 +1,14 @@
 package Server
 
-import Server.Messages.{CreatePost, DeletePost, GetPost, UpdatePost}
+import Objects.ObjectTypes.PostType
+import Objects.{Post, User}
 import Objects.ObjectJsonSupport._
-import Objects.Post
+import Server.Actors.UserActor
+import Server.Messages._
 import akka.actor.Props
 import akka.util.Timeout
+import org.joda.time.DateTime
 import spray.http.MediaTypes.`application/json`
-import spray.http._
 import spray.routing._
 
 import scala.concurrent.duration._
@@ -23,6 +25,36 @@ trait RootService extends HttpService {
 
   val myRoute =
     respondWithMediaType(`application/json`) {
+      put {
+        path("user") {
+          parameters('id, 'about, 'birthday, 'gender, 'firstname, 'lastname) {
+            (id, about, birthday, gender, firstname, lastname) =>
+              requestContext =>
+                try {
+                  val user = User(id.toInt, about, birthday, gender.last, firstname, lastname)
+                  actorRefFactory.actorOf(Props(new UserActor(user)), name = s"user$id")
+                  requestContext.complete(ResponseMessage(s"user $id created").toJson.compactPrint)
+                } catch {
+                  case e: Throwable =>
+                    requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                }
+          }
+        } ~
+          path("post") {
+            parameters('creator, 'from, 'message, 'ps) {
+              (creator, from, message, ps) =>
+                requestContext =>
+                  try {
+                    actorRefFactory.actorSelection(s"user$creator") ! Post(-1, new DateTime().toString, from.toInt, message, PostType.withName(ps))
+                    requestContext.complete(ResponseMessage(s"Added post to $creator").toJson.compactPrint)
+                  } catch {
+                    case e: Throwable =>
+                      requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                  }
+            }
+          }
+      }
+      /*
       // Update existing post
       path("post") {
         post {
@@ -51,7 +83,6 @@ trait RootService extends HttpService {
               storageService ! DeletePost(requestContext, postId)
           }
         }
+      */
     }
-
-
 }

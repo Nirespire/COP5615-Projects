@@ -6,7 +6,6 @@ import spray.json._
 
 case class Post (
                   id:Int,
-                  creator:Int,
                   createdTime:String,
                   from:Int,
                   message:String,
