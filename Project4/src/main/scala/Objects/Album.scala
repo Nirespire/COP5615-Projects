@@ -1,21 +1,17 @@
 package Objects
 
 
-import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
-import org.joda.time.DateTime
-import spray.httpx.SprayJsonSupport
-import spray.json._
-
-
-case class Album (
-                   id:Int,
-                   from:Int,
-                   createdTime:String,
-                   updatedTime:String,
-                   coverPhoto:Int,
-                   description:String,
-                   pictures:Array[Int]
-                 )
+case class Album(
+                  var id: Int,
+                  from: Int,
+                  createdTime: String,
+                  updatedTime: String,
+                  coverPhoto: Int,
+                  description: String,
+                  pictures: Array[Int]
+                ) {
+  def updateId(newId: Int) = id = newId
+}
 
 //object DateJsonFormat extends RootJsonFormat[DateTime] {
 //

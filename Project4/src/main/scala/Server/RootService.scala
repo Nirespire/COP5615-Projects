@@ -1,16 +1,14 @@
 package Server
 
-import Objects.ObjectTypes.PostType
-import Objects.{Post, User}
 import Objects.ObjectJsonSupport._
+import Objects.{Album, Post, User}
 import Server.Actors.UserActor
 import Server.Messages._
 import akka.actor.Props
 import akka.util.Timeout
-import org.joda.time.DateTime
 import spray.http.MediaTypes.`application/json`
-import spray.routing._
 import spray.json._
+import spray.routing._
 
 import scala.concurrent.duration._
 
@@ -31,7 +29,7 @@ trait RootService extends HttpService {
           entity(as[User]) { user =>
             requestContext =>
               try {
-                actorRefFactory.actorOf(Props(new UserActor(user)), name = s"user${user.id}")
+                actorRefFactory.actorOf(Props(new UserActor(user)), name = s"${user.id}")
                 requestContext.complete(ResponseMessage(s"user ${user.id} created").toJson.compactPrint)
               } catch {
                 case e: Throwable =>
@@ -43,12 +41,25 @@ trait RootService extends HttpService {
             entity(as[Post]) { post =>
               requestContext =>
                 try {
-                  actorRefFactory.actorSelection(s"user${post.creator}") ! post
+                  actorRefFactory.actorSelection(s"${post.creator}") ! post
                   requestContext.complete(ResponseMessage(s"Added post to ${post.creator}").toJson.compactPrint)
                 } catch {
                   case e: Throwable =>
                     requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
+            }
+          } ~
+          path("album") {
+            entity(as[Album]) { album =>
+              requestContext =>
+                try {
+                  actorRefFactory.actorSelection(s"${album.from}") ! album
+                  requestContext.complete(ResponseMessage(s"Added post to ${album.from}").toJson.compactPrint)
+                } catch {
+                  case e: Throwable =>
+                    requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                }
+
             }
           }
       }
