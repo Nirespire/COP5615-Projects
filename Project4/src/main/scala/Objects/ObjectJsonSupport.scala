@@ -5,7 +5,7 @@ import spray.httpx.SprayJsonSupport
 import spray.json.DefaultJsonProtocol
 
 object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val PostJsonFormat = jsonFormat5(Post)
+  implicit val PostJsonFormat = jsonFormat6(Post)
   implicit val AlbumJsonFormat = jsonFormat7(Album)
   implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
   implicit val FriendListJsonFormat = jsonFormat4(FriendList)

@@ -10,6 +10,7 @@ import akka.util.Timeout
 import org.joda.time.DateTime
 import spray.http.MediaTypes.`application/json`
 import spray.routing._
+import spray.json._
 
 import scala.concurrent.duration._
 
@@ -27,30 +28,27 @@ trait RootService extends HttpService {
     respondWithMediaType(`application/json`) {
       put {
         path("user") {
-          parameters('id, 'about, 'birthday, 'gender, 'firstname, 'lastname) {
-            (id, about, birthday, gender, firstname, lastname) =>
+          entity(as[User]) { user =>
+            requestContext =>
+              try {
+                actorRefFactory.actorOf(Props(new UserActor(user)), name = s"user${user.id}")
+                requestContext.complete(ResponseMessage(s"user ${user.id} created").toJson.compactPrint)
+              } catch {
+                case e: Throwable =>
+                  requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+              }
+          }
+        } ~
+          path("post") {
+            entity(as[Post]) { post =>
               requestContext =>
                 try {
-                  val user = User(id.toInt, about, birthday, gender.last, firstname, lastname)
-                  actorRefFactory.actorOf(Props(new UserActor(user)), name = s"user$id")
-                  requestContext.complete(ResponseMessage(s"user $id created").toJson.compactPrint)
+                  actorRefFactory.actorSelection(s"user${post.creator}") ! post
+                  requestContext.complete(ResponseMessage(s"Added post to ${post.creator}").toJson.compactPrint)
                 } catch {
                   case e: Throwable =>
                     requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
-          }
-        } ~
-          path("post") {
-            parameters('creator, 'from, 'message, 'ps) {
-              (creator, from, message, ps) =>
-                requestContext =>
-                  try {
-                    actorRefFactory.actorSelection(s"user$creator") ! Post(-1, new DateTime().toString, from.toInt, message, PostType.withName(ps))
-                    requestContext.complete(ResponseMessage(s"Added post to $creator").toJson.compactPrint)
-                  } catch {
-                    case e: Throwable =>
-                      requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-                  }
             }
           }
       }
