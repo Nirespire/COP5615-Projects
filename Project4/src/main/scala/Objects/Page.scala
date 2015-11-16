@@ -9,8 +9,4 @@ case class Page(
                  category: String,
                  cover: Int,
                  likes: Int
-                 ) extends Actor {
-  def receive = {
-    case _ =>
-  }
-}
+                 )

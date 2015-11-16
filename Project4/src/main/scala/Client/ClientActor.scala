@@ -35,10 +35,10 @@ class ClientActor(id: Int) extends Actor {
   def receive = {
     // Create a user profile for self
     case true =>
-//      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
-//      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
-//
-//    case MakePost =>
+      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
+      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
+
+    case MakePost =>
       putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,statuses(Random.nextInt(statuses.length)),status),true)
 
   }

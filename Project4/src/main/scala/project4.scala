@@ -22,7 +22,7 @@ object Project4 extends App {
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
-  /*
+
   Thread.sleep(1000)
 
   println("Start clients!")
@@ -35,7 +35,7 @@ object Project4 extends App {
   }
 
   println("End Loop")
-*/
+
 }
 
 class RootServerActor extends Actor with RootService with ActorLogging {
