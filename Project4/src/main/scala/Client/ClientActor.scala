@@ -37,6 +37,10 @@ class ClientActor(id: Int) extends Actor {
       //
       //    case MakePost =>
       putOrPostObject(Objects.Post(BaseObject(), id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
+      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
+
+    case MakePost =>
+      putOrPostObject(Objects.Post(BaseObject(), id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
 
   }
 
