@@ -1,5 +1,6 @@
 package Client
 
+import Client.Messages.MakePost
 import Client.Resources.statuses
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
@@ -11,6 +12,7 @@ import spray.client.pipelining
 import spray.client.pipelining._
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.util.{Failure, Random, Success, Try}
 
 class ClientActor(id: Int) extends Actor {
