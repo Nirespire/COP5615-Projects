@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 
 trait RootService extends HttpService {
 
+  var profiles: Int = 0
 
   implicit def executionContext = actorRefFactory.dispatcher
 
@@ -26,11 +27,12 @@ trait RootService extends HttpService {
           entity(as[User]) { user =>
             requestContext =>
               try {
+                user.b.updateId(profiles)
+                profiles += 1
                 actorRefFactory.actorOf(Props(new UserActor(user)), name = s"${user.b.id}")
                 requestContext.complete(ResponseMessage(s"user ${user.b.id} created").toJson.compactPrint)
               } catch {
-                case e: Throwable =>
-                  requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
               }
           }
         } ~
@@ -41,8 +43,7 @@ trait RootService extends HttpService {
                   actorRefFactory.actorSelection(s"${post.creator}") ! post
                   requestContext.complete(ResponseMessage(s"Added post to ${post.creator}").toJson.compactPrint)
                 } catch {
-                  case e: Throwable =>
-                    requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                  case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
             }
           } ~
