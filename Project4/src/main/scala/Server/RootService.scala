@@ -18,7 +18,7 @@ trait RootService extends HttpService {
 
   implicit def executionContext = actorRefFactory.dispatcher
 
-  implicit val timeout = Timeout(5 seconds)
+  implicit val timeout = Timeout(500 milli)
 
   val myRoute =
     respondWithMediaType(`application/json`) {
@@ -54,8 +54,7 @@ trait RootService extends HttpService {
                   actorRefFactory.actorSelection(s"${album.from}") ! album
                   requestContext.complete(ResponseMessage(s"Added album to ${album.from}").toJson.compactPrint)
                 } catch {
-                  case e: Throwable =>
-                    requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                  case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
 
             }
@@ -65,10 +64,9 @@ trait RootService extends HttpService {
           path("user" / IntNumber) { pid =>
             requestContext =>
               try {
-                actorRefFactory.actorSelection(s"$pid") ! GetPost(requestContext, pid)
+                actorRefFactory.actorSelection(s"$pid") ! GetUser(requestContext)
               } catch {
-                case e: Throwable =>
-                  requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+                case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
               }
           }
         }

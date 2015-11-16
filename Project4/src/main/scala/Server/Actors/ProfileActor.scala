@@ -1,6 +1,7 @@
 package Server.Actors
 
 import Objects.{Album, Post}
+import Server.Messages.GetPost
 import akka.actor.Actor
 
 import scala.collection.mutable
