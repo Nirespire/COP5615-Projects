@@ -1,3 +1,3 @@
 package Server.Messages
 
-case class ResponseMessage(message:String)
+case class ResponseMessage(message: String)

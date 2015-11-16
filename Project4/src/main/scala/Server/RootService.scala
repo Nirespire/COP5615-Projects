@@ -14,13 +14,10 @@ import scala.concurrent.duration._
 
 trait RootService extends HttpService {
 
-  val storage = actorRefFactory.actorOf(Props[PostStorageActor], "storage")
 
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val timeout = Timeout(5 seconds)
-
-  val storageService = actorRefFactory.actorOf(Props(new PostStorageActor()))
 
   val myRoute =
     respondWithMediaType(`application/json`) {
@@ -29,8 +26,8 @@ trait RootService extends HttpService {
           entity(as[User]) { user =>
             requestContext =>
               try {
-                actorRefFactory.actorOf(Props(new UserActor(user)), name = s"${user.id}")
-                requestContext.complete(ResponseMessage(s"user ${user.id} created").toJson.compactPrint)
+                actorRefFactory.actorOf(Props(new UserActor(user)), name = s"${user.b.id}")
+                requestContext.complete(ResponseMessage(s"user ${user.b.id} created").toJson.compactPrint)
               } catch {
                 case e: Throwable =>
                   requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
@@ -54,7 +51,7 @@ trait RootService extends HttpService {
               requestContext =>
                 try {
                   actorRefFactory.actorSelection(s"${album.from}") ! album
-                  requestContext.complete(ResponseMessage(s"Added post to ${album.from}").toJson.compactPrint)
+                  requestContext.complete(ResponseMessage(s"Added album to ${album.from}").toJson.compactPrint)
                 } catch {
                   case e: Throwable =>
                     requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
@@ -62,36 +59,47 @@ trait RootService extends HttpService {
 
             }
           }
-      }
-      /*
-      // Update existing post
-      path("post") {
-        post {
-          entity(as[Post]) { post =>
-            requestContext =>
-              storageService ! UpdatePost(requestContext, post)
-          }
-        }
       } ~
-        // Create a new Post
-        put {
-          entity(as[Post]) { post =>
+        get {
+          path("user" / IntNumber) { pid =>
             requestContext =>
-              storageService ! CreatePost(requestContext, post)
-          }
-        } ~
-        path("post" / IntNumber) { (postId) =>
-          // Get an existing post
-          get {
-            requestContext =>
-              storageService ! GetPost(requestContext, postId)
-          } ~
-          // Delete existing post
-          delete {
-            requestContext =>
-              storageService ! DeletePost(requestContext, postId)
+              try {
+                actorRefFactory.actorSelection(s"$pid") ! GetPost(requestContext, pid)
+              } catch {
+                case e: Throwable =>
+                  requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+              }
           }
         }
-      */
     }
+  /*
+  // Update existing post
+  path("post") {
+    post {
+      entity(as[Post]) { post =>
+        requestContext =>
+          storageService ! UpdatePost(requestContext, post)
+      }
+    }
+  } ~
+    // Create a new Post
+    put {
+      entity(as[Post]) { post =>
+        requestContext =>
+          storageService ! CreatePost(requestContext, post)
+      }
+    } ~
+    path("post" / IntNumber) { (postId) =>
+      // Get an existing post
+      get {
+        requestContext =>
+          storageService ! GetPost(requestContext, postId)
+      } ~
+      // Delete existing post
+      delete {
+        requestContext =>
+          storageService ! DeletePost(requestContext, postId)
+      }
+    }
+  */
 }

@@ -15,4 +15,5 @@ object ListType extends Enumeration {
       case _ => throw new DeserializationException("Enum string expected")
     }
   }
+
 }

@@ -1,8 +1,8 @@
 package Objects.ObjectTypes
 
-import spray.json.{JsValue, JsString, RootJsonFormat, DeserializationException}
+import spray.json.{DeserializationException, JsString, JsValue, RootJsonFormat}
 
-object PostType extends Enumeration{
+object PostType extends Enumeration {
   type PostType = Value
   val link, status, photo = Value
 
@@ -14,6 +14,7 @@ object PostType extends Enumeration{
       case _ => throw new DeserializationException("Enum string expected")
     }
   }
+
 }
 
 

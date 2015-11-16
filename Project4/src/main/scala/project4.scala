@@ -1,14 +1,15 @@
-import Server.RootService
-import akka.actor.{ActorLogging, Actor, ActorSystem, Props}
+import Server.Actors.RootServerActor
+import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.typesafe.config.ConfigFactory
-import spray.can.Http
 import akka.pattern.ask
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
+import spray.can.Http
+
 import scala.concurrent.duration._
 import scala.util.Try
 
-object Project4 extends App {
+object project4 extends App {
 
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
@@ -36,10 +37,4 @@ object Project4 extends App {
 
   println("End Loop")
 */
-}
-
-class RootServerActor extends Actor with RootService with ActorLogging {
-  def actorRefFactory = context
-
-  def receive = runRoute(myRoute)
 }

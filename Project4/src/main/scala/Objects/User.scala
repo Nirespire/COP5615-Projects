@@ -1,8 +1,6 @@
 package Objects
 
-import akka.actor.Actor
-
-case class User(id: Int,
+case class User(b: BaseObject,
                 about: String,
                 birthday: String,
                 gender: Char,

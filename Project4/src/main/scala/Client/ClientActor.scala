@@ -1,20 +1,17 @@
 package Client
 
-import java.io.InputStream
-
-import Client.Messages.MakePost
+import Client.Resources.statuses
+import Objects.ObjectJsonSupport._
+import Objects.ObjectTypes.PostType._
 import Objects._
 import akka.actor.Actor
 import com.typesafe.config.ConfigFactory
-import scala.concurrent.duration._
 import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
+
 import scala.collection.mutable
-import scala.util.{Random, Try, Failure, Success}
-import ObjectJsonSupport._
-import Objects.ObjectTypes.PostType._
-import Client.Resources.statuses
+import scala.util.{Failure, Random, Success, Try}
 
 class ClientActor(id: Int) extends Actor {
 
@@ -24,7 +21,7 @@ class ClientActor(id: Int) extends Actor {
   var myFriendLists = mutable.HashMap[Int, FriendList]()
   var myPages = mutable.HashMap[Int, Page]()
 
-  var me:User = _
+  var me: User = _
 
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
@@ -35,11 +32,11 @@ class ClientActor(id: Int) extends Actor {
   def receive = {
     // Create a user profile for self
     case true =>
-//      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
-//      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
-//
-//    case MakePost =>
-      putOrPostObject(Objects.Post(-1,id,new DateTime().toString(),id,statuses(Random.nextInt(statuses.length)),status),true)
+      //      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
+      //      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
+      //
+      //    case MakePost =>
+      putOrPostObject(Objects.Post(BaseObject(), id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
 
   }
 
@@ -73,7 +70,7 @@ class ClientActor(id: Int) extends Actor {
 
     future onComplete {
       case Success(obj: Object) =>
-        //println(if (getOrDelete) "Get " else "Delete" + objType, obj)
+      //println(if (getOrDelete) "Get " else "Delete" + objType, obj)
 
       case Success(somethingUnexpected) =>
         println("Unexpected return", somethingUnexpected)
@@ -100,7 +97,7 @@ class ClientActor(id: Int) extends Actor {
     }
 
     // TODO: Uglyness. Is there way to determine type outside case?
-    val future = obj match{
+    val future = obj match {
       case obj: Post =>
         putOrPost match {
           case true =>
@@ -172,19 +169,19 @@ class ClientActor(id: Int) extends Actor {
 
     future onComplete {
       case Success(obj: Object) =>
-//        println(if (putOrPost) "Put " else "Post " + objType, obj)
+        //        println(if (putOrPost) "Put " else "Post " + objType, obj)
 
-        if(obj.isInstanceOf[Post])
-          myPosts.put(obj.asInstanceOf[Post].id, obj.asInstanceOf[Post])
-        else if(obj.isInstanceOf[Album])
-          myAlbums.put(obj.asInstanceOf[Album].id, obj.asInstanceOf[Album])
-        else if(obj.isInstanceOf[FriendList])
+        if (obj.isInstanceOf[Post])
+          myPosts.put(obj.asInstanceOf[Post].b.id, obj.asInstanceOf[Post])
+        else if (obj.isInstanceOf[Album])
+          myAlbums.put(obj.asInstanceOf[Album].b.id, obj.asInstanceOf[Album])
+        else if (obj.isInstanceOf[FriendList])
           myFriendLists.put(obj.asInstanceOf[FriendList].id, obj.asInstanceOf[FriendList])
-        else if(obj.isInstanceOf[Page])
-          myPages.put(obj.asInstanceOf[Page].id, obj.asInstanceOf[Page])
-        else if(obj.isInstanceOf[Picture])
-          myPictures.put(obj.asInstanceOf[Picture].id, obj.asInstanceOf[Picture])
-        else if(obj.isInstanceOf[User])
+        else if (obj.isInstanceOf[Page])
+          myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
+        else if (obj.isInstanceOf[Picture])
+          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
+        else if (obj.isInstanceOf[User])
           me = obj.asInstanceOf[User]
 
       case Success(somethingUnexpected) =>
