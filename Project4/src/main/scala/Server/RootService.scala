@@ -30,7 +30,8 @@ trait RootService extends HttpService {
                 user.b.updateId(profiles)
                 profiles += 1
                 actorRefFactory.actorOf(Props(new UserActor(user)), name = s"${user.b.id}")
-                requestContext.complete(ResponseMessage(s"user ${user.b.id} created").toJson.compactPrint)
+                //requestContext.complete(ResponseMessage(s"user ${user.b.id} created").toJson.compactPrint)
+                requestContext.complete(user)
               } catch {
                 case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
               }
@@ -41,7 +42,8 @@ trait RootService extends HttpService {
               requestContext =>
                 try {
                   actorRefFactory.actorSelection(s"${post.creator}") ! post
-                  requestContext.complete(ResponseMessage(s"Added post to ${post.creator}").toJson.compactPrint)
+                  //requestContext.complete(ResponseMessage(s"Added post to ${post.creator}").toJson.compactPrint)
+                  requestContext.complete(post)
                 } catch {
                   case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
@@ -52,7 +54,8 @@ trait RootService extends HttpService {
               requestContext =>
                 try {
                   actorRefFactory.actorSelection(s"${album.from}") ! album
-                  requestContext.complete(ResponseMessage(s"Added album to ${album.from}").toJson.compactPrint)
+                  //requestContext.complete(ResponseMessage(s"Added album to ${album.from}").toJson.compactPrint)
+                  requestContext.complete(album)
                 } catch {
                   case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
                 }
@@ -60,16 +63,16 @@ trait RootService extends HttpService {
             }
           }
       } ~
-        get {
-          path("user" / IntNumber) { pid =>
-            requestContext =>
-              try {
-                actorRefFactory.actorSelection(s"$pid") ! GetUser(requestContext)
-              } catch {
-                case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-              }
-          }
+      get {
+        path("user" / IntNumber) { pid =>
+          requestContext =>
+            try {
+              actorRefFactory.actorSelection(s"$pid") ! GetUser(requestContext)
+            } catch {
+              case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+            }
         }
+      }
     }
   /*
   // Update existing post

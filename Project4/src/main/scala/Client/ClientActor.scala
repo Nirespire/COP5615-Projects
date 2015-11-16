@@ -1,15 +1,17 @@
 package Client
 
-import Client.Messages.MakePost
+import Client.Messages.{MakeAlbum, MakePost}
 import Client.Resources.statuses
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
+import Server.Messages.ResponseMessage
 import akka.actor.Actor
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
+import spray.json._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -34,15 +36,19 @@ class ClientActor(id: Int) extends Actor {
   def receive = {
     // Create a user profile for self
     case true =>
-      //      putOrPostObject(User(-1,"about","04-25-1994",'M',"Sanjay","Nair"), true)
-      //      context.system.scheduler.scheduleOnce(1 second, self, MakePost)
-      //
-      //    case MakePost =>
-      putOrPostObject(Objects.Post(BaseObject(), id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
+      putOrPostObject(User(b=BaseObject(), "about", "04-25-1994", 'M', "Sanjay", "Nair"), true)
+      context.system.scheduler.scheduleOnce(1 second, self, false)
+
+    case false =>
+      getOrDeleteObject("User",me.b.id, true)
       context.system.scheduler.scheduleOnce(1 second, self, MakePost)
 
     case MakePost =>
-      putOrPostObject(Objects.Post(BaseObject(), id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
+      putOrPostObject(Objects.Post(b=BaseObject(), me.b.id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
+      context.system.scheduler.scheduleOnce(1 second, self, MakeAlbum)
+
+    case MakeAlbum =>
+      putOrPostObject(Objects.Album(b=BaseObject(),me.b.id,new DateTime().toString(),new DateTime().toString(),-1,"My new Album", Array[Int]()), true)
 
   }
 
@@ -76,7 +82,7 @@ class ClientActor(id: Int) extends Actor {
 
     future onComplete {
       case Success(obj: Object) =>
-      //println(if (getOrDelete) "Get " else "Delete" + objType, obj)
+        println(if (getOrDelete) "Get " else "Delete" + objType, obj)
 
       case Success(somethingUnexpected) =>
         println("Unexpected return", somethingUnexpected)
@@ -187,8 +193,12 @@ class ClientActor(id: Int) extends Actor {
           myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
         else if (obj.isInstanceOf[Picture])
           myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
-        else if (obj.isInstanceOf[User])
+        else if (obj.isInstanceOf[User]) {
           me = obj.asInstanceOf[User]
+          println("registered as user " + me.b.id)
+        }
+        else if (obj.isInstanceOf[ResponseMessage])
+          println("Response: " + obj.asInstanceOf[ResponseMessage].message)
 
       case Success(somethingUnexpected) =>
         println("Unexpected return", somethingUnexpected)
