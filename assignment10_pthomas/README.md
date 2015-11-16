@@ -8,7 +8,7 @@ A simulation of how mapreduce steps are executed, this example show wordcount us
 
 First the file is split into 60KB files and placed in input folder, this is to represent the splitting on files on DFS
 
-A map thread is called on each split of the file, this emits a <key, value> output.
+A map thread is called on each split of the file, this emits a [key, value] output.
 
 Based on the key, the output is sent to one of the reducers.
 
