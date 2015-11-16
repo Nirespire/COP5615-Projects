@@ -1,6 +1,6 @@
 package Objects
 
-import Server.Messages.ResponseMessage
+import Server.Messages.{DebugMessage, ResponseMessage}
 import spray.httpx.SprayJsonSupport
 import spray.json.DefaultJsonProtocol
 
@@ -13,4 +13,5 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val PageJsonFormat = jsonFormat4(Page)
   implicit val PictureJsonFormat = jsonFormat4(Picture)
   implicit val UserJsonFormat = jsonFormat6(User)
+  implicit val DebugMessageJsonFormat = jsonFormat4(DebugMessage)
 }

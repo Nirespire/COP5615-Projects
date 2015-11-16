@@ -30,7 +30,7 @@ object project4 extends App {
   // Start up actor system of clients
   val clientSystem = ActorSystem("client-spray-system")
 
-  (1 to 10).foreach { idx =>
+  (1 to 10000).foreach { idx =>
     clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client" + idx) ! true
   }
 
