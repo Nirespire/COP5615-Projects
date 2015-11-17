@@ -60,9 +60,9 @@ class ClientActor(id: Int) extends Actor {
       putOrPostObject(Objects.Album(b=BaseObject(),me.b.id,new DateTime().toString(),new DateTime().toString(),-1,"My new Album", Array[Int]()), true)
       context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
-    case MakeFriendList =>
-      putOrPostObject(Objects.FriendList(-1,me.b.id,Array[Int](),close_friends), true)
-      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
+//    case MakeFriendList =>
+//      putOrPostObject(Objects.FriendList(-1,me.b.id,Array[Int](),close_friends), true)
+//      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
 
 
   }
@@ -203,7 +203,7 @@ class ClientActor(id: Int) extends Actor {
         else if (obj.isInstanceOf[Album])
           myAlbums.put(obj.asInstanceOf[Album].b.id, obj.asInstanceOf[Album])
         else if (obj.isInstanceOf[FriendList])
-          myFriendLists.put(obj.asInstanceOf[FriendList].id, obj.asInstanceOf[FriendList])
+          myFriendLists.put(obj.asInstanceOf[FriendList].owner, obj.asInstanceOf[FriendList])
         else if (obj.isInstanceOf[Page])
           myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
         else if (obj.isInstanceOf[Picture])

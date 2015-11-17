@@ -1,14 +1,18 @@
 package Server.Actors
 
+import Objects.ObjectTypes.ListType.ListType
 import Objects.User
+import spray.routing.RequestContext
 import Objects.ObjectJsonSupport._
-import Server.Messages.GetUser
 import spray.json._
 
-class UserActor(var user: User) extends ProfileActor {
+import scala.collection.mutable
+
+class UserActor(user: User) extends ProfileActor {
+  val friendsMap = mutable.Map[ListType, mutable.Set[Int]]()
+
   def userReceive: Receive = {
-    case newUser: User => user = newUser
-    case GetUser(rc) => rc.complete(user.toJson.compactPrint)
+    case rc: RequestContext => rc.complete(user)
     case _ =>
   }
 

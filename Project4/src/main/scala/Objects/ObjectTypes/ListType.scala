@@ -6,7 +6,6 @@ object ListType extends Enumeration {
   type ListType = Value
   val close_friends, acquaintances, restricted, user_created, education, work, current_city, family = Value
 
-
   implicit object ListTypeJsonFormat extends RootJsonFormat[ListType.ListType] {
     def write(obj: ListType.ListType): JsValue = JsString(obj.toString)
 

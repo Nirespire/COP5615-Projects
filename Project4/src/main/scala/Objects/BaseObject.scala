@@ -1,10 +1,14 @@
 package Objects
 
-import scala.Array._
+import scala.collection.mutable
 
-case class BaseObject(var id: Int = -1, val likes: Array[Int] = Array()) {
+case class BaseObject(var id: Int = -1) {
+
+  val likes = mutable.Set[Int]()
 
   def updateId(newId: Int) = id = newId
 
-  def appendLikes(pids: Array[Int]) = concat(likes, pids)
+  def appendLike(pid: Int) = {
+    likes.add(pid)
+  }
 }

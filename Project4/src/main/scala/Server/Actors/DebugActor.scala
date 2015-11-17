@@ -29,7 +29,7 @@ class DebugActor extends Actor {
       friendlists += 1
 
     case GetServerInfo(rc: RequestContext) =>
-      rc.complete(DebugMessage(profiles,posts,albums,friendlists).toJson.compactPrint)
+      rc.complete(DebugMessage(profiles, posts, albums, friendlists).toJson.compactPrint)
 
     case _ =>
 

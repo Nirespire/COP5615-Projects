@@ -35,4 +35,7 @@ object project4 extends App {
   }
 
   println("End Loop")
+
+  Thread.sleep(180000)
+  clientSystem.shutdown()
 }
