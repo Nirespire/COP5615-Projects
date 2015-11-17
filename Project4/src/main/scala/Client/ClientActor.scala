@@ -7,7 +7,7 @@ import Objects.ObjectTypes.PostType._
 import Objects.ObjectTypes.ListType._
 import Objects._
 import Server.Messages.ResponseMessage
-import akka.actor.Actor
+import akka.actor.{ActorLogging, Actor}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import spray.client.pipelining
@@ -18,7 +18,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.{Failure, Random, Success, Try}
 
-class ClientActor(id: Int) extends Actor {
+class ClientActor(id: Int) extends Actor with ActorLogging {
 
   //  var myPosts = mutable.HashMap[Int, Post]()
   //  var myPictures = mutable.HashMap[Int, Picture]()
@@ -38,18 +38,18 @@ class ClientActor(id: Int) extends Actor {
     // Create a user profile for self
     case true =>
       putOrPostObject(User(b = BaseObject(), "about", "04-25-1994", 'M', "Sanjay", "Nair"), true)
-      context.system.scheduler.scheduleOnce(1 second, self, false)
+      context.system.scheduler.scheduleOnce(10 second, self, false)
 
     case false =>
       if (me == null) {
         context.system.scheduler.scheduleOnce(1 second, self, false)
       }
       else {
-        //        println("starting activity")
+//        log.info(me.b.id + " starting activity")
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
-        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
+//        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
       }
 
     case MakePost =>
@@ -204,7 +204,7 @@ class ClientActor(id: Int) extends Actor {
           //          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
         } else if (obj.isInstanceOf[User]) {
           me = obj.asInstanceOf[User]
-          //          println("registered as user " + me.b.id)
+//          log.info("registered as user " + me.b.id)
         } else if (obj.isInstanceOf[ResponseMessage])
           println("Response: " + obj.asInstanceOf[ResponseMessage].message)
 
