@@ -20,11 +20,11 @@ import scala.util.{Failure, Random, Success, Try}
 
 class ClientActor(id: Int) extends Actor {
 
-  var myPosts = mutable.HashMap[Int, Post]()
-  var myPictures = mutable.HashMap[Int, Picture]()
-  var myAlbums = mutable.HashMap[Int, Album]()
-  var myFriendLists = mutable.HashMap[Int, FriendList]()
-  var myPages = mutable.HashMap[Int, Page]()
+  //  var myPosts = mutable.HashMap[Int, Post]()
+  //  var myPictures = mutable.HashMap[Int, Picture]()
+  //  var myAlbums = mutable.HashMap[Int, Album]()
+  //  var myFriendLists = mutable.HashMap[Int, FriendList]()
+  //  var myPages = mutable.HashMap[Int, Page]()
 
   var me: User = _
 
@@ -37,15 +37,15 @@ class ClientActor(id: Int) extends Actor {
   def receive = {
     // Create a user profile for self
     case true =>
-      putOrPostObject(User(b=BaseObject(), "about", "04-25-1994", 'M', "Sanjay", "Nair"), true)
+      putOrPostObject(User(b = BaseObject(), "about", "04-25-1994", 'M', "Sanjay", "Nair"), true)
       context.system.scheduler.scheduleOnce(1 second, self, false)
 
     case false =>
-      if(me == null){
+      if (me == null) {
         context.system.scheduler.scheduleOnce(1 second, self, false)
       }
       else {
-//        println("starting activity")
+        //        println("starting activity")
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
@@ -53,16 +53,16 @@ class ClientActor(id: Int) extends Actor {
       }
 
     case MakePost =>
-      putOrPostObject(Objects.Post(b=BaseObject(), me.b.id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
+      putOrPostObject(Objects.Post(b = BaseObject(), me.b.id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
       context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
 
     case MakeAlbum =>
-      putOrPostObject(Objects.Album(b=BaseObject(),me.b.id,new DateTime().toString(),new DateTime().toString(),-1,"My new Album", Array[Int]()), true)
+      putOrPostObject(Objects.Album(b = BaseObject(), me.b.id, new DateTime().toString(), new DateTime().toString(), -1, "My new Album", Array[Int]()), true)
       context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
-//    case MakeFriendList =>
-//      putOrPostObject(Objects.FriendList(-1,me.b.id,Array[Int](),close_friends), true)
-//      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
+    //    case MakeFriendList =>
+    //      putOrPostObject(Objects.FriendList(-1,me.b.id,Array[Int](),close_friends), true)
+    //      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
 
 
   }
@@ -97,7 +97,7 @@ class ClientActor(id: Int) extends Actor {
 
     future onComplete {
       case Success(obj: Object) =>
-//        println(if (getOrDelete) "Get " else "Delete" + objType, obj)
+      //        println(if (getOrDelete) "Get " else "Delete" + objType, obj)
 
       case Success(somethingUnexpected) =>
         println("Unexpected return", somethingUnexpected)
@@ -109,18 +109,12 @@ class ClientActor(id: Int) extends Actor {
 
   def putOrPostObject(obj: Any, putOrPost: Boolean) {
     val (pipeline, objType) = obj match {
-      case obj: Post =>
-        (sendReceive ~> unmarshal[Objects.Post], "Post")
-      case obj: Album =>
-        (sendReceive ~> unmarshal[Objects.Album], "Album")
-      case obj: Picture =>
-        (sendReceive ~> unmarshal[Objects.Picture], "Picture")
-      case obj: FriendList =>
-        (sendReceive ~> unmarshal[Objects.FriendList], "FriendList")
-      case obj: User =>
-        (sendReceive ~> unmarshal[Objects.User], "User")
-      case obj: Page =>
-        (sendReceive ~> unmarshal[Page], "Page")
+      case obj: Post => (sendReceive ~> unmarshal[Objects.Post], "Post")
+      case obj: Album => (sendReceive ~> unmarshal[Objects.Album], "Album")
+      case obj: Picture => (sendReceive ~> unmarshal[Objects.Picture], "Picture")
+      case obj: FriendList => (sendReceive ~> unmarshal[Objects.FriendList], "FriendList")
+      case obj: User => (sendReceive ~> unmarshal[Objects.User], "User")
+      case obj: Page => (sendReceive ~> unmarshal[Page], "Page")
     }
 
     // TODO: Uglyness. Is there way to determine type outside case?
@@ -198,21 +192,20 @@ class ClientActor(id: Int) extends Actor {
       case Success(obj: Object) =>
         //        println(if (putOrPost) "Put " else "Post " + objType, obj)
 
-        if (obj.isInstanceOf[Post])
-          myPosts.put(obj.asInstanceOf[Post].b.id, obj.asInstanceOf[Post])
-        else if (obj.isInstanceOf[Album])
-          myAlbums.put(obj.asInstanceOf[Album].b.id, obj.asInstanceOf[Album])
-        else if (obj.isInstanceOf[FriendList])
-          myFriendLists.put(obj.asInstanceOf[FriendList].owner, obj.asInstanceOf[FriendList])
-        else if (obj.isInstanceOf[Page])
-          myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
-        else if (obj.isInstanceOf[Picture])
-          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
-        else if (obj.isInstanceOf[User]) {
+        if (obj.isInstanceOf[Post]) {
+          //          myPosts.put(obj.asInstanceOf[Post].b.id, obj.asInstanceOf[Post])
+        } else if (obj.isInstanceOf[Album]) {
+          //          myAlbums.put(obj.asInstanceOf[Album].b.id, obj.asInstanceOf[Album])
+        } else if (obj.isInstanceOf[FriendList]) {
+          //          myFriendLists.put(obj.asInstanceOf[FriendList].owner, obj.asInstanceOf[FriendList])
+        } else if (obj.isInstanceOf[Page]) {
+          //          myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
+        } else if (obj.isInstanceOf[Picture]) {
+          //          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
+        } else if (obj.isInstanceOf[User]) {
           me = obj.asInstanceOf[User]
-//          println("registered as user " + me.b.id)
-        }
-        else if (obj.isInstanceOf[ResponseMessage])
+          //          println("registered as user " + me.b.id)
+        } else if (obj.isInstanceOf[ResponseMessage])
           println("Response: " + obj.asInstanceOf[ResponseMessage].message)
 
       case Success(somethingUnexpected) =>

@@ -18,13 +18,13 @@ trait ProfileActor extends Actor with ActorLogging {
 
   def receive = {
     case CreatePost(rc, p) =>
-      log.info(s"Post count = $numPosts")
+      //      log.info(s"Post count = $numPosts")
       p.b.updateId(numPosts)
       numPosts += 1
       posts.append(p)
       rc.complete(p)
     case CreateAlbum(rc, a) =>
-      log.info(s"Album count = $albums")
+      //      log.info(s"Album count = $albums")
       //TODO: create instance of album actor using profileId and album id
       a.b.updateId(albums)
       albums += 1

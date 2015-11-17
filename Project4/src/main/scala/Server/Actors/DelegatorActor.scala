@@ -17,12 +17,13 @@ class DelegatorActor extends Actor with ActorLogging {
       try {
         user.b.updateId(profiles.size)
         profiles.append(context.actorOf(Props(new UserActor(user))))
+//        log.info(s"Number of profiles = ${profiles.size} - ${profiles(profiles.size - 1)}")
         requestContext.complete(user)
       } catch {
         case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
     case x: CreatePost =>
-      log.info(s"CreatePost  = ${x.post.creator}")
+//      log.info(s"CreatePost  = ${x.post.creator}")
       debugActor ! CreatePost
       try {
         profiles(x.post.creator) ! x
@@ -30,7 +31,7 @@ class DelegatorActor extends Actor with ActorLogging {
         case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
     case x: CreateAlbum =>
-      log.info(s"CreateAlbum = ${x.album.from}")
+//      log.info(s"CreateAlbum = ${x.album.from}")
       debugActor ! CreateAlbum
       try {
         profiles(x.album.from) ! x
