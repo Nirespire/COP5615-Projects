@@ -6,12 +6,7 @@ import spray.json._
 import spray.routing.RequestContext
 import Objects.ObjectJsonSupport._
 
-class DebugActor extends Actor {
-
-  var profiles: Int = 0
-  var posts: Int = 0
-  var albums: Int = 0
-  var friendlists: Int = 0
+class DebugActor(var profiles:Int = 0, var posts:Int = 0, var albums:Int = 0, var friendlistUpdates:Int = 0) extends Actor {
 
 
   def receive = {
@@ -25,11 +20,11 @@ class DebugActor extends Actor {
     case CreateAlbum =>
       albums += 1
 
-    case CreateFriendList =>
-      friendlists += 1
+    case UpdateFriendList =>
+      friendlistUpdates += 1
 
     case GetServerInfo(rc: RequestContext) =>
-      rc.complete(DebugMessage(profiles, posts, albums, friendlists).toJson.compactPrint)
+      rc.complete(this.toJson.compactPrint)
 
     case _ =>
 

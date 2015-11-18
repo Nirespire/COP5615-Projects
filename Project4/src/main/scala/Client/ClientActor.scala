@@ -68,6 +68,9 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
         //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
+        if(me.b.id > 100){
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
+        }
 
       }
 
@@ -149,6 +152,25 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
         case Failure(error) =>
           log.error(error, "Couldn't put page")
+      }
+
+    case MakeFriend =>
+      val updatedList = UpdFriendList(me.b.id,Random.nextInt(me.b.id))
+
+      val pipeline = sendReceive ~> unmarshal[UpdFriendList]
+      val future = pipeline {
+        pipelining.Post("http://" + serviceHost + ":" + servicePort + "/addfriend", updatedList)
+      }
+
+      future onComplete {
+        case Success(obj: UpdFriendList) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't post updated friend list")
       }
 
 

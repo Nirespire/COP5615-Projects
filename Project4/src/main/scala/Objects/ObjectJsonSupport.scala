@@ -1,7 +1,8 @@
 package Objects
 
 import Objects.ObjectTypes.ListType
-import Server.Messages.{DebugMessage, ResponseMessage}
+import Server.Messages.ResponseMessage
+import Server.Actors.DebugActor
 import spray.httpx.SprayJsonSupport
 import spray.json._
 
@@ -34,12 +35,28 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
     }
   }
 
-  implicit val PostJsonFormat = jsonFormat6(Post)
-  implicit val AlbumJsonFormat = jsonFormat7(Album)
-  implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
-  implicit val FriendListJsonFormat = jsonFormat3(FriendList)
-  implicit val PageJsonFormat = jsonFormat4(Page)
-  implicit val PictureJsonFormat = jsonFormat4(Picture)
-  implicit val UserJsonFormat = jsonFormat6(User)
-  implicit val DebugMessageJsonFormat = jsonFormat4(DebugMessage)
-}
+  implicit object DebugActorJsonFormat extends RootJsonFormat[DebugActor] {
+    def write(da: DebugActor) = JsObject(
+      "profiles" -> JsNumber(da.profiles),
+      "posts" -> JsNumber(da.posts),
+      "albums" -> JsNumber(da.albums),
+      "friendlistUpdates" -> JsNumber(da.friendlistUpdates)
+    )
+
+    def read(value: JsValue) ={
+      value.asJsObject.getFields ("profiles", "posts", "albums", "friendlistUpdates") match {
+      case Seq (JsNumber (profiles), JsNumber (posts), JsNumber (albums), JsNumber (friendlistUpdates) ) =>
+      new DebugActor (profiles.toInt, posts.toInt, albums.toInt, friendlistUpdates.toInt)
+      case _ => throw new DeserializationException ("Debug Actor expected")
+      }
+      }
+    }
+
+    implicit val PostJsonFormat = jsonFormat6(Post)
+    implicit val AlbumJsonFormat = jsonFormat7(Album)
+    implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
+    implicit val FriendListJsonFormat = jsonFormat3(FriendList)
+    implicit val PageJsonFormat = jsonFormat4(Page)
+    implicit val PictureJsonFormat = jsonFormat4(Picture)
+    implicit val UserJsonFormat = jsonFormat6(User)
+  }

@@ -8,7 +8,7 @@ import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 import spray.json._
 import scala.collection.mutable
 
-class DelegatorActor(debugActor: ActorRef) extends Actor {
+class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
   val profiles = mutable.ArrayBuffer[ActorRef]()
 
   def receive = {
@@ -22,7 +22,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor {
       } catch {
         case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-      println((System.nanoTime() - start) + " creation time")
+      //log.info((System.nanoTime() - start) + " creation time")
     case x: CreatePost =>
       try {
         profiles(x.post.creator) ! x
