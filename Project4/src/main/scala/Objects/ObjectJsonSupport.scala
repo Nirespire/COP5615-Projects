@@ -1,5 +1,6 @@
 package Objects
 
+import Objects.ObjectTypes.ListType
 import Server.Messages.{DebugMessage, ResponseMessage}
 import spray.httpx.SprayJsonSupport
 import spray.json._
@@ -15,6 +16,20 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
         val bs = BaseObject(id.toInt)
         ids.foreach { likeId => bs.appendLike(likeId.convertTo[Int]) }
         bs
+      case _ => throw new DeserializationException("Failed to deser BaseObject")
+    }
+  }
+
+
+  implicit object UpdFriendListJsonFormat extends RootJsonFormat[UpdFriendList] {
+    def write(upd: UpdFriendList) = {
+      JsObject("pid" -> JsNumber(upd.pid), "fid" -> JsNumber(upd.fid),
+        "listType" -> JsString(upd.listType.toString))
+    }
+
+    def read(json: JsValue) = json.asJsObject.getFields("pid", "fid", "listType") match {
+      case Seq(JsNumber(pid), JsNumber(fid), JsString(listType)) =>
+        UpdFriendList(pid.toInt, fid.toInt, ListType.withName(listType))
       case _ => throw new DeserializationException("Failed to deser BaseObject")
     }
   }

@@ -63,11 +63,12 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         context.system.scheduler.scheduleOnce(1 second, self, false)
       }
       else {
-//        log.info(me.b.id + " starting activity")
+        //        log.info(me.b.id + " starting activity")
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
         //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
+
       }
 
     case MakePost =>
@@ -290,7 +291,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
           //          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
         } else if (obj.isInstanceOf[User]) {
           me = obj.asInstanceOf[User]
-//          log.info("registered as user " + me.b.id)
+          //          log.info("registered as user " + me.b.id)
         } else if (obj.isInstanceOf[ResponseMessage])
           println("Response: " + obj.asInstanceOf[ResponseMessage].message)
 
