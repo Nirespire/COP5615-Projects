@@ -1,38 +1,35 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
+import Objects.UpdFriendList
 import Server.Messages._
 import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 
 import spray.json._
 import scala.collection.mutable
 
-class DelegatorActor extends Actor with ActorLogging {
+class DelegatorActor(debugActor: ActorRef) extends Actor {
   val profiles = mutable.ArrayBuffer[ActorRef]()
-  val debugActor = context.actorOf(Props(new DebugActor()))
 
   def receive = {
     case CreateUser(requestContext, user) =>
-      debugActor ! CreateProfile
+      val start = System.nanoTime()
       try {
         user.b.updateId(profiles.size)
-        profiles.append(context.actorOf(Props(new UserActor(user))))
-//        log.info(s"Number of profiles = ${profiles.size} - ${profiles(profiles.size - 1)}")
+        profiles.append(context.actorOf(Props(new UserActor(user, debugActor))))
         requestContext.complete(user)
+        debugActor ! CreateProfile
       } catch {
         case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
+      println((System.nanoTime() - start) + " creation time")
     case x: CreatePost =>
-//      log.info(s"CreatePost  = ${x.post.creator}")
-      debugActor ! CreatePost
       try {
         profiles(x.post.creator) ! x
       } catch {
         case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
     case x: CreateAlbum =>
-//      log.info(s"CreateAlbum = ${x.album.from}")
-      debugActor ! CreateAlbum
       try {
         profiles(x.album.from) ! x
       } catch {
@@ -44,7 +41,12 @@ class DelegatorActor extends Actor with ActorLogging {
       } catch {
         case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-    case x: GetServerInfo => debugActor ! x
+    case x: UpdFriendList =>
+      try {
+        profiles(x.pid) ! x
+      } catch {
+        case e: Throwable => x.rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+      }
     case _ =>
   }
 
