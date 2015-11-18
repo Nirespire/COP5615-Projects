@@ -1,6 +1,6 @@
 package Client
 
-import Client.Messages.{MakeFriendList, MakeAlbum, MakePost}
+import Client.Messages._
 import Client.Resources.statuses
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
@@ -26,19 +26,37 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
   //  var myFriendLists = mutable.HashMap[Int, FriendList]()
   //  var myPages = mutable.HashMap[Int, Page]()
 
-  var me: User = _
+  var me: User = null
 
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
   lazy val serviceHost = Try(config.getString("service.host")).getOrElse("localhost")
+
+  val myPages = mutable.ArrayBuffer[Page]()
 
   import context.dispatcher
 
   def receive = {
     // Create a user profile for self
     case true =>
-      putOrPostObject(User(b = BaseObject(), "about", "04-25-1994", 'M', "Sanjay", "Nair"), true)
-      context.system.scheduler.scheduleOnce(10 second, self, false)
+      val newUser = User(BaseObject(),"about me", "04-25-1994",'M',"Sanjay", "Nair")
+      val pipeline = sendReceive ~> unmarshal[Objects.User]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/user", newUser)
+      }
+
+      future onComplete {
+        case Success(obj: User) =>
+          me = obj
+          context.system.scheduler.scheduleOnce(10 second, self, false)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't create user")
+      }
+
 
     case false =>
       if (me == null) {
@@ -49,20 +67,88 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
-//        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
+        //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
       }
 
     case MakePost =>
-      putOrPostObject(Objects.Post(b = BaseObject(), me.b.id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status), true)
-      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
+
+      val newPost = Objects.Post(b = BaseObject(), me.b.id, new DateTime().toString(), id, statuses(Random.nextInt(statuses.length)), status)
+      val pipeline = sendReceive ~> unmarshal[Objects.Post]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/post", newPost)
+      }
+
+      future onComplete {
+        case Success(obj: Post) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
+
+        case Success(somethingUnexpected) =>
+          println("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put post")
+      }
+
+    case MakePicture =>
+
+      //TODO: Need to assign this an album. Do get on albums first.
+      val newPicture = Picture(BaseObject(), me.b.id, -1, "filename.png")
+      val pipeline = sendReceive ~> unmarshal[Objects.Picture]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/picture", newPicture)
+      }
+
+      future onComplete {
+        case Success(obj: Picture) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put picture")
+      }
+
 
     case MakeAlbum =>
-      putOrPostObject(Objects.Album(b = BaseObject(), me.b.id, new DateTime().toString(), new DateTime().toString(), -1, "My new Album", Array[Int]()), true)
-      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
-    //    case MakeFriendList =>
-    //      putOrPostObject(Objects.FriendList(-1,me.b.id,Array[Int](),close_friends), true)
-    //      context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriendList)
+      val newAlbum = Album(b = BaseObject(), me.b.id, new DateTime().toString(), new DateTime().toString(), -1, "My new Album", Array[Int]())
+      val pipeline = sendReceive ~> unmarshal[Objects.Album]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/album", newAlbum)
+      }
+
+      future onComplete {
+        case Success(obj: Album) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put album")
+      }
+
+
+    case MakePage =>
+
+      //TODO Need to assign a picture cover photo
+      val newPage = Page(b = BaseObject(), "page description", "page category", -1)
+      val pipeline = sendReceive ~> unmarshal[Objects.Page]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/page", newPage)
+      }
+
+      future onComplete {
+        case Success(obj: Page) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put page")
+      }
 
 
   }
