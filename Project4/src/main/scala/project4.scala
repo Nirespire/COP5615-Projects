@@ -23,16 +23,18 @@ object project4 extends App {
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
-  Thread.sleep(1000)
+  if(args.length > 0){
+    Thread.sleep(1000)
 
-  println("Start clients!")
+    println("Start clients!")
 
-  // Start up actor system of clients
-  val clientSystem = ActorSystem("client-spray-system")
+    // Start up actor system of clients
+    val clientSystem = ActorSystem("client-spray-system")
 
-  (1 to 5000).foreach { idx =>
-    clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client" + idx) ! true
+    (1 to args(0).toInt).foreach { idx =>
+      clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client" + idx) ! true
+    }
+
+    println("End Loop")
   }
-
-  println("End Loop")
 }

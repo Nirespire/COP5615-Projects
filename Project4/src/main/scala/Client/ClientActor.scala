@@ -15,16 +15,13 @@ import spray.client.pipelining._
 import spray.json._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.{Failure, Random, Success, Try}
 
 class ClientActor(id: Int) extends Actor with ActorLogging {
 
-  //  var myPosts = mutable.HashMap[Int, Post]()
-  //  var myPictures = mutable.HashMap[Int, Picture]()
-  //  var myAlbums = mutable.HashMap[Int, Album]()
-  //  var myFriendLists = mutable.HashMap[Int, FriendList]()
-  //  var myPages = mutable.HashMap[Int, Page]()
+  var myFriends = mutable.ArrayBuffer[Int]()
 
   var me: User = null
 
@@ -63,13 +60,15 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         context.system.scheduler.scheduleOnce(1 second, self, false)
       }
       else {
-        //        log.info(me.b.id + " starting activity")
+//        TODO add some statistical parameter that chooses when each of these happen
+//        log.info(me.b.id + " starting activity")
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
-        //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
+//        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
         if(me.b.id > 100){
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
+//          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
         }
 
       }
@@ -95,7 +94,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
     case MakePicture =>
 
-      //TODO: Need to assign this an album. Do get on albums first.
+//      TODO: Need to assign this an album. Do get on albums first.
       val newPicture = Picture(BaseObject(), me.b.id, -1, "filename.png")
       val pipeline = sendReceive ~> unmarshal[Objects.Picture]
       val future = pipeline {
@@ -136,7 +135,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
     case MakePage =>
 
-      //TODO Need to assign a picture cover photo
+//      TODO Need to assign a picture cover photo
       val newPage = Page(b = BaseObject(), "page description", "page category", -1)
       val pipeline = sendReceive ~> unmarshal[Objects.Page]
       val future = pipeline {
@@ -174,6 +173,27 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
       }
 
 
+    case GetFriendsPost =>
+      if(!myFriends.isEmpty) {
+//        TODO replace this with a get to some friendlist
+        val friendId = myFriends(Random.nextInt(myFriends.length))
+
+        val pipeline = sendReceive ~> unmarshal[Post]
+        val future = pipeline {
+          pipelining.Get("http://" + serviceHost + ":" + servicePort + "/post/" + friendId)
+        }
+
+        future onComplete {
+          case Success(obj: Post) =>
+            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
+
+          case Success(somethingUnexpected) =>
+            log.error("Unexpected return", somethingUnexpected)
+
+          case Failure(error) =>
+            log.error(error, "Couldn't get friend's post")
+        }
+      }
   }
 
 
@@ -213,115 +233,6 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
       case Failure(error) =>
         println(error, "Couldn't " + (if (getOrDelete) "get " else "delete ") + objType)
-    }
-  }
-
-  def putOrPostObject(obj: Any, putOrPost: Boolean) {
-    val (pipeline, objType) = obj match {
-      case obj: Post => (sendReceive ~> unmarshal[Objects.Post], "Post")
-      case obj: Album => (sendReceive ~> unmarshal[Objects.Album], "Album")
-      case obj: Picture => (sendReceive ~> unmarshal[Objects.Picture], "Picture")
-      case obj: FriendList => (sendReceive ~> unmarshal[Objects.FriendList], "FriendList")
-      case obj: User => (sendReceive ~> unmarshal[Objects.User], "User")
-      case obj: Page => (sendReceive ~> unmarshal[Page], "Page")
-    }
-
-    // TODO: Uglyness. Is there way to determine type outside case?
-    val future = obj match {
-      case obj: Post =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-
-      case obj: Album =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-      case obj: Picture =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-      case obj: FriendList =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-      case obj: User =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-      case obj: Page =>
-        putOrPost match {
-          case true =>
-            pipeline {
-              pipelining.Put("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-          case false =>
-            pipeline {
-              pipelining.Post("http://" + serviceHost + ":" + servicePort + "/" + objType.toLowerCase, obj)
-            }
-        }
-    }
-
-    future onComplete {
-      case Success(obj: Object) =>
-        //        println(if (putOrPost) "Put " else "Post " + objType, obj)
-
-        if (obj.isInstanceOf[Post]) {
-          //          myPosts.put(obj.asInstanceOf[Post].b.id, obj.asInstanceOf[Post])
-        } else if (obj.isInstanceOf[Album]) {
-          //          myAlbums.put(obj.asInstanceOf[Album].b.id, obj.asInstanceOf[Album])
-        } else if (obj.isInstanceOf[FriendList]) {
-          //          myFriendLists.put(obj.asInstanceOf[FriendList].owner, obj.asInstanceOf[FriendList])
-        } else if (obj.isInstanceOf[Page]) {
-          //          myPages.put(obj.asInstanceOf[Page].b.id, obj.asInstanceOf[Page])
-        } else if (obj.isInstanceOf[Picture]) {
-          //          myPictures.put(obj.asInstanceOf[Picture].b.id, obj.asInstanceOf[Picture])
-        } else if (obj.isInstanceOf[User]) {
-          me = obj.asInstanceOf[User]
-          //          log.info("registered as user " + me.b.id)
-        } else if (obj.isInstanceOf[ResponseMessage])
-          println("Response: " + obj.asInstanceOf[ResponseMessage].message)
-
-      case Success(somethingUnexpected) =>
-        println("Unexpected return", somethingUnexpected)
-
-      case Failure(error) =>
-        println(error, "Couldn't " + (if (putOrPost) "put " else "post ") + objType)
     }
   }
 }
