@@ -4,18 +4,15 @@ import Client.Messages._
 import Client.Resources.statuses
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
-import Objects.ObjectTypes.ListType._
 import Objects._
-import Server.Messages.ResponseMessage
-import akka.actor.{ActorLogging, Actor}
+import akka.actor.{Actor, ActorLogging}
+import com.google.common.io.BaseEncoding
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
-import spray.json._
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.{Failure, Random, Success, Try}
 
@@ -65,6 +62,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         getOrDeleteObject("User", me.b.id, true)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
+//        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
 //        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
         if(me.b.id > 100){
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
@@ -93,6 +91,8 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
       }
 
     case MakePicture =>
+
+      BaseEncoding.base64().encode(scala.io.Source.fromFile("/image.png").map(_.toByte).toArray)
 
 //      TODO: Need to assign this an album. Do get on albums first.
       val newPicture = Picture(BaseObject(), me.b.id, -1, "filename.png")
