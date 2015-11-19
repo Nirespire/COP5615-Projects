@@ -6,4 +6,3 @@ case class User(b: BaseObject,
                 gender: Char,
                 first_name: String,
                 last_name: String)
-

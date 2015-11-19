@@ -64,10 +64,9 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
         context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 //        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
 //        context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
-        if(me.b.id > 100){
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
 //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
-        }
+
 
       }
 
@@ -92,7 +91,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
     case MakePicture =>
 
-      BaseEncoding.base64().encode(scala.io.Source.fromFile("/image.png").map(_.toByte).toArray)
+//      BaseEncoding.base64().encode(scala.io.Source.fromFile("/image.png").map(_.toByte).toArray)
 
 //      TODO: Need to assign this an album. Do get on albums first.
       val newPicture = Picture(BaseObject(), me.b.id, -1, "filename.png")
@@ -163,6 +162,7 @@ class ClientActor(id: Int) extends Actor with ActorLogging {
 
       future onComplete {
         case Success(obj: UpdFriendList) =>
+//          log.info("added friend", obj)
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
 
         case Success(somethingUnexpected) =>

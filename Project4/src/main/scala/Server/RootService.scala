@@ -1,7 +1,7 @@
 package Server
 
 import Objects.ObjectJsonSupport._
-import Objects.{UpdFriendList, Album, Post, User}
+import Objects._
 import Server.Actors.{DebugActor, DelegatorActor}
 import Server.Messages._
 import akka.actor.Props
@@ -15,33 +15,124 @@ trait RootService extends HttpService {
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val timeout = Timeout(5 seconds)
-  val debugActor = actorRefFactory.actorOf(Props(new DebugActor()))
-  val delegatorActor = actorRefFactory.actorOf(Props(new DelegatorActor(debugActor)))
+  val delegatorActor = actorRefFactory.actorOf(Props(new DelegatorActor(null)))
+  val debugInfo = DebugActor()
+
   val myRoute = respondWithMediaType(`application/json`) {
     get {
-      path("user" / IntNumber) { pid => rc => delegatorActor ! GetUser(rc, pid) } ~
-        path("post" / IntNumber / IntNumber) { (pid, postId) => rc => delegatorActor ! GetPost(rc, pid, postId) } ~
-        path("post" / IntNumber) { pid => rc => delegatorActor ! GetPost(rc, pid) } ~
-        path("debug") { rc => debugActor ! GetServerInfo(rc) }
+      path("user" / IntNumber) { pid =>
+        path("feed") { rc =>
+          /*TODO*/
+        } ~
+          path("post" / IntNumber) { postId => rc =>
+
+          } ~
+          path("post") { rc =>
+
+          } ~
+          path("albums") { rc =>
+
+          } ~
+          path("pictures") { rc =>
+
+          } ~
+          path("friendlists") { rc =>
+            //                parameters('listType'){
+            //                  listType =>
+          } ~ {
+          rc => delegatorActor ! GetUser(rc, pid)
+        }
+      } ~
+        path("page" / IntNumber) { pid =>
+          path("feed") { rc =>
+            /*TODO*/
+          } ~
+            path("post" / IntNumber) { postId => rc =>
+
+            } ~
+            path("post") { rc =>
+
+            } ~
+            path("albums") { rc =>
+
+            } ~
+            path("pictures") { rc =>
+
+            } ~ { rc =>
+
+          }
+        } ~
+        path("picture" / IntNumber / IntNumber) { (pid, pictureId) => rc => /*TODO*/} ~
+        path("album" / IntNumber / IntNumber) { (pid, albumId) => rc => /*TODO*/} ~
+        path("post" / IntNumber / IntNumber) { (pid, postId) => rc => /*TODO*/} ~
+        path("debug") { rc => rc.complete(debugInfo) }
     } ~
       put {
         path("user") {
-          entity(as[User]) { user => rc => delegatorActor ! CreateUser(rc, user) }
+          entity(as[User]) { user => rc =>
+            debugInfo.profiles += 1
+            delegatorActor ! CreateUser(rc, user)
+          }
         } ~
+          path("page") {
+            entity(as[Page]) { user => rc => /*TODO*/}
+          } ~
           path("post") {
-            entity(as[Post]) { post => rc => delegatorActor ! CreatePost(rc, post) }
+            entity(as[Post]) { post => rc =>
+                debugInfo.posts += 1
+                delegatorActor ! CreatePost(rc, post)
+            }
           } ~
           path("album") {
-            entity(as[Album]) { album => rc => delegatorActor ! CreateAlbum(rc, album) }
+            entity(as[Album]) { album => rc =>
+              debugInfo.albums += 1
+              delegatorActor ! CreateAlbum(rc, album)
+            }
+          } ~
+          path("picture") {
+            entity(as[Album]) { album => rc => /*TODO*/}
+          }
+      } ~
+      delete {
+        path("user") {
+          entity(as[User]) { user => rc => }
+        } ~
+          path("page") {
+            entity(as[Page]) { user => rc => /*TODO*/}
+          } ~
+          path("post") {
+            entity(as[Post]) { post => rc => }
+          } ~
+          path("album") {
+            entity(as[Album]) { album => rc => }
+          } ~
+          path("picture") {
+            entity(as[Album]) { album => rc => /*TODO*/}
           }
       } ~
       post {
         path("addfriend") {
           entity(as[UpdFriendList]) { updFL => rc =>
+            debugInfo.friendlistUpdates += 1
             updFL.updateRC(rc)
             delegatorActor ! updFL
           }
-        }
+        } ~
+          path("user") {
+            entity(as[User]) { user => rc => /*TODO*/}
+          } ~
+          path("page") {
+            entity(as[Page]) { user => rc => /*TODO*/}
+          } ~
+          path("post") {
+            entity(as[Post]) { post => rc => /*TODO*/}
+          } ~
+          path("album") {
+            entity(as[Album]) { album => rc => /*TODO*/}
+          } ~
+          path("picture") {
+            entity(as[Album]) { album => rc => /*TODO*/}
+          }
       }
   }
 }

@@ -13,6 +13,7 @@ class ProfileActor(val debugActor: ActorRef) extends Actor {
   var albums = 0
   var numFriendLists = 0
   val posts = mutable.ArrayBuffer[Post]()
+  val otherPosts = mutable.ArrayBuffer[(Int,Int)]()
   //  val friendLists = mutable.ArrayBuffer[FriendList]()
 
   def receive = {
@@ -20,13 +21,13 @@ class ProfileActor(val debugActor: ActorRef) extends Actor {
       p.b.updateId(numPosts)
       numPosts += 1
       posts.append(p)
-      debugActor ! CreatePost
+//      debugActor ! CreatePost
       rc.complete(p)
     case CreateAlbum(rc, a) =>
       //TODO: create instance of album actor using profileId and album id
       a.b.updateId(albums)
       albums += 1
-      debugActor ! CreateAlbum
+//      debugActor ! CreateAlbum
       rc.complete(a)
     //    case fl: FriendList =>
     //      fl.updateId(numFriendLists)

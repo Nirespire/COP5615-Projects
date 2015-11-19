@@ -24,7 +24,7 @@ class UserActor(var user: User, debugActor: ActorRef) extends ProfileActor(debug
       friendsMap(upd.listType) = Set(upd.fid)
     }
 
-      debugActor ! UpdateFriendList
+//      debugActor ! UpdateFriendList
 
       upd.rc.complete(upd)
   }

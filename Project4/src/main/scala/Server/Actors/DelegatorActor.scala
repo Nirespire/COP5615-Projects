@@ -18,7 +18,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
         user.b.updateId(profiles.size)
         profiles.append(context.actorOf(Props(new UserActor(user, debugActor))))
         requestContext.complete(user)
-        debugActor ! CreateProfile
+//        debugActor ! CreateProfile
       } catch {
         case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
