@@ -1,8 +1,14 @@
+import java.awt.image.{DataBufferByte, BufferedImage}
+import java.io.{InputStream, File, FileInputStream}
+import javax.imageio.ImageIO
+
+import Client.ClientType
 import Server.Actors.RootServerActor
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
+import com.google.common.io.BaseEncoding
 import com.typesafe.config.ConfigFactory
 import spray.can.Http
 
@@ -24,18 +30,31 @@ object project4 extends App {
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
-  if(numClients > 0){
-    println("Running with " + numClients + " clients")
-    Thread.sleep(1000)
+  Thread.sleep(1000)
 
+  if (numClients > 0) {
+    println("Running with " + numClients + " clients")
     println("Start clients!")
 
     // Start up actor system of clients
     val clientSystem = ActorSystem("client-spray-system")
 
-    (1 to numClients).foreach { idx =>
-      clientSystem.actorOf(Props(new Client.ClientActor(idx)), "client" + idx) ! true
+    val numActive = (0.5 * numClients).toInt
+    val numPassive = (0.3 * numClients).toInt
+    val numCelebrity = numClients - numActive + numPassive
+
+    (1 to numActive).foreach { idx =>
+      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Active)), "client" + idx) ! true
     }
+
+    (numActive + 1 to numActive + numPassive).foreach { idx =>
+      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Passive)), "client" + idx) ! true
+    }
+
+    (numActive + numPassive + 1 to numClients).foreach { idx =>
+      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.ContentCreator)), "client" + idx) ! true
+    }
+
 
     println("End Loop")
   }

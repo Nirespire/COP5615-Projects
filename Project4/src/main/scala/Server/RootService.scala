@@ -6,6 +6,7 @@ import Server.Actors.{DebugActor, DelegatorActor}
 import Server.Messages._
 import akka.actor.Props
 import akka.util.Timeout
+import com.google.common.io.BaseEncoding
 import spray.http.MediaTypes.`application/json`
 import spray.routing._
 
@@ -24,19 +25,19 @@ trait RootService extends HttpService {
         path("feed") { rc =>
           /*TODO*/
         } ~
-          path("post" / IntNumber) { postId => rc =>
+          path("post" / IntNumber) { postId => rc =>/*TODO*/
 
           } ~
-          path("post") { rc =>
+          path("post") { rc =>/*TODO*/
 
           } ~
-          path("albums") { rc =>
+          path("albums") { rc =>/*TODO*/
 
           } ~
-          path("pictures") { rc =>
+          path("pictures") { rc =>/*TODO*/
 
           } ~
-          path("friendlists") { rc =>
+          path("friendlists") { rc =>/*TODO*/
             //                parameters('listType'){
             //                  listType =>
           } ~ {
@@ -47,18 +48,18 @@ trait RootService extends HttpService {
           path("feed") { rc =>
             /*TODO*/
           } ~
-            path("post" / IntNumber) { postId => rc =>
+            path("post" / IntNumber) { postId => rc =>/*TODO*/
 
             } ~
-            path("post") { rc =>
+            path("post") { rc =>/*TODO*/
 
             } ~
-            path("albums") { rc =>
+            path("albums") { rc =>/*TODO*/
 
             } ~
-            path("pictures") { rc =>
+            path("pictures") { rc =>/*TODO*/
 
-            } ~ { rc =>
+            } ~ { rc =>/*TODO*/
 
           }
         } ~
@@ -95,16 +96,16 @@ trait RootService extends HttpService {
       } ~
       delete {
         path("user") {
-          entity(as[User]) { user => rc => }
+          entity(as[User]) { user => rc => /*TODO*/}
         } ~
           path("page") {
             entity(as[Page]) { user => rc => /*TODO*/}
           } ~
           path("post") {
-            entity(as[Post]) { post => rc => }
+            entity(as[Post]) { post => rc => /*TODO*/}
           } ~
           path("album") {
-            entity(as[Album]) { album => rc => }
+            entity(as[Album]) { album => rc => /*TODO*/}
           } ~
           path("picture") {
             entity(as[Album]) { album => rc => /*TODO*/}

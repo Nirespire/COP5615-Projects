@@ -114,4 +114,18 @@ object Resources {
     "Linking to this movie clip : http://www.youtube.com/watch?v=rYyD55elKJA",
     "I’m so stoked on my friends status updates. Going to the gym? Awesome! Pursuing your career in Babysitting? Rad! Going to sleep? Tell me more!!!"
   )
+
+  val pageCategories = Seq(
+    "Book or Magazine",
+    "Brand or Product",
+    "Company or Organization",
+    "Local Business",
+    "Movie",
+    "Music",
+    "Other",
+    "People",
+    "Sports",
+    "Television",
+    "Website or Blog"
+  )
 }
