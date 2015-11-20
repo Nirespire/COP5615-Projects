@@ -1,8 +1,8 @@
 package Server.Actors
 
 import Objects.ObjectTypes.ListType.ListType
-import Objects.{UpdFriendList, User}
-import Server.Messages.{UpdateFriendList, ResponseMessage}
+import Objects.{UpdateFriendList, User}
+import Server.Messages.{UpdateMsg, ResponseMessage}
 import akka.actor.ActorRef
 import spray.routing.RequestContext
 import Objects.ObjectJsonSupport._
@@ -14,19 +14,19 @@ class UserActor(var user: User, debugActor: ActorRef) extends ProfileActor(debug
   val friendsMap = mutable.Map[ListType, Set[Int]]()
 
   def userReceive: Receive = {
-    case newUser: User => user = newUser
+    case UpdateMsg(rc, newUser: User) =>
+      user = newUser
+      rc.complete(user)
     case rc: RequestContext => rc.complete(user)
-    case upd: UpdFriendList =>
+    case UpdateMsg(rc, upd: UpdateFriendList) =>
       user.b.appendLike(upd.fid)
-    if (friendsMap.contains(upd.listType)) {
-      friendsMap(upd.listType) = friendsMap(upd.listType) + upd.fid
-    } else {
-      friendsMap(upd.listType) = Set(upd.fid)
-    }
+      if (friendsMap.contains(upd.listType)) {
+        friendsMap(upd.listType) = friendsMap(upd.listType) + upd.fid
+      } else {
+        friendsMap(upd.listType) = Set(upd.fid)
+      }
 
-//      debugActor ! UpdateFriendList
-
-      upd.rc.complete(upd)
+      rc.complete(upd)
   }
 
   override def receive = userReceive orElse super.receive

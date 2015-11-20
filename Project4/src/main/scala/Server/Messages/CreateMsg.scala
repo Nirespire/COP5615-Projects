@@ -2,4 +2,4 @@ package Server.Messages
 
 import spray.routing.RequestContext
 
-case class GetUser(requestContext: RequestContext, pid: Int)
+case class CreateMsg[T](rc:RequestContext, obj:T)

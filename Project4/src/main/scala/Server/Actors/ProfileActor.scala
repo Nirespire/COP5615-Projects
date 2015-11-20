@@ -1,38 +1,42 @@
 package Server.Actors
 
-import Objects.Post
-import Server.Messages.{CreateAlbum, CreatePost}
+import Objects.ObjectJsonSupport._
+import Objects.{Album, Post}
+import Server.Messages.{GetMsg, ResponseMessage, CreateMsg}
 import akka.actor.{Actor, ActorRef}
 
-import Objects.ObjectJsonSupport._
-import spray.json._
 import scala.collection.mutable
 
 class ProfileActor(val debugActor: ActorRef) extends Actor {
-  var numPosts = 0
-  var albums = 0
-  var numFriendLists = 0
+  var albums = mutable.ArrayBuffer[Album]()
   val posts = mutable.ArrayBuffer[Post]()
-  val otherPosts = mutable.ArrayBuffer[(Int,Int)]()
+  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
   //  val friendLists = mutable.ArrayBuffer[FriendList]()
 
   def receive = {
-    case CreatePost(rc, p) =>
-      p.b.updateId(numPosts)
-      numPosts += 1
-      posts.append(p)
-//      debugActor ! CreatePost
-      rc.complete(p)
-    case CreateAlbum(rc, a) =>
-      //TODO: create instance of album actor using profileId and album id
-      a.b.updateId(albums)
-      albums += 1
-//      debugActor ! CreateAlbum
-      rc.complete(a)
-    //    case fl: FriendList =>
-    //      fl.updateId(numFriendLists)
-    //      numFriendLists += 1
-    //      friendLists.append(fl)
+    case CreateMsg(rc, obj) =>
+      try {
+        obj match {
+          case p: Post =>
+            p.b.updateId(posts.size)
+            posts.append(p)
+            rc.complete(p)
+          case a: Album =>
+            a.b.updateId(albums.size)
+            albums.append(a)
+            rc.complete(a)
+        }
+      } catch {
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
+      }
+    case GetMsg(rc, obj) =>
+      try {
+        obj match {
+          case ("post", _, pId: Int) => if (pId == -1) rc.complete(posts.last) else rc.complete(posts(pId))
+          case ("album", _, aId: Int) => if (aId == -1) rc.complete(albums.last) else rc.complete(albums(aId))
+        }
+      }
+
     case _ =>
   }
 }

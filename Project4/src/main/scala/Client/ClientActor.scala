@@ -178,7 +178,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
 
       future onComplete {
-        case Success(obj: Album) =>
+        case Success(obj) =>
+          println("HHH" + obj)
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
         case Success(somethingUnexpected) =>
@@ -210,15 +211,15 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
 
     case MakeFriend =>
-      val updatedList = UpdFriendList(myBaseObj.id, Random.nextInt(myBaseObj.id))
+      val updatedList = UpdateFriendList(myBaseObj.id, Random.nextInt(myBaseObj.id))
 
-      val pipeline = sendReceive ~> unmarshal[UpdFriendList]
+      val pipeline = sendReceive ~> unmarshal[UpdateFriendList]
       val future = pipeline {
         pipelining.Post("http://" + serviceHost + ":" + servicePort + "/addfriend", updatedList)
       }
 
       future onComplete {
-        case Success(obj: UpdFriendList) =>
+        case Success(obj: UpdateFriendList) =>
           //          log.info("added friend", obj)
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
 

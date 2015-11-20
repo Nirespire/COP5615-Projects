@@ -1,7 +1,7 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
-import Objects.UpdFriendList
+import Objects.{Album, Post, User, UpdateFriendList}
 import Server.Messages._
 import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 
@@ -9,45 +9,38 @@ import spray.json._
 import scala.collection.mutable
 
 class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
-  val profiles = mutable.ArrayBuffer[ActorRef]()
+  val profiles = mutable.HashMap[Int, ActorRef]()
 
   def receive = {
-    case CreateUser(requestContext, user) =>
-      val start = System.nanoTime()
+    case cMsg @ CreateMsg(rc, obj) =>
       try {
-        user.b.updateId(profiles.size)
-        profiles.append(context.actorOf(Props(new UserActor(user, debugActor))))
-        requestContext.complete(user)
-//        debugActor ! CreateProfile
+        obj match {
+          case u: User =>
+            profiles.put(u.b.id, context.actorOf(Props(new UserActor(u, debugActor))))
+            rc.complete(u)
+          case p: Post => profiles(p.creator) ! cMsg
+          case a: Album => profiles(a.from) ! cMsg
+        }
       } catch {
-        case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-      //log.info((System.nanoTime() - start) + " creation time")
-    case x: CreatePost =>
+    case getMsg @ GetMsg(rc, params) =>
       try {
-        profiles(x.post.creator) ! x
+        params match {
+          case pid: Int => profiles(pid) ! rc
+          case _ => profiles(getMsg.pid) ! getMsg
+        }
       } catch {
-        case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-    case x: CreateAlbum =>
+    case UpdateMsg(rc, obj) =>
       try {
-        profiles(x.album.from) ! x
+        obj match {
+          case updFL: UpdateFriendList => profiles(updFL.pid) ! UpdateMsg(rc, obj)
+        }
       } catch {
-        case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-      }
-    case GetUser(requestContext, pid) =>
-      try {
-        profiles(pid) ! requestContext
-      } catch {
-        case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-      }
-    case x: UpdFriendList =>
-      try {
-        profiles(x.pid) ! x
-      } catch {
-        case e: Throwable => x.rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
     case _ =>
   }
-
 }
