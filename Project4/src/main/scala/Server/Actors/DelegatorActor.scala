@@ -12,7 +12,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
   val profiles = mutable.HashMap[Int, ActorRef]()
 
   def receive = {
-    case cMsg @ CreateMsg(rc, obj) =>
+    case cMsg@CreateMsg(rc, obj) =>
       try {
         obj match {
           case u: User =>
@@ -24,7 +24,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-    case getMsg @ GetMsg(rc, params) =>
+    case getMsg@GetMsg(rc, pid, params) =>
       try {
         params match {
           case pid: Int => profiles(pid) ! rc
@@ -33,10 +33,10 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
       }
-    case UpdateMsg(rc, obj) =>
+    case updMsg@UpdateMsg(rc, obj) =>
       try {
         obj match {
-          case updFL: UpdateFriendList => profiles(updFL.pid) ! UpdateMsg(rc, obj)
+          case updFL: UpdateFriendList => profiles(updFL.pid) ! updMsg
         }
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
