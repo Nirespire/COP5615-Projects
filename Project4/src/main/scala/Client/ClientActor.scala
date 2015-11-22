@@ -19,10 +19,6 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.{Failure, Random, Success, Try}
 
-object ClientType extends Enumeration {
-  type ClientType = Value
-  val Active, Passive, ContentCreator = Value
-}
 
 class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor with ActorLogging {
 
@@ -60,7 +56,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         future onComplete {
           case Success(obj: Page) =>
             mePage = obj
-            myBaseObj = obj.b
+            myBaseObj = obj.baseObject
             context.system.scheduler.scheduleOnce(10 second, self, false)
 
           case Success(somethingUnexpected) =>
@@ -81,7 +77,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         future onComplete {
           case Success(obj: User) =>
             me = obj
-            myBaseObj = obj.b
+            myBaseObj = obj.baseObject
             context.system.scheduler.scheduleOnce(10 second, self, false)
 
           case Success(somethingUnexpected) =>
@@ -108,30 +104,27 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           getOrDeleteObject("User", myBaseObj.id, true)
         }
 
-        if(probability < putPercent){
+        if (probability < putPercent) {
           context.system.scheduler.scheduleOnce(1 second, self, MakePost)
           context.system.scheduler.scheduleOnce(1 second, self, MakeAlbum)
           //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
           //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
         }
 
-        if(probability < getPercent){
+        if (probability < getPercent) {
           //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
         }
 
-        if(probability < friendPercent){
+        if (probability < friendPercent) {
           context.system.scheduler.scheduleOnce(1 second, self, MakeFriend)
         }
-
-
-
 
 
       }
 
     case MakePost =>
 
-      val newPost = Objects.Post(b = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), status)
+      val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), status)
       val pipeline = sendReceive ~> unmarshal[Objects.Post]
       val future = pipeline {
         pipelining.Put("http://" + serviceHost + ":" + servicePort + "/post", newPost)
@@ -171,7 +164,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
     case MakeAlbum =>
 
-      val newAlbum = Album(b = BaseObject(), myBaseObj.id, new DateTime().toString(), new DateTime().toString(), -1, "My new Album", Array[Int]())
+      val newAlbum = Album(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), new DateTime().toString(), -1, "My new Album")
       val pipeline = sendReceive ~> unmarshal[Objects.Album]
       val future = pipeline {
         pipelining.Put("http://" + serviceHost + ":" + servicePort + "/album", newAlbum)
@@ -179,7 +172,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj) =>
-          println("HHH" + obj)
           context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
         case Success(somethingUnexpected) =>
@@ -193,7 +185,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case MakePage =>
 
       //      TODO Need to assign a picture cover photo
-      val newPage = Page(b = BaseObject(), "page description", "page category", -1)
+      val newPage = Page(baseObject = BaseObject(), "page description", "page category", -1)
       val pipeline = sendReceive ~> unmarshal[Objects.Page]
       val future = pipeline {
         pipelining.Put("http://" + serviceHost + ":" + servicePort + "/page", newPage)

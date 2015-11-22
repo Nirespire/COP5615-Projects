@@ -7,10 +7,12 @@ import spray.httpx.SprayJsonSupport
 import spray.json._
 
 object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
+  def setToJsArray(setObj: scala.collection.mutable.Set[Int]) = JsArray(setObj.map(JsNumber(_)).toVector)
+
 
   implicit object BaseObjectJsonFormat extends RootJsonFormat[BaseObject] {
     def write(bs: BaseObject) = JsObject("id" -> JsNumber(bs.id),
-      "likes" -> JsArray(bs.likes.map(JsNumber(_)).toVector))
+      "likes" -> setToJsArray(bs.likes))
 
     def read(json: JsValue) = json.asJsObject.getFields("id", "likes") match {
       case Seq(JsNumber(id), JsArray(ids)) =>
@@ -41,8 +43,27 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
     }
   }
 
+  implicit object AlbumJsonFormat extends RootJsonFormat[Album] {
+    def write(a: Album) = JsObject("b" -> a.baseObject.toJson,
+      "from" -> JsNumber(a.from),
+      "createdTime" -> JsString(a.createdTime),
+      "updatedTime" -> JsString(a.updatedTime),
+      "coverPhoto" -> JsNumber(a.coverPhoto),
+      "description" -> JsString(a.description),
+      "pictures" -> setToJsArray(a.pictures)
+    )
+
+    def read(json: JsValue) = json.asJsObject.
+      getFields("b", "from", "createdTime", "updatedTime", "coverPhoto", "description", "pictures") match {
+      case Seq(b, JsNumber(from), JsString(cTime), JsString(uTime), JsNumber(cInt), JsString(desc), JsArray(pics)) =>
+        val a = Album(b.convertTo[BaseObject], from.toInt, cTime, uTime, cInt.toInt, desc)
+        pics.foreach { pic => a.pictures.add(pic.convertTo[Int]) }
+        a
+      case _ => throw new DeserializationException("Failed to deser Album")
+    }
+  }
+
   implicit val PostJsonFormat = jsonFormat6(Post)
-  implicit val AlbumJsonFormat = jsonFormat7(Album)
   implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
   implicit val UpdateFriendListJsonFormat = jsonFormat3(UpdateFriendList)
   implicit val FriendListJsonFormat = jsonFormat3(FriendList)

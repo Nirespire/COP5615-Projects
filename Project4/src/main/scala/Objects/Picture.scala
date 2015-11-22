@@ -1,7 +1,7 @@
 package Objects
 
-case class Picture(b: BaseObject,
+case class Picture(baseObject: BaseObject,
                    from: Int,
-                   album: Int,
-                   filename: String,
-                   base64Encoded: String)
+                   var album: Int,
+                   var filename: String,
+                   var base64Encoded: String)

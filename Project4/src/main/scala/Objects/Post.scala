@@ -2,7 +2,7 @@ package Objects
 
 import Objects.ObjectTypes.PostType.PostType
 
-case class Post(b: BaseObject,
+case class Post(baseObject: BaseObject,
                 creator: Int,
                 createdTime: String,
                 from: Int,

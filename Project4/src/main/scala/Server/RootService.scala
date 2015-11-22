@@ -25,72 +25,45 @@ trait RootService extends HttpService {
 
   val myRoute = respondWithMediaType(`application/json`) {
     get {
-      path("user" / IntNumber) { pid =>
-        path("feed") { rc =>
-          /*TODO*/
-        } ~
-          path("post" / IntNumber) { postId => rc => GetMsg(rc, pid, ("post", postId)) } ~
-          path("albums" / IntNumber) { aId => rc => dActor(pid) ! GetMsg(rc, pid, ("album", aId)) } ~
-          path("pictures" / IntNumber) { piId => rc => dActor(pid) ! GetMsg(rc, pid, ("picture", piId)) } ~
-          path("post") { rc => dActor(pid) ! GetMsg(rc, pid, ("post", -1)) } ~
-          path("albums") { rc => dActor(pid) ! GetMsg(rc, pid, ("album", -1)) } ~
-          path("pictures") { rc => dActor(pid) ! GetMsg(rc, pid, ("picture", -1)) } ~ { rc =>
-          dActor(pid) ! GetMsg(rc, pid, None)
-        }
-      } ~
-        path("page" / IntNumber) { pid =>
-          path("feed") { rc =>
-            /*TODO*/
-          } ~
-            path("post" / IntNumber) { postId => rc => GetMsg(rc, pid, ("post", postId)) } ~
-            path("albums" / IntNumber) { aId => rc => dActor(pid) ! GetMsg(rc, pid, ("album", aId)) } ~
-            path("pictures" / IntNumber) { piId => rc => dActor(pid) ! GetMsg(rc, pid, ("picture", piId)) } ~
-            path("post") { rc => dActor(pid) ! GetMsg(rc, pid, ("post", -1)) } ~
-            path("albums") { rc => dActor(pid) ! GetMsg(rc, pid, ("album", -1)) } ~
-            path("pictures") { rc => dActor(pid) ! GetMsg(rc, pid, ("picture", -1)) } ~ { rc =>
-            dActor(pid) ! GetMsg(rc, pid, None)
-          }
-        } ~
-        path("picture" / IntNumber / IntNumber) { (pid, pictureId) => rc =>
-          dActor(pid) ! GetMsg(rc, pid, ("picture", pictureId))
-        } ~
-        path("album" / IntNumber / IntNumber) { (pid, albumId) => rc =>
-          dActor(pid) ! GetMsg(rc, pid, ("album", albumId))
-        } ~
-        path("post" / IntNumber / IntNumber) { (pid, postId) => rc =>
-          dActor(pid) ! GetMsg(rc, pid, ("post", postId))
-        } ~
-        path("debug") { rc => rc.complete(debugInfo) }
+      path("user" / IntNumber / Segment / IntNumber) { (pid, ts, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
+        path("user" / IntNumber / Segment) { (pid, ts) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) } ~
+        path("user" / IntNumber) { pid => rc => dActor(pid) ! GetMsg(rc, pid, None) } ~
+        path("page" / IntNumber / Segment / IntNumber) { (pid, ts, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
+        path("page" / IntNumber / Segment) { (pid, ts) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) } ~
+        path("page" / IntNumber) { pid => rc => dActor(pid) ! GetMsg(rc, pid, None) } ~
+        path("debug") { rc => rc.complete(debugInfo) } ~
+        path(Segment / IntNumber / IntNumber) { (ts, pid, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
+        path(Segment / IntNumber) { (ts, pid) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) }
     } ~
       put {
         path("user") {
           entity(as[User]) { user => rc =>
-            user.b.updateId(debugInfo.profiles)
+            user.baseObject.updateId(debugInfo.profiles)
             debugInfo.profiles += 1
-            dActor(user.b.id) ! CreateMsg[User](rc, user)
+            dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
           }
         } ~
           path("page") {
             entity(as[Page]) { page => rc =>
-              page.b.updateId(debugInfo.profiles)
+              page.baseObject.updateId(debugInfo.profiles)
               debugInfo.profiles += 1
-              dActor(page.b.id) ! CreateMsg[Page](rc, page)
+              dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
             }
           } ~
           path("post") {
             entity(as[Post]) { post => rc =>
               debugInfo.posts += 1
-              dActor(post.creator) ! CreateMsg[Post](rc, post)
+              dActor(post.creator) ! CreateMsg[Post](rc, post.creator, post)
             }
           } ~
           path("album") {
             entity(as[Album]) { album => rc =>
               debugInfo.albums += 1
-              dActor(album.from) ! CreateMsg[Album](rc, album)
+              dActor(album.from) ! CreateMsg[Album](rc, album.from, album)
             }
           } ~
           path("picture") {
-            entity(as[Picture]) { pic => rc => dActor(pic.from) ! CreateMsg[Picture](rc, pic) }
+            entity(as[Picture]) { pic => rc => dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic) }
           }
       } ~
       delete {
@@ -114,25 +87,26 @@ trait RootService extends HttpService {
         path("addfriend") {
           entity(as[UpdateFriendList]) { updFL => rc =>
             debugInfo.friendlistUpdates += 1
-            dActor(updFL.pid) ! UpdateMsg(rc, updFL)
+            dActor(updFL.pid) ! UpdateMsg(rc, updFL.pid, updFL)
           }
         } ~
           path("user") {
-            entity(as[User]) { user => rc => dActor(user.b.id) ! UpdateMsg(rc, user) }
+            entity(as[User]) { user => rc => dActor(user.baseObject.id) ! UpdateMsg(rc, user.baseObject.id, user) }
           } ~
           path("page") {
-            entity(as[Page]) { page => rc => dActor(page.b.id) ! UpdateMsg(rc, page) }
+            entity(as[Page]) { page => rc => dActor(page.baseObject.id) ! UpdateMsg(rc, page.baseObject.id, page) }
           } ~
           path("post") {
-            entity(as[Post]) { post => rc => dActor(post.b.id) ! UpdateMsg(rc, post) }
+            entity(as[Post]) { post => rc => dActor(post.creator) ! UpdateMsg(rc, post.creator, post) }
           } ~
           path("album") {
-            entity(as[Album]) { album => rc => dActor(album.b.id) ! UpdateMsg(rc, album) }
+            entity(as[Album]) { album => rc => dActor(album.from) ! UpdateMsg(rc, album.from, album) }
           } ~
           path("picture") {
-            entity(as[Picture]) { pic => rc => dActor(pic.b.id) ! UpdateMsg(rc, pic) }
+            entity(as[Picture]) { pic => rc => dActor(pic.from) ! UpdateMsg(rc, pic.from, pic) }
 
           }
       }
   }
+
 }
