@@ -33,6 +33,7 @@ class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
             if (p.album == -1 || p.album > albums.size) p.album = 0
             albums(p.album).addPicture(p.baseObject.id)
             if (albums(p.album).coverPhoto == -1) albums(p.album).coverPhoto = p.baseObject.id
+            rc.complete(p)
         }
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage))

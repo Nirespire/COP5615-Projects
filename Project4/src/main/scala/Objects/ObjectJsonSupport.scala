@@ -27,17 +27,20 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   implicit object DebugActorJsonFormat extends RootJsonFormat[DebugInfo] {
     def write(da: DebugInfo) = JsObject(
       "profiles" -> JsNumber(da.profiles),
+      "users" -> JsNumber(da.users),
+      "pages" -> JsNumber(da.pages),
       "posts" -> JsNumber(da.posts),
       "albums" -> JsNumber(da.albums),
+      "pictures" -> JsNumber(da.pictures),
       "friendlistUpdates" -> JsNumber(da.friendlistUpdates),
       "requestPersecond" ->
         JsNumber((da.profiles + da.posts + da.albums + da.friendlistUpdates) * 1000000000.0 / (System.nanoTime() - da.start))
     )
 
     def read(value: JsValue) = {
-      value.asJsObject.getFields("profiles", "posts", "albums", "friendlistUpdates") match {
-        case Seq(JsNumber(profiles), JsNumber(posts), JsNumber(albums), JsNumber(friendlistUpdates)) =>
-          DebugInfo(profiles.toInt, posts.toInt, albums.toInt, friendlistUpdates.toInt)
+      value.asJsObject.getFields("profiles", "users", "pages", "posts", "albums", "pictures", "friendlistUpdates") match {
+        case Seq(JsNumber(profiles),JsNumber(users), JsNumber(pages), JsNumber(posts), JsNumber(albums),JsNumber(pictures), JsNumber(friendlistUpdates)) =>
+          DebugInfo(profiles.toInt, users.toInt, pages.toInt, posts.toInt, albums.toInt, pictures.toInt, friendlistUpdates.toInt)
         case _ => throw new DeserializationException("Debug Actor expected")
       }
     }

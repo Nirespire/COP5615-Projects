@@ -1,5 +1,10 @@
 package Client
 
+import java.io.InputStream
+import java.util.GregorianCalendar
+
+import com.google.common.io.BaseEncoding
+
 
 object Resources {
   val statuses = Seq(
@@ -128,4 +133,130 @@ object Resources {
     "Television",
     "Website or Blog"
   )
+
+
+  val names = Seq(
+    "Lavelle Bartley",
+    "Kyra Villareal",
+    "Marine Vigil",
+    "Leonardo Tonn",
+    "Larisa Neal",
+    "Krystin Litchford",
+    "Synthia Pitre",
+    "Charlie Bode",
+    "Ciera Bitner",
+    "Jenette Bradsher",
+    "Nettie Hoback",
+    "Sal Bosket",
+    "Darin Millay",
+    "Miss Robey",
+    "Cornelius Allison",
+    "Calista Martyn",
+    "Sterling Dorr",
+    "Coral Glenn",
+    "Lorette Omara",
+    "Millard Maag",
+    "Lynette Huss",
+    "Zona Biffle",
+    "Lucina Mccranie",
+    "Marybelle Burney",
+    "Melina Wallander",
+    "Olene Alcon",
+    "Audrey Sayles",
+    "Kennith Ring",
+    "Lena Schiller",
+    "Glen Lacaze",
+    "Britta Tillman",
+    "Vena Strout",
+    "Angelika Lukes",
+    "Cathey Wallick",
+    "Charlotte Neeson",
+    "Mindi Seats",
+    "Rochelle Putnam",
+    "Violette Cahall",
+    "Elena Cancel",
+    "Walter Douglass",
+    "Lynne Dimarco",
+    "Tiffani Legere",
+    "Genevive Souther",
+    "Twana Krone",
+    "Kenia Dalzell",
+    "Willie Unruh",
+    "Eldridge Glanton",
+    "Tressie Gay",
+    "Latoria Curiel",
+    "Sarah Heinen",
+    "Rickie Stauber",
+    "Gino Beebe",
+    "Dorathy Houde",
+    "Marin Klem",
+    "Brent Read",
+    "Ronni Marsee",
+    "Tommie Lasala",
+    "Iliana Wortham",
+    "Fallon Meyers",
+    "Roxanna Scarborough",
+    "Haydee Biehl",
+    "Jeanie Neault",
+    "Francesca Lesesne",
+    "Karina Striplin",
+    "Korey Bregman",
+    "Bruce Peets",
+    "Beata Vanegas",
+    "Margene Marques",
+    "Yukiko Hua",
+    "Corey Kavanaugh",
+    "Beverley Kuehne",
+    "Lula Rega",
+    "Van Tetzlaff",
+    "Lesha Irwin",
+    "Jacinto Claus",
+    "Edris Yearta",
+    "Tomika Hively",
+    "Thelma Rozzell",
+    "Trudy Likens",
+    "Carrol Hensley",
+    "Veronica Mabrey",
+    "Hobert Gouveia",
+    "Pamelia Hayman",
+    "Daphne Darsey",
+    "Ione Fox",
+    "Lilliana Lafontaine",
+    "Dwana Paschall",
+    "Bethany Noyola",
+    "Nancey Peacock",
+    "Eldridge Archey",
+    "Lyndsey Finlay",
+    "Chadwick Cahall",
+    "Gaynelle Weir",
+    "Ken Millis",
+    "Delila Geissler",
+    "Mika Caprio",
+    "Maritza Carnahan",
+    "Syble Ismail",
+    "Kellye Leitzel",
+    "Lyla Alcocer"
+  )
+
+  def randomBirthday(): String ={
+
+    val year:Int = randBetween(1900, 2010)
+    val month:Int = randBetween(1,12)
+    val day: Int = randBetween(1,27)
+
+    return day + "-" +  month + "-" + year
+
+  }
+
+  def randBetween(start:Int, end:Int) :Int = {
+    return start + Math.round(Math.random() * (end - start)).toInt
+  }
+
+  def getImageBytes(filename: String): String = {
+    val is: InputStream = getClass.getResourceAsStream(filename)
+    val bytes = Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
+    BaseEncoding.base64().encode(bytes)
+  }
+
+
 }

@@ -45,48 +45,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def receive = {
     // Create a user profile or page for self
     case true =>
-      if (isPage) {
-        val newPage = Page(BaseObject(), "about", pageCategories(Random.nextInt(pageCategories.length)), -1)
-        val pipeline = sendReceive ~> unmarshal[Objects.Page]
-
-        val future = pipeline {
-          pipelining.Put("http://" + serviceHost + ":" + servicePort + "/page", newPage)
-        }
-
-        future onComplete {
-          case Success(obj: Page) =>
-            mePage = obj
-            myBaseObj = obj.baseObject
-            context.system.scheduler.scheduleOnce(10 second, self, false)
-
-          case Success(somethingUnexpected) =>
-            log.error("Unexpected return", somethingUnexpected)
-
-          case Failure(error) =>
-            log.error(error, "Couldn't create page")
-        }
-      }
-      else {
-        val newUser = User(BaseObject(), "about me", "04-25-1994", 'M', "Sanjay", "Nair")
-        val pipeline = sendReceive ~> unmarshal[Objects.User]
-
-        val future = pipeline {
-          pipelining.Put("http://" + serviceHost + ":" + servicePort + "/user", newUser)
-        }
-
-        future onComplete {
-          case Success(obj: User) =>
-            me = obj
-            myBaseObj = obj.baseObject
-            context.system.scheduler.scheduleOnce(10 second, self, false)
-
-          case Success(somethingUnexpected) =>
-            log.error("Unexpected return", somethingUnexpected)
-
-          case Failure(error) =>
-            log.error(error, "Couldn't create user")
-        }
-      }
+      registerMyself()
 
     // Do some activity every second
     case false =>
@@ -107,8 +66,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         if (probability < putPercent) {
           context.system.scheduler.scheduleOnce(1 second, self, MakePost)
           context.system.scheduler.scheduleOnce(1 second, self, MakeAlbum)
-          //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
-          //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
         }
 
         if (probability < getPercent) {
@@ -119,11 +77,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           context.system.scheduler.scheduleOnce(1 second, self, MakeFriend)
         }
 
+        context.system.scheduler.scheduleOnce(1 second, self, false)
+
 
       }
 
     case MakePost =>
-
       val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), status)
       val pipeline = sendReceive ~> unmarshal[Objects.Post]
       val future = pipeline {
@@ -132,7 +91,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: Post) =>
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
 
         case Success(somethingUnexpected) =>
           println("Unexpected return", somethingUnexpected)
@@ -142,9 +101,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
 
     case MakePicture =>
-
       //      TODO: Need to assign this an album. Do get on albums first.
-      val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", getImageBytes("/image.png"))
+      //      val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", getImageBytes("/image.png"))
+      val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", "blah")
       val pipeline = sendReceive ~> unmarshal[Objects.Picture]
       val future = pipeline {
         pipelining.Put("http://" + serviceHost + ":" + servicePort + "/picture", newPicture)
@@ -152,7 +111,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: Picture) =>
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
 
         case Success(somethingUnexpected) =>
           log.error("Unexpected return", somethingUnexpected)
@@ -172,34 +131,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj) =>
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
         case Success(somethingUnexpected) =>
           log.error("Unexpected return", somethingUnexpected)
 
         case Failure(error) =>
           log.error(error, "Couldn't put album")
-      }
-
-
-    case MakePage =>
-
-      //      TODO Need to assign a picture cover photo
-      val newPage = Page(baseObject = BaseObject(), "page description", "page category", -1)
-      val pipeline = sendReceive ~> unmarshal[Objects.Page]
-      val future = pipeline {
-        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/page", newPage)
-      }
-
-      future onComplete {
-        case Success(obj: Page) =>
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePage)
-
-        case Success(somethingUnexpected) =>
-          log.error("Unexpected return", somethingUnexpected)
-
-        case Failure(error) =>
-          log.error(error, "Couldn't put page")
       }
 
     case MakeFriend =>
@@ -212,8 +150,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: UpdateFriendList) =>
-          //          log.info("added friend", obj)
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
+        //          log.info("added friend", obj)
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
 
         case Success(somethingUnexpected) =>
           log.error("Unexpected return", somethingUnexpected)
@@ -235,7 +173,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
         future onComplete {
           case Success(obj: Post) =>
-            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
+          //            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
 
           case Success(somethingUnexpected) =>
             log.error("Unexpected return", somethingUnexpected)
@@ -287,10 +225,53 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   }
 
 
-  def getImageBytes(filename: String): String = {
-    val is: InputStream = getClass.getResourceAsStream(filename)
-    val bytes = Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
-    BaseEncoding.base64().encode(bytes)
+  def registerMyself() {
+    if (isPage) {
+      val newPage = Page(BaseObject(), "about", pageCategories(Random.nextInt(pageCategories.length)), -1)
+      val pipeline = sendReceive ~> unmarshal[Objects.Page]
+
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/page", newPage)
+      }
+
+      future onComplete {
+        case Success(obj: Page) =>
+          mePage = obj
+          myBaseObj = obj.baseObject
+          context.system.scheduler.scheduleOnce(10 second, self, false)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't create page")
+      }
+    }
+    else {
+      val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+      val gender = Random.nextInt(2)
+      val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0))
+      val pipeline = sendReceive ~> unmarshal[Objects.User]
+
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/user", newUser)
+      }
+
+      future onComplete {
+        case Success(obj: User) =>
+          me = obj
+          myBaseObj = obj.baseObject
+          context.system.scheduler.scheduleOnce(10 second, self, false)
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't create user")
+      }
+    }
   }
+
+
 }
 

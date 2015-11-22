@@ -39,6 +39,7 @@ trait RootService extends HttpService {
         path("user") {
           entity(as[User]) { user => rc =>
             user.baseObject.updateId(debugInfo.profiles)
+            debugInfo.users += 1
             debugInfo.profiles += 1
             dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
           }
@@ -46,6 +47,7 @@ trait RootService extends HttpService {
           path("page") {
             entity(as[Page]) { page => rc =>
               page.baseObject.updateId(debugInfo.profiles)
+              debugInfo.pages += 1
               debugInfo.profiles += 1
               dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
             }
@@ -63,7 +65,10 @@ trait RootService extends HttpService {
             }
           } ~
           path("picture") {
-            entity(as[Picture]) { pic => rc => dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic) }
+            entity(as[Picture]) {
+              debugInfo.pictures += 1
+              pic => rc => dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic)
+            }
           }
       } ~
       delete {
