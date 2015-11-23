@@ -8,7 +8,7 @@ import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ActorRef, Actor, ActorLogging}
 import com.google.common.io.BaseEncoding
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
@@ -24,14 +24,19 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   var myFriends = mutable.ArrayBuffer[Int]()
 
+  var myRealFriends = mutable.HashMap[ActorRef, Int]()
+
   var me: User = null
   var mePage: Page = null
   var myBaseObj: BaseObject = null
 
-  val (putPercent, getPercent, friendPercent) = clientType match {
-    case ClientType.Active => (80, 50, 90)
-    case ClientType.Passive => (20, 90, 80)
-    case ClientType.ContentCreator => (70, 20, 10)
+  var numPosts = 0
+  var numAlbums = 0
+
+  val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
+    case ClientType.Active => (80, 50, 90, 50)
+    case ClientType.Passive => (20, 90, 80, 5)
+    case ClientType.ContentCreator => (70, 20, 10, 40)
   }
 
   val config = ConfigFactory.load()
@@ -64,26 +69,59 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
 
         if (probability < putPercent) {
-          context.system.scheduler.scheduleOnce(1 second, self, MakePost)
-          context.system.scheduler.scheduleOnce(1 second, self, MakeAlbum)
-          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
+
+          val rand = Random.nextInt(4)
+
+          rand match {
+            case 0 =>
+              context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, MakePost(status, -1))
+
+            case 1 =>
+              context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, MakeAlbum)
+
+            case 2 =>
+              context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, MakePicture(-1))
+
+            case 3 =>
+              context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, MakePicturePost)
+            case _ =>
+          }
         }
 
         if (probability < getPercent) {
-          //context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
+          if (numPosts > 50) {
+            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
+          }
         }
 
         if (probability < friendPercent) {
-          context.system.scheduler.scheduleOnce(1 second, self, MakeFriend)
+          //context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, MakeFriend)
         }
 
-        context.system.scheduler.scheduleOnce(1 second, self, false)
+        if (probability < updatePercent) {
+          context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, UpdatePost(status, -1))
 
+          if (numAlbums > 0) {
+            context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, AddPictureToAlbum)
+          }
+        }
 
+        context.system.scheduler.scheduleOnce(Random.nextInt(3) second, self, false)
       }
 
-    case MakePost =>
-      val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), status)
+    /*TODO
+    case UpdatePicture(pictureID) =>
+
+    case UpdateAlbum(albumID) =>
+
+    case UpdateSelf =>
+
+    case UpdatePost(postType, attachmentID) =>
+
+     */
+
+    case MakePost(postType, attachmentID) =>
+      val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), postType, attachmentID)
       val pipeline = sendReceive ~> unmarshal[Objects.Post]
       val future = pipeline {
         pipelining.Put("http://" + serviceHost + ":" + servicePort + "/post", newPost)
@@ -91,6 +129,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: Post) =>
+          numPosts += 1
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
 
         case Success(somethingUnexpected) =>
@@ -100,8 +139,26 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           log.error(error, "Couldn't put post")
       }
 
-    case MakePicture =>
-      //      TODO: Need to assign this an album. Do get on albums first.
+    case MakePicturePost =>
+      val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", "blah")
+      val pipeline = sendReceive ~> unmarshal[Objects.Picture]
+      val future = pipeline {
+        pipelining.Put("http://" + serviceHost + ":" + servicePort + "/picture", newPicture)
+      }
+
+      future onComplete {
+        case Success(obj: Picture) =>
+          context.system.scheduler.scheduleOnce(1 second, self, MakePost(photo, obj.baseObject.id))
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put picture post")
+      }
+
+
+    case MakePicture(albumID) =>
       //      val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", getImageBytes("/image.png"))
       val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", "blah")
       val pipeline = sendReceive ~> unmarshal[Objects.Picture]
@@ -111,6 +168,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: Picture) =>
+        //          log.info(obj.toString())
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture)
 
         case Success(somethingUnexpected) =>
@@ -118,6 +176,23 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
         case Failure(error) =>
           log.error(error, "Couldn't put picture")
+      }
+
+    case AddPictureToAlbum =>
+      val pipeline = sendReceive ~> unmarshal[Objects.Album]
+      val future = pipeline {
+        pipelining.Get("http://" + serviceHost + ":" + servicePort + "/album/" + myBaseObj.id)
+      }
+
+      future onComplete {
+        case Success(obj) =>
+          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePicture(obj.baseObject.id))
+
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
+
+        case Failure(error) =>
+          log.error(error, "Couldn't put album")
       }
 
 
@@ -131,6 +206,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj) =>
+          numAlbums += 1
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
 
         case Success(somethingUnexpected) =>
@@ -140,8 +216,23 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           log.error(error, "Couldn't put album")
       }
 
-    case MakeFriend =>
-      val updatedList = UpdateFriendList(myBaseObj.id, Random.nextInt(myBaseObj.id))
+    // From matchmaker
+    case aNewFriend: ActorRef =>
+      log.info(myBaseObj.id + " just met someone")
+      aNewFriend ! Handshake(true, myBaseObj.id)
+
+    // From new friend
+    case Handshake(needResponse, id) =>
+      myRealFriends.put(sender, id)
+      self ! MakeFriend(id)
+      if (needResponse) {
+        sender ! Handshake(false, myBaseObj.id)
+      }
+
+
+    /*TODO check this*/
+    case MakeFriend(id) =>
+      val updatedList = UpdateFriendList(myBaseObj.id, if (id == -1) Random.nextInt(myBaseObj.id) else id)
 
       val pipeline = sendReceive ~> unmarshal[UpdateFriendList]
       val future = pipeline {
@@ -150,6 +241,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       future onComplete {
         case Success(obj: UpdateFriendList) =>
+          myFriends.append(obj.fid)
         //          log.info("added friend", obj)
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeFriend)
 
@@ -162,25 +254,26 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
     case GetFriendsPost =>
+      //        TODO replace this with a get to some friendlist
+      var friendId = Random.nextInt(myBaseObj.id)
       if (!myFriends.isEmpty) {
-        //        TODO replace this with a get to some friendlist
-        val friendId = myFriends(Random.nextInt(myFriends.length))
+        friendId = myFriends(Random.nextInt(myFriends.length))
+      }
 
-        val pipeline = sendReceive ~> unmarshal[Post]
-        val future = pipeline {
-          pipelining.Get("http://" + serviceHost + ":" + servicePort + "/post/" + friendId)
-        }
+      val pipeline = sendReceive ~> unmarshal[Post]
+      val future = pipeline {
+        pipelining.Get("http://" + serviceHost + ":" + servicePort + "/post/" + friendId)
+      }
 
-        future onComplete {
-          case Success(obj: Post) =>
-          //            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
+      future onComplete {
+        case Success(obj: Post) =>
+        //            context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, GetFriendsPost)
 
-          case Success(somethingUnexpected) =>
-            log.error("Unexpected return", somethingUnexpected)
+        case Success(somethingUnexpected) =>
+          log.error("Unexpected return", somethingUnexpected)
 
-          case Failure(error) =>
-            log.error(error, "Couldn't get friend's post")
-        }
+        case Failure(error) =>
+          log.error(error, "Couldn't get friend's post")
       }
   }
 

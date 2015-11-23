@@ -1,4 +1,4 @@
 package Client.Messages
 
 
-case class MakePicture()
+case class MakePicture(albumID: Int)

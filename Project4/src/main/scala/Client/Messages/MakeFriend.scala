@@ -1,4 +1,4 @@
 package Client.Messages
 
 
-case class MakeFriend()
+case class MakeFriend(id:Int)

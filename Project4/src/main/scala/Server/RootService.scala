@@ -65,9 +65,9 @@ trait RootService extends HttpService {
             }
           } ~
           path("picture") {
-            entity(as[Picture]) {
+            entity(as[Picture]) { pic => rc =>
               debugInfo.pictures += 1
-              pic => rc => dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic)
+              dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic)
             }
           }
       } ~

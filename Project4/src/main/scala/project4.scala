@@ -2,7 +2,7 @@ import java.awt.image.{DataBufferByte, BufferedImage}
 import java.io.{InputStream, File, FileInputStream}
 import javax.imageio.ImageIO
 
-import Client.ClientType
+import Client.{MatchMaker, ClientType}
 import Server.Actors.RootServerActor
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
@@ -39,21 +39,32 @@ object project4 extends App {
     // Start up actor system of clients
     val clientSystem = ActorSystem("client-spray-system")
 
+    val matchmaker = clientSystem.actorOf(Props(new MatchMaker), "MatchMaker")
+
     val numActive = (0.5 * numClients).toInt
     val numPassive = (0.3 * numClients).toInt
     val numCelebrity = numClients - numActive + numPassive
 
     (1 to numActive).foreach { idx =>
-      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Active)), "client" + idx) ! true
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Active)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
     }
 
     (numActive + 1 to numActive + numPassive).foreach { idx =>
-      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Passive)), "client" + idx) ! true
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Passive)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
+
     }
 
     (numActive + numPassive + 1 to numClients).foreach { idx =>
-      clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.ContentCreator)), "client" + idx) ! true
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(true,ClientType.ContentCreator)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
     }
+
+    matchmaker ! true;
 
 
     println("End Loop")

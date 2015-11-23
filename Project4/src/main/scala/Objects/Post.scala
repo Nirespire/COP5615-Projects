@@ -7,4 +7,5 @@ case class Post(baseObject: BaseObject,
                 createdTime: String,
                 from: Int,
                 message: String,
-                postType: PostType)
+                postType: PostType,
+                attachmentId: Int)
