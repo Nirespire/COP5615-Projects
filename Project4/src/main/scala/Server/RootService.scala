@@ -13,7 +13,7 @@ import spray.routing._
 import scala.concurrent.duration._
 
 trait RootService extends HttpService {
-  val split = 8
+  val split = 1
 
   implicit def executionContext = actorRefFactory.dispatcher
 
@@ -25,12 +25,9 @@ trait RootService extends HttpService {
 
   val myRoute = respondWithMediaType(`application/json`) {
     get {
-      path("user" / IntNumber / Segment / IntNumber) { (pid, ts, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
-        path("user" / IntNumber / Segment) { (pid, ts) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) } ~
-        path("user" / IntNumber) { pid => rc => dActor(pid) ! GetMsg(rc, pid, None) } ~
-        path("page" / IntNumber / Segment / IntNumber) { (pid, ts, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
-        path("page" / IntNumber / Segment) { (pid, ts) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) } ~
-        path("page" / IntNumber) { pid => rc => dActor(pid) ! GetMsg(rc, pid, None) } ~
+      path(("user" | "page") / IntNumber / Segment / IntNumber) { (pid, ts, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
+        path(("user" | "page") / IntNumber / Segment) { (pid, ts) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) } ~
+        path(("user" | "page") / IntNumber) { pid => rc => dActor(pid) ! GetMsg(rc, pid, None) } ~
         path("debug") { rc => rc.complete(debugInfo) } ~
         path(Segment / IntNumber / IntNumber) { (ts, pid, postId) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, postId)) } ~
         path(Segment / IntNumber) { (ts, pid) => rc => dActor(pid) ! GetMsg(rc, pid, (ts, -1)) }
@@ -109,7 +106,6 @@ trait RootService extends HttpService {
           } ~
           path("picture") {
             entity(as[Picture]) { pic => rc => dActor(pic.from) ! UpdateMsg(rc, pic.from, pic) }
-
           }
       }
   }

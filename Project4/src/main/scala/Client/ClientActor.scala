@@ -1,15 +1,12 @@
 package Client
 
-import java.io.InputStream
-
 import Client.ClientType.ClientType
 import Client.Messages._
 import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
-import akka.actor.{ActorRef, Actor, ActorLogging}
-import com.google.common.io.BaseEncoding
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import spray.client.pipelining
@@ -254,9 +251,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
     case GetFriendsPost =>
-      //        TODO replace this with a get to some friendlist
       var friendId = Random.nextInt(myBaseObj.id)
-      if (!myFriends.isEmpty) {
+      if (myFriends.nonEmpty) {
         friendId = myFriends(Random.nextInt(myFriends.length))
       }
 
@@ -313,7 +309,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         println("Unexpected return", somethingUnexpected)
 
       case Failure(error) =>
-        println(error, "Couldn't " + (if (getOrDelete) "get " else "delete ") + objType)
+        println(error.getMessage, "Couldn't " + (if (getOrDelete) "get " else "delete ") + objType)
     }
   }
 

@@ -5,13 +5,14 @@ import Objects.{BaseObject, Picture, Album, Post}
 import Server.Messages.{GetMsg, ResponseMessage, CreateMsg}
 import akka.actor.{Actor, ActorRef}
 import org.joda.time.DateTime
+import spray.json.{JsArray, JsNumber}
 
 import scala.collection.mutable
 
 class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
   val createdTime = new DateTime().toString()
   val defaultAlbum = Album(BaseObject(0), pid, createdTime, createdTime, -1, "Default Album")
-  var albums = mutable.ArrayBuffer[Album](defaultAlbum)
+  val albums = mutable.ArrayBuffer[Album](defaultAlbum)
   val posts = mutable.ArrayBuffer[Post]()
   val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
   val pictures = mutable.ArrayBuffer[Picture]()
@@ -38,17 +39,21 @@ class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
             rc.complete(p)
         }
       } catch {
-        case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
+        case e: Throwable => rc.complete(e.getMessage)
       }
-    case getMsg@GetMsg(rc, pid, obj) =>
+    case getMsg@GetMsg(rc, _, obj) =>
       try {
         obj match {
           case ("post", pId: Int) => if (pId == -1) rc.complete(posts.last) else rc.complete(posts(pId))
           case ("album", aId: Int) => if (aId == -1) rc.complete(albums.last) else rc.complete(albums(aId))
           case ("picture", aId: Int) => if (aId == -1) rc.complete(pictures.last) else rc.complete(pictures(aId))
+          case ("feed", fId: Int) =>
+            val startIdx = if (posts.size < 10) 0 else posts.size - 10
+            val stopIdx = posts.size
+            rc.complete(JsArray(posts.slice(startIdx, stopIdx).map(post => JsNumber(post.baseObject.id)).toVector))
         }
       } catch {
-        case e: Throwable => rc.failWith(e)
+        case e: Throwable => rc.complete(e.getMessage)
       }
 
     case _ =>
