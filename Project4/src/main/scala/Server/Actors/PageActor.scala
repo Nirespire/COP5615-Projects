@@ -13,7 +13,7 @@ class PageActor(var page: Page, debugActor: ActorRef)
       page = newPage
       rc.complete(page)
 
-    case getMsg@GetMsg(rc, _, None) => rc.complete(page)
+    case getMsg@GetMsg(rc, _, ("page", -1)) => rc.complete(page)
   }
 
   override def receive = pageReceive orElse super.receive

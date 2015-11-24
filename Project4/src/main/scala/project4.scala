@@ -41,8 +41,8 @@ object project4 extends App {
 
     val matchmaker = clientSystem.actorOf(Props(new MatchMaker), "MatchMaker")
 
-    val numActive = (0.5 * numClients).toInt
-    val numPassive = (0.3 * numClients).toInt
+    val numActive = (0.15 * numClients).toInt
+    val numPassive = (0.80 * numClients).toInt
     val numCelebrity = numClients - numActive + numPassive
 
     (1 to numActive).foreach { idx =>
@@ -64,7 +64,7 @@ object project4 extends App {
       actor ! true
     }
 
-    matchmaker ! true;
+    matchmaker ! true
 
 
     println("End Loop")

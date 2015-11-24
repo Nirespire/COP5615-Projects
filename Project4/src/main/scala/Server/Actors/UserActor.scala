@@ -26,7 +26,9 @@ class UserActor(var user: User, debugActor: ActorRef)
         friendsMap(upd.listType) = Set(upd.fid)
       }
       rc.complete(upd)
-    case getMsg@GetMsg(rc, _, None) => rc.complete(user)
+    case getMsg@GetMsg(rc, _, ("user", -1)) => rc.complete(user)
+    case getMsg@GetMsg(rc, _, listType: ListType) =>
+      rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
   }
 
   override def receive = userReceive orElse super.receive

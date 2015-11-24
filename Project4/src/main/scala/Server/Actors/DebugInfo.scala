@@ -1,13 +1,36 @@
 package Server.Actors
 
-case class DebugInfo(var profiles: Int = 0,
-                      var users: Int = 0,
-                    var pages: Int = 0,
-                     var posts: Int = 0,
-                     var albums: Int = 0,
-                     var  pictures: Int = 0,
-                     var friendlistUpdates: Int = 0
-                      ) {
+import Utils.Constants
 
+import scala.collection.mutable
+
+case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
+                     mutable.HashMap[Char, Int]().withDefaultValue(0)) {
   val start = System.nanoTime()
+
+  def postRequestPerSecond() = (debugVar(Constants.profilesChar) +
+    debugVar(Constants.albumsChar) +
+    debugVar(Constants.flChar) +
+    debugVar(Constants.picturesChar) +
+    debugVar(Constants.postsChar)
+    ) * Constants.nano / (System.nanoTime() - start)
+
+  def getRequestPerSecond() = (debugVar(Constants.getProfilesChar) +
+    debugVar(Constants.getAlbumsChar) +
+    debugVar(Constants.getFlChar) +
+    debugVar(Constants.getPicturesChar) +
+    debugVar(Constants.getPostsChar)
+    ) * Constants.nano / (System.nanoTime() - start)
+
+  def allRequestPerSecond() = (debugVar(Constants.profilesChar) +
+    debugVar(Constants.albumsChar) +
+    debugVar(Constants.flChar) +
+    debugVar(Constants.picturesChar) +
+    debugVar(Constants.postsChar) +
+    debugVar(Constants.getProfilesChar) +
+    debugVar(Constants.getAlbumsChar) +
+    debugVar(Constants.getFlChar) +
+    debugVar(Constants.getPicturesChar) +
+    debugVar(Constants.getPostsChar)
+    ) * Constants.nano / (System.nanoTime() - start)
 }

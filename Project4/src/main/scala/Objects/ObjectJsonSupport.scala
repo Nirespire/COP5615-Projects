@@ -1,6 +1,7 @@
 package Objects
 
 import Objects.ObjectTypes.ListType
+import Utils.Constants
 import Server.Messages.ResponseMessage
 import Server.Actors.DebugInfo
 import spray.httpx.SprayJsonSupport
@@ -26,21 +27,47 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
 
   implicit object DebugActorJsonFormat extends RootJsonFormat[DebugInfo] {
     def write(da: DebugInfo) = JsObject(
-      "profiles" -> JsNumber(da.profiles),
-      "users" -> JsNumber(da.users),
-      "pages" -> JsNumber(da.pages),
-      "posts" -> JsNumber(da.posts),
-      "albums" -> JsNumber(da.albums),
-      "pictures" -> JsNumber(da.pictures),
-      "friendlistUpdates" -> JsNumber(da.friendlistUpdates),
-      "requestPersecond" ->
-        JsNumber((da.profiles + da.posts + da.albums + da.friendlistUpdates) * 1000000000.0 / (System.nanoTime() - da.start))
+      "post-profiles" -> JsNumber(da.debugVar(Constants.profilesChar)),
+      "post-posts" -> JsNumber(da.debugVar(Constants.postsChar)),
+      "post-albums" -> JsNumber(da.debugVar(Constants.albumsChar)),
+      "post-pictures" -> JsNumber(da.debugVar(Constants.picturesChar)),
+      "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.flChar)),
+      "post-requestPersecond" -> JsNumber(da.postRequestPerSecond()),
+      "get-profiles" -> JsNumber(da.debugVar(Constants.profilesChar)),
+      "get-posts" -> JsNumber(da.debugVar(Constants.postsChar)),
+      "get-albums" -> JsNumber(da.debugVar(Constants.albumsChar)),
+      "get-pictures" -> JsNumber(da.debugVar(Constants.picturesChar)),
+      "get-friendlistUpdates" -> JsNumber(da.debugVar(Constants.flChar)),
+      "get-requestPersecond" -> JsNumber(da.getRequestPerSecond()),
+      "all-requestPersecond" -> JsNumber(da.allRequestPerSecond())
     )
 
     def read(value: JsValue) = {
-      value.asJsObject.getFields("profiles", "users", "pages", "posts", "albums", "pictures", "friendlistUpdates") match {
-        case Seq(JsNumber(profiles),JsNumber(users), JsNumber(pages), JsNumber(posts), JsNumber(albums),JsNumber(pictures), JsNumber(friendlistUpdates)) =>
-          DebugInfo(profiles.toInt, users.toInt, pages.toInt, posts.toInt, albums.toInt, pictures.toInt, friendlistUpdates.toInt)
+      val da = DebugInfo()
+      value.asJsObject.getFields("post-profiles", "post-posts", "post-albums", "post-pictures",
+        "post-friendlistUpdates", "get-profiles", "get-posts", "get-albums",
+        "get-pictures", "get-friendlistUpdates") match {
+        case Seq(JsNumber(post_profiles),
+        JsNumber(post_posts),
+        JsNumber(post_albums),
+        JsNumber(post_pictures),
+        JsNumber(post_friendlistUpdates),
+        JsNumber(get_profiles),
+        JsNumber(get_posts),
+        JsNumber(get_albums),
+        JsNumber(get_pictures),
+        JsNumber(get_friendlistUpdates)) =>
+          da.debugVar(Constants.profilesChar) = post_profiles.toInt
+          da.debugVar(Constants.postsChar) = post_posts.toInt
+          da.debugVar(Constants.albumsChar) = post_albums.toInt
+          da.debugVar(Constants.picturesChar) = post_pictures.toInt
+          da.debugVar(Constants.flChar) = post_friendlistUpdates.toInt
+          da.debugVar(Constants.profilesChar) = get_profiles.toInt
+          da.debugVar(Constants.postsChar) = get_posts.toInt
+          da.debugVar(Constants.albumsChar) = get_albums.toInt
+          da.debugVar(Constants.picturesChar) = get_pictures.toInt
+          da.debugVar(Constants.flChar) = get_friendlistUpdates.toInt
+          da
         case _ => throw new DeserializationException("Debug Actor expected")
       }
     }
