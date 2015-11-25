@@ -1,5 +1,9 @@
 package Client
 
+import java.security.KeyPairGenerator
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+
 import Client.ClientType.ClientType
 import Client.Messages._
 import Client.Resources._
@@ -361,6 +365,4 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-
 }
-

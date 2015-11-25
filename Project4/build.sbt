@@ -2,7 +2,7 @@ name := "COP5615 Project 4"
 
 version := "1.0"
 
-scalaVersion := "2.10.5"
+scalaVersion := "2.11.6"
 
 resolvers ++= Seq(
   "Spray repository" at "http://repo.spray.io",
@@ -23,6 +23,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-actor" % akkaV,
     "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
     "joda-time" % "joda-time" % "2.9.1",
-    "com.google.guava" % "guava" % "17.0"
+    "com.google.guava" % "guava" % "17.0",
+    "org.scalatest" %"scalatest_2.11" % "2.2.1" % "test"
   )
 }
