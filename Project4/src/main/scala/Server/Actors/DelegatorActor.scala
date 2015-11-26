@@ -1,51 +1,34 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
+import Objects.{Page, User}
 import Server.Messages._
 import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 
 import spray.json._
 import scala.collection.mutable
 
-class DelegatorActor extends Actor with ActorLogging {
-  val profiles = mutable.ArrayBuffer[ActorRef]()
-  val debugActor = context.actorOf(Props(new DebugActor()))
+class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
+  val profiles = mutable.HashMap[Int, ActorRef]()
 
   def receive = {
-    case CreateUser(requestContext, user) =>
-      debugActor ! CreateProfile
+    case cMsg@CreateMsg(rc, pid, u: User) =>
       try {
-        user.b.updateId(profiles.size)
-        profiles.append(context.actorOf(Props(new UserActor(user))))
-//        log.info(s"Number of profiles = ${profiles.size} - ${profiles(profiles.size - 1)}")
-        requestContext.complete(user)
+        profiles.put(pid, context.actorOf(Props(new UserActor(u, debugActor))))
+        rc.complete(u)
       } catch {
-        case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
       }
-    case x: CreatePost =>
-//      log.info(s"CreatePost  = ${x.post.creator}")
-      debugActor ! CreatePost
+    case cMsg@CreateMsg(rc, pid, p: Page) =>
       try {
-        profiles(x.post.creator) ! x
+        profiles.put(pid, context.actorOf(Props(new PageActor(p, debugActor))))
+        rc.complete(p)
       } catch {
-        case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
+        case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
       }
-    case x: CreateAlbum =>
-//      log.info(s"CreateAlbum = ${x.album.from}")
-      debugActor ! CreateAlbum
-      try {
-        profiles(x.album.from) ! x
-      } catch {
-        case e: Throwable => x.requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-      }
-    case GetUser(requestContext, pid) =>
-      try {
-        profiles(pid) ! requestContext
-      } catch {
-        case e: Throwable => requestContext.complete(ResponseMessage(e.getMessage).toJson.compactPrint)
-      }
-    case x: GetServerInfo => debugActor ! x
+    case cMsg@CreateMsg(rc, pid, obj) => profiles(pid) ! cMsg
+    case getMsg@GetMsg(rc, pid, params) => profiles(pid) ! getMsg
+    case updMsg@UpdateMsg(rc, pid, obj) => profiles(pid) ! updMsg
     case _ =>
   }
-
 }

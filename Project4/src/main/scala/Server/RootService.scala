@@ -1,68 +1,136 @@
 package Server
 
 import Objects.ObjectJsonSupport._
-import Objects.{Album, Post, User}
-import Server.Actors.DelegatorActor
+import Objects.ObjectTypes.ListType.ListType
+import Objects._
+import Server.Actors.{DebugInfo, DelegatorActor}
 import Server.Messages._
-import akka.actor.Props
+import Utils.Constants
+import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
+import com.google.common.io.BaseEncoding
 import spray.http.MediaTypes.`application/json`
 import spray.routing._
 
 import scala.concurrent.duration._
 
 trait RootService extends HttpService {
+  val split = 8
+
   implicit def executionContext = actorRefFactory.dispatcher
 
-  implicit val timeout = Timeout(500 milli)
-  val delegatorActor = actorRefFactory.actorOf(Props(new DelegatorActor()))
+  implicit val timeout = Timeout(5 seconds)
+  val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null))))
+  val da = DebugInfo()
+
+  def dActor(pid: Int) = delegatorActor(pid % split)
+
+
+  def routeTypes(pid: Int, ts: String, tsId: Int, rc: RequestContext) = {
+    //    val profileType = profileStr match {
+    //      case "user" | "page" => true
+    //      case x => rc.complete(ResponseMessage(s"Unknown profile type - $x, $pid, $ts, $tsId")); false;
+    //    }
+
+    val sendActor = ts match {
+      case "user" | "page" => da.debugVar(Constants.profilesChar) += 1; true;
+      case "post" => da.debugVar(Constants.getPostsChar) += 1; true;
+      case "album" => da.debugVar(Constants.getAlbumsChar) += 1; true;
+      case "picture" => da.debugVar(Constants.getPicturesChar) += 1; true;
+      case "feed" => true
+      case "friendlist" => da.debugVar(Constants.getFlChar) += 1; true;
+      case _ => rc.complete(ResponseMessage("Unimplemented request")); false;
+    }
+
+    if (sendActor) dActor(pid) ! GetMsg(rc, pid, (ts, tsId))
+  }
+
   val myRoute = respondWithMediaType(`application/json`) {
-    put {
-      path("user") {
-        entity(as[User]) { user => rc => delegatorActor ! CreateUser(rc, user) }
+    get {
+      //      path(Segment / IntNumber / Segment / IntNumber) { (u, pid, ts, tsId) => rc => routeTypes(u, pid, ts, tsId, rc) } ~
+      //        path(Segment / IntNumber / Segment) { (u, pid, ts) => rc => routeTypes(u, pid, ts, -1, rc) } ~
+      //        path(Segment / IntNumber) { (u, pid) => rc => routeTypes(u, pid, "", -1, rc) } ~
+      path(Segment / IntNumber / IntNumber) { (ts, pid, tsId) =>
+        entity(as[ListType]) { listType => rc =>
+          dActor(pid) ! GetMsg(rc, pid, listType)
+        } ~ { rc => routeTypes(pid, ts, tsId, rc) }
       } ~
-        path("post") {
-          entity(as[Post]) { post => rc => delegatorActor ! CreatePost(rc, post) }
-        } ~
-        path("album") {
-          entity(as[Album]) { album => rc => delegatorActor ! CreateAlbum(rc, album) }
-        }
+        path(Segment / IntNumber) { (ts, pid) => rc => routeTypes(pid, ts, -1, rc) } ~
+        path("debug") { rc => rc.complete(da) }
     } ~
-      get {
-        path("user" / IntNumber) { pid => rc => delegatorActor ! GetUser(rc, pid) } ~
-          path("post" / IntNumber / IntNumber) { (pid, postId) => rc => delegatorActor ! GetPost(rc, pid, postId) } ~
-          path("post" / IntNumber) { pid => rc => delegatorActor ! GetPost(rc, pid) } ~
-          path("debug") { rc => delegatorActor ! GetServerInfo(rc) }
+      put {
+        path("user") {
+          entity(as[User]) { user => rc =>
+            user.baseObject.updateId(da.debugVar(Constants.profilesChar))
+            da.debugVar(Constants.profilesChar) += 1
+            dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
+          }
+        } ~
+          path("page") {
+            entity(as[Page]) { page => rc =>
+              page.baseObject.updateId(da.debugVar(Constants.profilesChar))
+              da.debugVar(Constants.profilesChar) += 1
+              dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
+            }
+          } ~
+          path("post") {
+            entity(as[Post]) { post => rc =>
+              da.debugVar(Constants.postsChar) += 1
+              dActor(post.creator) ! CreateMsg[Post](rc, post.creator, post)
+            }
+          } ~
+          path("album") {
+            entity(as[Album]) { album => rc =>
+              da.debugVar(Constants.albumsChar) += 1
+              dActor(album.from) ! CreateMsg[Album](rc, album.from, album)
+            }
+          } ~
+          path("picture") {
+            entity(as[Picture]) { pic => rc =>
+              da.debugVar(Constants.picturesChar) += 1
+              dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic)
+            }
+          }
+      } ~
+      delete {
+        path("user") {
+          entity(as[User]) { user => rc => /*TODO*/}
+        } ~
+          path("page") {
+            entity(as[Page]) { user => rc => /*TODO*/}
+          } ~
+          path("post") {
+            entity(as[Post]) { post => rc => /*TODO*/}
+          } ~
+          path("album") {
+            entity(as[Album]) { album => rc => /*TODO*/}
+          } ~
+          path("picture") {
+            entity(as[Album]) { album => rc => /*TODO*/}
+          }
+      } ~
+      post {
+        path("addfriend") {
+          entity(as[UpdateFriendList]) { updFL => rc =>
+            da.debugVar(Constants.flChar) += 1
+            dActor(updFL.pid) ! UpdateMsg(rc, updFL.pid, updFL)
+          }
+        } ~
+          path("user") {
+            entity(as[User]) { user => rc => dActor(user.baseObject.id) ! UpdateMsg(rc, user.baseObject.id, user) }
+          } ~
+          path("page") {
+            entity(as[Page]) { page => rc => dActor(page.baseObject.id) ! UpdateMsg(rc, page.baseObject.id, page) }
+          } ~
+          path("post") {
+            entity(as[Post]) { post => rc => dActor(post.creator) ! UpdateMsg(rc, post.creator, post) }
+          } ~
+          path("album") {
+            entity(as[Album]) { album => rc => dActor(album.from) ! UpdateMsg(rc, album.from, album) }
+          } ~
+          path("picture") {
+            entity(as[Picture]) { pic => rc => dActor(pic.from) ! UpdateMsg(rc, pic.from, pic) }
+          }
       }
   }
-  /*
-  // Update existing post
-  path("post") {
-    post {
-      entity(as[Post]) { post =>
-        rc =>
-          storageService ! UpdatePost(rc, post)
-      }
-    }
-  } ~
-    // Create a new Post
-    put {
-      entity(as[Post]) { post =>
-        rc =>
-          storageService ! CreatePost(rc, post)
-      }
-    } ~
-    path("post" / IntNumber) { (postId) =>
-      // Get an existing post
-      get {
-        rc =>
-          storageService ! GetPost(rc, postId)
-      } ~
-      // Delete existing post
-      delete {
-        rc =>
-          storageService ! DeletePost(rc, postId)
-      }
-    }
-  */
 }

@@ -2,7 +2,7 @@ name := "COP5615 Project 4"
 
 version := "1.0"
 
-scalaVersion := "2.10.5"
+scalaVersion := "2.11.6"
 
 resolvers ++= Seq(
   "Spray repository" at "http://repo.spray.io",
@@ -15,13 +15,15 @@ libraryDependencies ++= {
   val akkaV = "2.3.9"
   val sprayV = "1.3.3"
   Seq(
-    "io.spray"            %%  "spray-can"     % sprayV,
-    "io.spray"            %%  "spray-routing" % sprayV,
-    "io.spray"            %%  "spray-client"  % sprayV,
-    "io.spray"            %%  "spray-json"    % "1.3.1",
-    "io.spray"            %%  "spray-testkit" % sprayV  % "test",
-    "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
-    "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
-    "joda-time"           %  "joda-time"     % "2.9.1"
+    "io.spray" %% "spray-can" % sprayV,
+    "io.spray" %% "spray-routing" % sprayV,
+    "io.spray" %% "spray-client" % sprayV,
+    "io.spray" %% "spray-json" % "1.3.1",
+    "io.spray" %% "spray-testkit" % sprayV % "test",
+    "com.typesafe.akka" %% "akka-actor" % akkaV,
+    "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+    "joda-time" % "joda-time" % "2.9.1",
+    "com.google.guava" % "guava" % "17.0",
+    "org.scalatest" %"scalatest_2.11" % "2.2.1" % "test"
   )
 }

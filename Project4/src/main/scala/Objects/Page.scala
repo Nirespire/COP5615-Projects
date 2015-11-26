@@ -1,6 +1,6 @@
 package Objects
 
-case class Page(b: BaseObject,
+case class Page(baseObject: BaseObject,
                 about: String,
                 category: String,
                 cover: Int

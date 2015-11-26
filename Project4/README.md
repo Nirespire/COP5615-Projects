@@ -64,5 +64,30 @@ within the facebook server.
 - Picture: https://developers.facebook.com/docs/graph-api/reference/v2.5/album/picture
     /album/{album-id}/{picture-id}
 
+#### References for designing user simulator
 
-#### Overall Architecture
+http://www.sciencedirect.com/science/article/pii/S0747563211000379
+
+Tracii Ryan, Sophia Xenos, Who uses Facebook? An investigation into the relationship between the Big Five, shyness, narcissism, loneliness, and Facebook usage, Computers in Human Behavior, Volume 27, Issue 5, September 2011, Pages 1658-1664, ISSN 0747-5632, http://dx.doi.org/10.1016/j.chb.2011.02.004.
+(http://www.sciencedirect.com/science/article/pii/S0747563211000379)
+Keywords: Facebook; Big Five; Personality; Narcissism; Shyness; Loneliness
+
+## Types of personalities
+- Extraversion
+- Agreeableness
+- Conscientiousness
+- Neuroticism
+- Openness
+
+## Types of behavior
+- Active Social contributions
+    - Puts of posts, pictures, albums
+    - Gets of Posts, pictures, albums, pages
+    - Adding friends
+    - Liking stuff
+- Passive engagement
+    - Adding friends
+    - Gets of Posts, pictures, albums, pages
+- Content Creators/celebrities
+    - Represented as page
+    - Puts of posts, pictures, albums
