@@ -92,16 +92,15 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
 
             case ("feed", fId: Int) =>
               val pIds = mutable.ArrayBuffer[Int]()
-              var tenPostsCount = 10
               var postsIdx = posts.size - 1
-              while (tenPostsCount > 0 && postsIdx > 0) {
+              while (pIds.size < 10 && postsIdx >= 0) {
                 if (!posts(postsIdx).baseObject.deleted) {
                   pIds.append(postsIdx)
                 }
                 postsIdx -= 1
-                tenPostsCount -= 1
               }
-              if (tenPostsCount == 10) {
+
+              if (pIds.isEmpty) {
                 rc.complete(ResponseMessage("No posts for this Profile!"))
               } else {
                 rc.complete(JsArray(pIds.map(idx => JsNumber(idx)).toVector))
