@@ -125,6 +125,12 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           println(entity.toString())
         }
+
+        Post("/addfriend", UpdateFriendList(1,0)) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+
       }
     }
   }
@@ -232,6 +238,18 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     "when calling DELETE /album" - {
       "should return a album object" in {
         Delete("/album", Album(BaseObject(), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+      }
+    }
+  }
+
+
+  "1 likes 0's post" - {
+    "when calling PUT /like for a post" - {
+      "should return a post object" in {
+        Put("/like/0/post/0/1") ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString())
         }
