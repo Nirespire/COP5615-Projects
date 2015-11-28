@@ -31,6 +31,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
     case getMsg@GetMsg(rc, pid, params) => profiles(pid) ! getMsg
     case updMsg@UpdateMsg(rc, pid, obj) => profiles(pid) ! updMsg
     case likeMsg@LikeMsg(rc, pid, fid, obj) => profiles(pid) ! likeMsg
-    case _ =>
+    case deleteMsg@DeleteMsg(rc, pid, obj) => profiles(pid) ! deleteMsg
+    case x => println(s"Unhandled in DelegatorActor  $x")
   }
 }
