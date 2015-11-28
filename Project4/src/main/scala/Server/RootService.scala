@@ -59,10 +59,8 @@ trait RootService extends HttpService {
         path("debug") { rc => rc.complete(da) }
     } ~
       put {
-        path("like") {
-          path(IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
-            dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
-          }
+        path("like" / IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
+          dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
         } ~
           path("user") {
             entity(as[User]) { user => rc =>

@@ -173,46 +173,28 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
         } else {
           obj match {
             case ("post", pId: Int) =>
-              if (pId == -1) {
-                val lastPostId = posts.lastIndexWhere(p => !p.baseObject.deleted)
-                posts(lastPostId).baseObject.appendLike(fid)
-                rc.complete(posts(lastPostId))
+              val post = posts(pId)
+              if (post.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Post $pId Already deleted!"))
               } else {
-                val post = posts(pId)
-                if (post.baseObject.deleted) {
-                  rc.complete(ResponseMessage(s"Post $pId Already deleted!"))
-                } else {
-                  post.baseObject.appendLike(fid)
-                  rc.complete(post)
-                }
+                post.baseObject.appendLike(fid)
+                rc.complete(post)
               }
             case ("album", aId: Int) =>
-              if (aId == -1) {
-                val lastPostId = albums.lastIndexWhere(p => !p.baseObject.deleted)
-                albums(lastPostId).baseObject.appendLike(fid)
-                rc.complete(albums(lastPostId))
+              val album = albums(aId)
+              if (album.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Album $aId already deleted"))
               } else {
-                val album = albums(aId)
-                if (album.baseObject.deleted) {
-                  rc.complete(ResponseMessage(s"Album $aId already deleted"))
-                } else {
-                  album.baseObject.appendLike(fid)
-                  rc.complete(album)
-                }
+                album.baseObject.appendLike(fid)
+                rc.complete(album)
               }
             case ("picture", aId: Int) =>
-              if (aId == -1) {
-                val lastPostId = pictures.lastIndexWhere(p => !p.baseObject.deleted)
-                pictures(lastPostId).baseObject.appendLike(fid)
-                rc.complete(pictures(lastPostId))
+              val pic = pictures(aId)
+              if (pic.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Picture $aId already deleted"))
               } else {
-                val pic = pictures(aId)
-                if (pic.baseObject.deleted) {
-                  rc.complete(ResponseMessage(s"Picture $aId already deleted"))
-                } else {
-                  pic.baseObject.appendLike(fid)
-                  rc.complete(pic)
-                }
+                pic.baseObject.appendLike(fid)
+                rc.complete(pic)
               }
           }
         }
