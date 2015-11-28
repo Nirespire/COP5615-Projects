@@ -18,17 +18,6 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         }
       }
     }
-    "when calling PUT /post" - {
-      "should return a post object" in {
-        Put("/user", User(BaseObject(), "about me", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
-          println(entity.toString())
-          Put("/post", Objects.Post(BaseObject(), 0, new DateTime().toString(), 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
-            status should equal(OK)
-            println(entity.toString())
-          }
-        }
-      }
-    }
   }
 
   "Put Page" - {
@@ -42,6 +31,20 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
+  "Put Post" - {
+    "when calling PUT /post" - {
+      "should return a post object" in {
+        Put("/user", User(BaseObject(), "about me", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+          Put("/post", Objects.Post(BaseObject(), 2, new DateTime().toString(), 2, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
+            status should equal(OK)
+            println(entity.toString())
+          }
+        }
+      }
+    }
+  }
 
   "Put Picture" - {
     "when calling PUT /picture" - {
@@ -64,5 +67,52 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       }
     }
   }
+
+  "Post User" - {
+    "when calling POST /user" - {
+      "should return a user object" in {
+        Post("/user", User(BaseObject(0), "about me", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+      }
+    }
+  }
+
+  "Post Page" - {
+    "when calling POST /page" - {
+      "should return a page object" in {
+        Post("/page", Page(BaseObject(0), "about", "category", -1)) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+      }
+    }
+  }
+
+  "Post Picture" - {
+    "when calling POST /picture" - {
+      "should return a picture object" in {
+        Post("/picture", Picture(BaseObject(0), 0, -1, "filename", "blah")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+      }
+    }
+  }
+
+  "Post Album" - {
+    "when calling Post /album" - {
+      "should return a album object" in {
+        Post("/album", Album(BaseObject(0), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+        }
+      }
+    }
+  }
+
+
+  >>>>>>> f35c0a9922cf7ae5ef8fe4107620ba72e2a1df4b
 }
 
