@@ -111,8 +111,5 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       }
     }
   }
-
-
-  >>>>>>> f35c0a9922cf7ae5ef8fe4107620ba72e2a1df4b
 }
 
