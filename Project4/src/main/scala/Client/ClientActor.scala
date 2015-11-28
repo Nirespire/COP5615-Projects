@@ -126,7 +126,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case MakePost(postType, attachmentID) =>
       val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), postType, attachmentID)
       put(newPost.toJson.asJsObject, "post")
-      numPosts += 1
     case MakePicturePost =>
       val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", "blah")
       val pipeline = sendReceive ~> unmarshal[Objects.Picture]
