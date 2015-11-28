@@ -111,16 +111,50 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
       } catch {
         case e: Throwable => rc.complete(e.getMessage)
       }
+
+    case updMsg@UpdateMsg(rc, _, obj) =>
+      try {
+        if (baseObject.deleted) {
+          rc.complete(ResponseMessage("Profile already deleted!"))
+        } else {
+          obj match {
+            case (post: Post) =>
+              val pId = post.baseObject.id
+              if (post.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Post $pId Already deleted!"))
+              } else {
+                posts(pId) = post
+                rc.complete(post)
+              }
+            case (album: Album) =>
+              val aId = album.baseObject.id
+              if (album.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Album $aId already deleted"))
+              } else {
+                albums(aId) = album
+                rc.complete(album)
+              }
+            case (picture: Picture) =>
+              val pId = picture.baseObject.id
+              if (picture.baseObject.deleted) {
+                rc.complete(ResponseMessage(s"Picture $pId already deleted"))
+              } else {
+                pictures(pId) = picture
+                rc.complete(picture)
+              }
+          }
+        }
+      } catch {
+        case e: Throwable => rc.complete(e.getMessage)
+      }
     case deleteMsg@DeleteMsg(rc, _, obj) =>
       try {
         if (baseObject.deleted) {
           rc.complete(ResponseMessage("Profile already deleted!"))
         } else {
           obj match {
-            case ("post", pId: Int) =>
-              posts(pId).baseObject.delete(rc, s"Post $pId")
-            case ("album", aId: Int) =>
-              albums(aId).baseObject.delete(rc, s"Album $aId")
+            case ("post", pId: Int) => posts(pId).baseObject.delete(rc, s"Post $pId")
+            case ("album", aId: Int) => albums(aId).baseObject.delete(rc, s"Album $aId")
             case ("picture", pId: Int) =>
               val picture = pictures(pId)
               val album = albums(picture.album)
@@ -185,6 +219,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
       } catch {
         case e: Throwable => rc.complete(e.getMessage)
       }
+
     case _ =>
   }
 }

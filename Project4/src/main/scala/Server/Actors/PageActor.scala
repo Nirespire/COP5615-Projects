@@ -3,7 +3,7 @@ package Server.Actors
 import Objects.Page
 import Objects.ObjectJsonSupport._
 import spray.json._
-import Server.Messages.{DeleteMsg, ResponseMessage, UpdateMsg, GetMsg}
+import Server.Messages._
 import akka.actor.ActorRef
 
 class PageActor(var page: Page, debugActor: ActorRef)
@@ -12,6 +12,12 @@ class PageActor(var page: Page, debugActor: ActorRef)
   def baseObject = page.baseObject
 
   def pageReceive: Receive = {
+    case cMsg@CreateMsg(rc, _, p: Page) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("Page already deleted!"))
+      } else {
+        page = p
+      }
     case updMsg@UpdateMsg(rc, _, newPage: Page) =>
       if (baseObject.deleted) {
         rc.complete(ResponseMessage("Page already deleted!"))

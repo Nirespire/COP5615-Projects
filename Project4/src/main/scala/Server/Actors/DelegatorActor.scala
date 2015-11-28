@@ -15,6 +15,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
     case cMsg@CreateMsg(rc, pid, u: User) =>
       try {
         profiles.put(pid, context.actorOf(Props(new UserActor(u, debugActor))))
+        profiles(pid) ! cMsg
         rc.complete(u)
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage))

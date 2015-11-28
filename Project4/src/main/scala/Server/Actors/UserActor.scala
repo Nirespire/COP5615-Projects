@@ -2,7 +2,7 @@ package Server.Actors
 
 import Objects.ObjectTypes.ListType.ListType
 import Objects.{UpdateFriendList, User}
-import Server.Messages.{DeleteMsg, GetMsg, UpdateMsg, ResponseMessage}
+import Server.Messages._
 import akka.actor.ActorRef
 import spray.routing.RequestContext
 import Objects.ObjectJsonSupport._
@@ -18,6 +18,12 @@ class UserActor(var user: User, debugActor: ActorRef)
   def baseObject = user.baseObject
 
   def userReceive: Receive = {
+    case cMsg@CreateMsg(rc, _, u: User) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("User already deleted!"))
+      } else {
+        user = u
+      }
     case updMsg@UpdateMsg(rc, _, newUser: User) =>
       if (baseObject.deleted) {
         rc.complete(ResponseMessage("User already deleted!"))
