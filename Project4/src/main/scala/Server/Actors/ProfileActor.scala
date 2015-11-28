@@ -9,8 +9,9 @@ import spray.json.{JsArray, JsNumber}
 
 import scala.collection.mutable
 
-class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
-  var baseObject: BaseObject = _
+abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
+  def baseObject: BaseObject
+
   val createdTime = new DateTime().toString()
   val defaultAlbum = Album(BaseObject(0), pid, createdTime, createdTime, -1, "Default Album")
   val albums = mutable.ArrayBuffer[Album](defaultAlbum)

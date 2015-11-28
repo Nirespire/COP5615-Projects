@@ -12,15 +12,17 @@ import scala.collection.mutable
 
 class UserActor(var user: User, debugActor: ActorRef)
   extends ProfileActor(user.baseObject.id, debugActor) {
+
   val friendsMap = mutable.Map[ListType, Set[Int]]()
+
+  def baseObject = user.baseObject
 
   def userReceive: Receive = {
     case updMsg@UpdateMsg(rc, _, newUser: User) =>
       if (baseObject.deleted) {
-       rc.complete(ResponseMessage("User already deleted!"))
-      }else {
+        rc.complete(ResponseMessage("User already deleted!"))
+      } else {
         user = newUser
-        baseObject = user.baseObject
         rc.complete(user)
       }
     case updMsg@UpdateMsg(rc, _, upd: UpdateFriendList) =>

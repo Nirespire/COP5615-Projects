@@ -8,13 +8,15 @@ import akka.actor.ActorRef
 
 class PageActor(var page: Page, debugActor: ActorRef)
   extends ProfileActor(page.baseObject.id, debugActor) {
+
+  def baseObject = page.baseObject
+
   def pageReceive: Receive = {
     case updMsg@UpdateMsg(rc, _, newPage: Page) =>
       if (baseObject.deleted) {
         rc.complete(ResponseMessage("Page already deleted!"))
       } else {
         page = newPage
-        baseObject = page.baseObject
         rc.complete(page)
       }
     case getMsg@GetMsg(rc, _, ("page", -1)) =>
