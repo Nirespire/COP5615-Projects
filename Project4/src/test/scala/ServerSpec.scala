@@ -165,7 +165,14 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return latest post object" in {
         Get("/feed/0") ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Seq[Int]] should contain(0)
           println(entity.toString())
+
+          Get("/post/0/0") ~> myRoute ~> check{
+            status should equal(OK)
+            responseAs[Post].baseObject.id should equal(0)
+            println(entity.toString())
+          }
         }
       }
     }
