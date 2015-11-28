@@ -96,7 +96,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Page" - {
     "when calling POST /page" - {
       "should return a page object" in {
-        Post("/page", Page(BaseObject(0), "something updated", "category", 0)) ~> myRoute ~> check {
+        Post("/page", Page(BaseObject(3), "something updated", "category", 0)) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].about should equal("something updated")
           responseAs[Page].cover should equal(0)
