@@ -205,11 +205,28 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
+  "1 likes 0's post" - {
+    "when calling PUT /like for a post" - {
+      "should return a post object" in {
+        Put("/like/0/post/0/1") ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString())
+
+          Get("/post/0/0") ~> myRoute ~> check {
+            status should equal(OK)
+            responseAs[Post].baseObject.likes.contains(1)
+            println(entity.toString())
+          }
+        }
+      }
+    }
+  }
+
 
   "Delete User" - {
     "when calling DELETE /user" - {
       "should return a user object each" in {
-        Delete("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
+        Delete("/user", User(BaseObject(id=0), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString())
         }
@@ -220,7 +237,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete Page" - {
     "when calling DELETE /page" - {
       "should return a page object" in {
-        Delete("/page", Page(BaseObject(), "about", "category", -1)) ~> myRoute ~> check {
+        Delete("/page", Page(BaseObject(id=3), "about", "category", -1)) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString())
         }
@@ -261,22 +278,5 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-
-  "1 likes 0's post" - {
-    "when calling PUT /like for a post" - {
-      "should return a post object" in {
-        Put("/like/0/post/0/1") ~> myRoute ~> check {
-          status should equal(OK)
-          println(entity.toString())
-
-          Get("/post/0/0") ~> myRoute ~> check {
-            status should equal(OK)
-            responseAs[Post].baseObject.likes.contains(1)
-            println(entity.toString())
-          }
-        }
-      }
-    }
-  }
 }
 
