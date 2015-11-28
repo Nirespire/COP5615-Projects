@@ -2,7 +2,7 @@ package Server.Actors
 
 import Objects.ObjectTypes.ListType.ListType
 import Objects.{UpdateFriendList, User}
-import Server.Messages.{GetMsg, UpdateMsg, ResponseMessage}
+import Server.Messages.{DeleteMsg, GetMsg, UpdateMsg, ResponseMessage}
 import akka.actor.ActorRef
 import spray.routing.RequestContext
 import Objects.ObjectJsonSupport._
@@ -16,19 +16,39 @@ class UserActor(var user: User, debugActor: ActorRef)
 
   def userReceive: Receive = {
     case updMsg@UpdateMsg(rc, _, newUser: User) =>
-      user = newUser
-      rc.complete(user)
-    case updMsg@UpdateMsg(rc, _, upd: UpdateFriendList) =>
-      user.baseObject.appendLike(upd.fid)
-      if (friendsMap.contains(upd.listType)) {
-        friendsMap(upd.listType) = friendsMap(upd.listType) + upd.fid
-      } else {
-        friendsMap(upd.listType) = Set(upd.fid)
+      if (baseObject.deleted) {
+       rc.complete(ResponseMessage("User already deleted!"))
+      }else {
+        user = newUser
+        baseObject = user.baseObject
+        rc.complete(user)
       }
-      rc.complete(upd)
-    case getMsg@GetMsg(rc, _, ("user", -1)) => rc.complete(user)
+    case updMsg@UpdateMsg(rc, _, upd: UpdateFriendList) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("User already deleted!"))
+      } else {
+        user.baseObject.appendLike(upd.fid)
+        if (friendsMap.contains(upd.listType)) {
+          friendsMap(upd.listType) = friendsMap(upd.listType) + upd.fid
+        } else {
+          friendsMap(upd.listType) = Set(upd.fid)
+        }
+        rc.complete(upd)
+      }
+    case getMsg@GetMsg(rc, _, ("user", -1)) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("User already deleted!"))
+      } else {
+        rc.complete(user)
+      }
     case getMsg@GetMsg(rc, _, listType: ListType) =>
-      rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("User already deleted!"))
+      } else {
+        rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
+      }
+    case deleteMsg@DeleteMsg(rc, _, None) =>
+      user.baseObject.delete(rc, s"User ${user}")
   }
 
   override def receive = userReceive orElse super.receive

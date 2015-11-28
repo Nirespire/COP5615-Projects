@@ -29,6 +29,7 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
     case cMsg@CreateMsg(rc, pid, obj) => profiles(pid) ! cMsg
     case getMsg@GetMsg(rc, pid, params) => profiles(pid) ! getMsg
     case updMsg@UpdateMsg(rc, pid, obj) => profiles(pid) ! updMsg
+    case likeMsg@LikeMsg(rc, pid, fid, obj) => profiles(pid) ! likeMsg
     case _ =>
   }
 }

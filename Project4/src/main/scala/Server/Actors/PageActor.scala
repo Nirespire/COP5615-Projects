@@ -3,17 +3,27 @@ package Server.Actors
 import Objects.Page
 import Objects.ObjectJsonSupport._
 import spray.json._
-import Server.Messages.{UpdateMsg, GetMsg}
+import Server.Messages.{DeleteMsg, ResponseMessage, UpdateMsg, GetMsg}
 import akka.actor.ActorRef
 
 class PageActor(var page: Page, debugActor: ActorRef)
   extends ProfileActor(page.baseObject.id, debugActor) {
   def pageReceive: Receive = {
     case updMsg@UpdateMsg(rc, _, newPage: Page) =>
-      page = newPage
-      rc.complete(page)
-
-    case getMsg@GetMsg(rc, _, ("page", -1)) => rc.complete(page)
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("Page already deleted!"))
+      } else {
+        page = newPage
+        baseObject = page.baseObject
+        rc.complete(page)
+      }
+    case getMsg@GetMsg(rc, _, ("page", -1)) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage("Page already deleted!"))
+      } else {
+        rc.complete(page)
+      }
+    case deleteMsg@DeleteMsg(rc, _, None) => baseObject.delete(rc, s"Page ${page.baseObject.id}")
   }
 
   override def receive = pageReceive orElse super.receive

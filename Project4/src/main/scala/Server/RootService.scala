@@ -59,13 +59,18 @@ trait RootService extends HttpService {
         path("debug") { rc => rc.complete(da) }
     } ~
       put {
-        path("user") {
-          entity(as[User]) { user => rc =>
-            user.baseObject.updateId(da.debugVar(Constants.profilesChar))
-            da.debugVar(Constants.profilesChar) += 1
-            dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
+        path("like") {
+          path(IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
+            dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
           }
         } ~
+          path("user") {
+            entity(as[User]) { user => rc =>
+              user.baseObject.updateId(da.debugVar(Constants.profilesChar))
+              da.debugVar(Constants.profilesChar) += 1
+              dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
+            }
+          } ~
           path("page") {
             entity(as[Page]) { page => rc =>
               page.baseObject.updateId(da.debugVar(Constants.profilesChar))
@@ -94,19 +99,29 @@ trait RootService extends HttpService {
       } ~
       delete {
         path("user") {
-          entity(as[User]) { user => rc => /*TODO*/}
+          entity(as[User]) { user => rc =>
+            dActor(user.baseObject.id) ! DeleteMsg(rc, user.baseObject.id, None)
+          }
         } ~
           path("page") {
-            entity(as[Page]) { user => rc => /*TODO*/}
+            entity(as[Page]) { page => rc =>
+              dActor(page.baseObject.id) ! DeleteMsg(rc, page.baseObject.id, None)
+            }
           } ~
           path("post") {
-            entity(as[Post]) { post => rc => /*TODO*/}
+            entity(as[Post]) { post => rc =>
+              dActor(post.creator) ! DeleteMsg(rc, post.creator, ("post", post.baseObject.id))
+            }
           } ~
           path("album") {
-            entity(as[Album]) { album => rc => /*TODO*/}
+            entity(as[Album]) { album => rc =>
+              dActor(album.from) ! DeleteMsg(rc, album.from, ("album", album.baseObject.id))
+            }
           } ~
           path("picture") {
-            entity(as[Album]) { album => rc => /*TODO*/}
+            entity(as[Picture]) { pic => rc =>
+              dActor(pic.from) ! DeleteMsg(rc, pic.from, ("picture", pic.baseObject.id))
+            }
           }
       } ~
       post {
@@ -133,4 +148,5 @@ trait RootService extends HttpService {
           }
       }
   }
+
 }
