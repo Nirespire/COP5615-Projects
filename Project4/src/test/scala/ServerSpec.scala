@@ -14,16 +14,19 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a user object each" in {
         Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[User].baseObject.id should equal(0)
           println(entity.toString())
         }
 
         Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[User].baseObject.id should equal(1)
           println(entity.toString())
         }
 
         Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[User].baseObject.id should equal(2)
           println(entity.toString())
         }
       }
@@ -35,6 +38,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a page object" in {
         Put("/page", Page(BaseObject(), "about", "category", -1)) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Page].baseObject.id should equal(3)
           println(entity.toString())
         }
       }
@@ -46,6 +50,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a post object" in {
         Put("/post", Objects.Post(BaseObject(), 0, new DateTime().toString(), 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Post].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -57,6 +62,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a picture object" in {
         Put("/picture", Picture(BaseObject(), 0, -1, "filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Picture].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -68,6 +74,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a album object" in {
         Put("/album", Album(BaseObject(), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Album].baseObject.id should equal(1)
           println(entity.toString())
         }
       }
@@ -77,8 +84,9 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post User" - {
     "when calling POST /user" - {
       "should return a user object" in {
-        Post("/user", User(BaseObject(0), "about me", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
+        Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[User].about should equal("something updated")
           println(entity.toString())
         }
       }
@@ -88,8 +96,10 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Page" - {
     "when calling POST /page" - {
       "should return a page object" in {
-        Post("/page", Page(BaseObject(0), "about", "category", -1)) ~> myRoute ~> check {
+        Post("/page", Page(BaseObject(0), "something updated", "category", 0)) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Page].about should equal("something updated")
+          responseAs[Page].cover should equal(0)
           println(entity.toString())
         }
       }
@@ -99,8 +109,9 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Picture" - {
     "when calling POST /picture" - {
       "should return a picture object" in {
-        Post("/picture", Picture(BaseObject(0), 0, -1, "filename", "blah")) ~> myRoute ~> check {
+        Post("/picture", Picture(BaseObject(0), 0, -1, "updated filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Picture].filename should equal("updated filename")
           println(entity.toString())
         }
       }
@@ -110,8 +121,9 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Album" - {
     "when calling Post /album" - {
       "should return a album object" in {
-        Post("/album", Album(BaseObject(0), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
+        Post("/album", Album(BaseObject(0), 0, new DateTime().toString(), new DateTime().toString(), 0, "updated description")) ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Album].description should equal("updated description")
           println(entity.toString())
         }
       }
@@ -140,6 +152,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return user 0 object" in {
         Get("/user/0") ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[User].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -163,6 +176,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return post 0 object" in {
         Get("/post/0/0") ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Post].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -173,6 +187,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return album 0 object" in {
         Get("/album/0/0") ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Album].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -183,6 +198,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return picture 0 object" in {
         Get("/picture/0/0") ~> myRoute ~> check {
           status should equal(OK)
+          responseAs[Picture].baseObject.id should equal(0)
           println(entity.toString())
         }
       }
@@ -252,6 +268,12 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/like/0/post/0/1") ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString())
+
+          Get("/post/0/0") ~> myRoute ~> check {
+            status should equal(OK)
+            responseAs[Post].baseObject.likes.contains(1)
+            println(entity.toString())
+          }
         }
       }
     }
