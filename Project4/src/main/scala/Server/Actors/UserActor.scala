@@ -41,7 +41,7 @@ class UserActor(var user: User, debugActor: ActorRef)
         } else {
           friendsMap(upd.listType) = Set(upd.fid)
         }
-        rc.complete(upd.toJson.compactPrint)
+        rc.complete(upd)
       }
     case getMsg@GetMsg(rc, _, ("user", -1)) =>
       if (baseObject.deleted) {
