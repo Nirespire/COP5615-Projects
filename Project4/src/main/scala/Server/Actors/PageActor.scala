@@ -17,6 +17,7 @@ class PageActor(var page: Page, debugActor: ActorRef)
         rc.complete(ResponseMessage("Page already deleted!"))
       } else {
         page = p
+        rc.complete(page)
       }
     case updMsg@UpdateMsg(rc, _, newPage: Page) =>
       if (baseObject.deleted) {
