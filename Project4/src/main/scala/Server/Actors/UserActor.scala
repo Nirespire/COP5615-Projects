@@ -1,11 +1,10 @@
 package Server.Actors
 
+import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.ListType.ListType
 import Objects.{UpdateFriendList, User}
 import Server.Messages._
 import akka.actor.ActorRef
-import spray.routing.RequestContext
-import Objects.ObjectJsonSupport._
 import spray.json._
 
 import scala.collection.mutable
@@ -23,6 +22,7 @@ class UserActor(var user: User, debugActor: ActorRef)
         rc.complete(ResponseMessage("User already deleted!"))
       } else {
         user = u
+        rc.complete(user)
       }
     case updMsg@UpdateMsg(rc, _, newUser: User) =>
       if (baseObject.deleted) {
@@ -56,7 +56,7 @@ class UserActor(var user: User, debugActor: ActorRef)
         rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
       }
     case deleteMsg@DeleteMsg(rc, _, None) =>
-      user.baseObject.delete(rc, s"User ${user}")
+      user.baseObject.delete(rc, s"User $user")
   }
 
   override def receive = userReceive orElse super.receive
