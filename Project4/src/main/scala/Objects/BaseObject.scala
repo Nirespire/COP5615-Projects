@@ -13,9 +13,7 @@ case class BaseObject(var id: Int = -1) {
 
   def updateId(newId: Int) = id = newId
 
-  def appendLike(pid: Int) = {
-    likes.add(pid)
-  }
+  def appendLike(pid: Int) = likes.add(pid)
 
 
   def delete(rc: RequestContext, msg: String = "") = {

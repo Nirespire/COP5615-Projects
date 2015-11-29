@@ -41,7 +41,7 @@ class UserActor(var user: User, debugActor: ActorRef)
         } else {
           friendsMap(upd.listType) = Set(upd.fid)
         }
-        rc.complete(upd)
+        rc.complete(upd.toJson.compactPrint)
       }
     case getMsg@GetMsg(rc, _, ("user", -1)) =>
       if (baseObject.deleted) {
@@ -56,7 +56,7 @@ class UserActor(var user: User, debugActor: ActorRef)
         rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
       }
     case deleteMsg@DeleteMsg(rc, _, None) =>
-      user.baseObject.delete(rc, s"User ${user}")
+      user.baseObject.delete(rc, s"User $user")
   }
 
   override def receive = userReceive orElse super.receive

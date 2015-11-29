@@ -109,7 +109,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
      */
 
     case MakePost(postType, attachmentID) =>
-      val newPost = Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), postType, attachmentID)
+      val newPost = Objects.Post(baseObject = BaseObject(), myBaseObj.id, new DateTime().toString(), myBaseObj.id, statuses(Random.nextInt(statuses.length)), postType, attachmentID)
       put(newPost.toJson.asJsObject, "post")
     case MakePicturePost =>
       val newPicture = Picture(BaseObject(), myBaseObj.id, -1, "filename.png", "blah")
@@ -136,8 +136,15 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
     /*TODO check this*/
     case MakeFriend(id) =>
-      val updatedList = UpdateFriendList(myBaseObj.id, if (id == -1) Random.nextInt(myBaseObj.id) else id)
-      post(updatedList.toJson.asJsObject, "addfriend")
+      if (!isPage) {
+        val friendId = if (id == -1) Random.nextInt(myBaseObj.id) else id
+        if (PageMap.obj(friendId)) {
+          putRoute(s"like/$friendId/page/-1/${myBaseObj.id}", "likepage")
+        } else {
+          val updatedList = UpdateFriendList(myBaseObj.id, friendId)
+          post(updatedList.toJson.asJsObject, "addfriend")
+        }
+      }
     case GetFriendsPost =>
       var friendId = Random.nextInt(myBaseObj.id)
       if (myFriends.nonEmpty) {
@@ -150,11 +157,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           me = response ~> unmarshal[User]
           myBaseObj = me.baseObject
           context.system.scheduler.scheduleOnce(durationSeconds(10), self, false)
+          PageMap.obj.put(myBaseObj.id, isPage)
           log.info("Printing {}", me)
         case "page" =>
           mePage = response ~> unmarshal[Page]
           myBaseObj = mePage.baseObject
           context.system.scheduler.scheduleOnce(durationSeconds(10), self, false)
+          PageMap.obj.put(myBaseObj.id, isPage)
           log.info("Printing {}", mePage)
         case "post" =>
           numPosts += 1
@@ -167,6 +176,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           context.system.scheduler.scheduleOnce(durationSeconds(1), self, MakePost(photo, picture.baseObject.id))
         case "picture" =>
         //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture)
+        case "likepage"=>
       }
     case GetMsg(response, reaction) =>
       reaction match {
@@ -188,7 +198,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakeFriend)
         }
       } catch {
-        case e: Throwable => log.info("Error for response {}", response)
+        case e: Throwable => log.error(e, "Error for response {}", response)
       }
   }
 
@@ -204,7 +214,22 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def put(json: JsObject, route: String, returnSupport: String = "") = {
+
+  def putRoute(route: String, returnSupport: String = ""):Unit = {
+    val returnClass = if (returnSupport.nonEmpty) returnSupport else route
+    val pipeline = sendReceive
+
+    val future = pipeline {
+      pipelining.Put(s"http://$serviceHost:$servicePort/$route")
+    }
+
+    future onComplete {
+      case Success(response) => self ! PutMsg(response, returnClass)
+      case Failure(error) => log.error(error, s"Couldn't create using $route")
+    }
+  }
+
+  def put(json: JsObject, route: String, returnSupport: String = ""):Unit = {
     val returnClass = if (returnSupport.nonEmpty) returnSupport else route
     val pipeline = sendReceive
 
