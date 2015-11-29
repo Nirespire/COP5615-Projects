@@ -156,8 +156,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           myBaseObj = mePage.baseObject
           context.system.scheduler.scheduleOnce(durationSeconds(10), self, false)
           log.info("Printing {}", mePage)
-        case "post" => numPosts += 1
-        case "album" => numAlbums += 1
+        case "post" =>
+          numPosts += 1
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
+        case "album" =>
+          numAlbums += 1
+        //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
         case "picturePost" =>
           val picture = response ~> unmarshal[Picture]
           context.system.scheduler.scheduleOnce(durationSeconds(1), self, MakePost(photo, picture.baseObject.id))
