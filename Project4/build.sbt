@@ -24,6 +24,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
     "joda-time" % "joda-time" % "2.9.1",
     "com.google.guava" % "guava" % "17.0",
-    "org.scalatest" %"scalatest_2.11" % "2.2.1" % "test"
+    "org.scalatest" %"scalatest_2.11" % "2.2.1" % "test",
+    "org.joda" % "joda-convert" % "1.2"
   )
 }
