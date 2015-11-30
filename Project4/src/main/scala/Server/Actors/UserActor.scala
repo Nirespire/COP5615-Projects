@@ -1,7 +1,8 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
-import Objects.ObjectTypes.ListType.ListType
+import Objects.ObjectTypes.ListType
+import Objects.ObjectTypes.ListType
 import Objects.{UpdateFriendList, User}
 import Server.Messages._
 import akka.actor.ActorRef
@@ -12,7 +13,7 @@ import scala.collection.mutable
 class UserActor(var user: User, debugActor: ActorRef)
   extends ProfileActor(user.baseObject.id, debugActor) {
 
-  val friendsMap = mutable.Map[ListType, Set[Int]]()
+  val friendsMap = mutable.Map[ListType.Value, Set[Int]]()
 
   def baseObject = user.baseObject
 
@@ -49,10 +50,11 @@ class UserActor(var user: User, debugActor: ActorRef)
       } else {
         rc.complete(user)
       }
-    case getMsg@GetMsg(rc, _, listType: ListType) =>
+    case getMsg@GetMsg(rc, _, ("friendlist", listTypeIdx: Int)) =>
       if (baseObject.deleted) {
         rc.complete(ResponseMessage("User already deleted!"))
       } else {
+        val listType = ListType(listTypeIdx)
         rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))
       }
     case deleteMsg@DeleteMsg(rc, _, None) =>

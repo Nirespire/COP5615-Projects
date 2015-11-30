@@ -77,6 +77,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       if (random(101) < getPercent) {
         myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
           if (ProfileMap.obj(id)) get(s"page/$id", "page") else get(s"user/$id", "user")
+          if (random(2) == 0) get(s"friendlist/$id/0", "friendlist")
           if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
           if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
         }
@@ -164,7 +165,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           waitForIdFriends.clear()
           returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
           returnHandshake.clear()
-//          log.info(s"Printing $me - $myBaseObj")
+          //          log.info(s"Printing $me - $myBaseObj")
           self ! falseBool
         case "page" =>
           mePage = response ~> unmarshal[Page]
@@ -174,7 +175,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           waitForIdFriends.clear()
           returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
           returnHandshake.clear()
-//          log.info(s"Printing $mePage - $myBaseObj")
+          //          log.info(s"Printing $mePage - $myBaseObj")
           self ! falseBool
         case "post" =>
           numPosts += 1
@@ -191,15 +192,21 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         case "like" =>
       }
     case GetMsg(response, reaction) =>
-
       reaction match {
         case "user" =>
         case "page" =>
+        case "friendlist" =>
+          val arr = response ~> unmarshal[Array[Int]]
+          if(arr.nonEmpty) {
+            val makeFriendIdx = random(arr.length)
+
+          }
         case "feed" =>
           val arr = response ~> unmarshal[Array[Int]]
           (1 until arr.length).foreach(pIdx => get(s"post/${arr(0)}/${arr(pIdx)}", "feedpost"))
         case "feedpost" =>
           val post = response ~> unmarshal[Post]
+          if (random(2) == 0) putRoute(s"like/${post.from}/$reaction/${post.baseObject.id}/${myBaseObj.id}", "like")
         case "picture" =>
           val picture = response ~> unmarshal[Picture]
           if (random(2) == 0) putRoute(s"like/${picture.from}/$reaction/${picture.baseObject.id}/${myBaseObj.id}", "like")
@@ -216,9 +223,11 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         case "album" =>
           val album = response ~> unmarshal[Album]
           if (random(2) == 0) putRoute(s"like/${album.from}/$reaction/${album.baseObject.id}/${myBaseObj.id}", "like")
-        //          log.info(s"$album")
-        //          (0 until random(album.pictures.size)).foreach(pIdx => get(s"picture/${album.from}/pIdx"))
-
+          if (album.pictures.nonEmpty) {
+            (0 until random(album.pictures.size)).foreach { pIdx =>
+              get(s"picture/${album.from}/$pIdx", "picture")
+            }
+          }
         case x => log.error("Unmatched getmsg case {}", x)
       }
     case PostMsg(response, reaction) =>
