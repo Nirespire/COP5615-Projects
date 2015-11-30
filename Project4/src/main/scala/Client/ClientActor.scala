@@ -118,7 +118,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
             myFriends.append(updFL.fid)
           //          log.info("added friend {}", updFL)
           //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakeFriend)
-          case _ => log.info(s"Updated $reaction")
+          case _ => //log.info(s"Updated $reaction")
         }
       } catch {
         case e: Throwable => log.error(e, "Error for response {}", response)
