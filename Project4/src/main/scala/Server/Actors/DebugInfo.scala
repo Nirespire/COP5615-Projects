@@ -19,7 +19,8 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.getAlbumsChar) +
     debugVar(Constants.getFlChar) +
     debugVar(Constants.getPicturesChar) +
-    debugVar(Constants.getPostsChar)
+    debugVar(Constants.getPostsChar) +
+    debugVar(Constants.getFeedChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
   def allRequestPerSecond() = (debugVar(Constants.profilesChar) +
@@ -31,6 +32,7 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.getAlbumsChar) +
     debugVar(Constants.getFlChar) +
     debugVar(Constants.getPicturesChar) +
-    debugVar(Constants.getPostsChar)
+    debugVar(Constants.getPostsChar) +
+    debugVar(Constants.getFeedChar)
     ) * Constants.nano / (System.nanoTime() - start)
 }

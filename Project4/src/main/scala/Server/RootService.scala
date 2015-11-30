@@ -33,11 +33,11 @@ trait RootService extends HttpService {
     //    }
 
     val sendActor = ts match {
-      case "user" | "page" => da.debugVar(Constants.profilesChar) += 1; true;
+      case "user" | "page" => da.debugVar(Constants.getProfilesChar) += 1; true;
       case "post" => da.debugVar(Constants.getPostsChar) += 1; true;
       case "album" => da.debugVar(Constants.getAlbumsChar) += 1; true;
       case "picture" => da.debugVar(Constants.getPicturesChar) += 1; true;
-      case "feed" => true
+      case "feed" => da.debugVar(Constants.getFeedChar) += 1; true
       case "friendlist" => da.debugVar(Constants.getFlChar) += 1; true;
       case _ => rc.complete(ResponseMessage("Unimplemented request")); false;
     }

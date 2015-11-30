@@ -1,6 +1,7 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
+import Objects.ObjectTypes.PostType
 import Objects.{BaseObject, Picture, Album, Post}
 import Server.Messages._
 import akka.actor.{Actor, ActorRef}
@@ -15,9 +16,9 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
   val createdTime = new DateTime().toString()
   val defaultAlbum = Album(BaseObject(0), pid, createdTime, createdTime, -1, "Default Album")
   val albums = mutable.ArrayBuffer[Album](defaultAlbum)
-  val posts = mutable.ArrayBuffer[Post]()
-  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
-  val pictures = mutable.ArrayBuffer[Picture]()
+  val posts = mutable.ArrayBuffer[Post](Post(BaseObject(), pid, "", pid, "No Posts", PostType.empty, -1))
+  //  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
+  val pictures = mutable.ArrayBuffer[Picture](Picture(BaseObject(), pid, -1, "", ""))
   //  val friendLists = mutable.ArrayBuffer[FriendList]()
 
   def receive = {
@@ -91,20 +92,19 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
               }
 
             case ("feed", fId: Int) =>
-              val pIds = mutable.ArrayBuffer[Int]()
+              val pIds = mutable.ArrayBuffer[Int](pid)
               var postsIdx = posts.size - 1
-              while (pIds.size < 10 && postsIdx >= 0) {
+              while (pIds.size < 11 && postsIdx > 0) {
                 if (!posts(postsIdx).baseObject.deleted) {
                   pIds.append(postsIdx)
                 }
                 postsIdx -= 1
               }
 
-              if (pIds.isEmpty) {
-                rc.complete(ResponseMessage("No posts for this Profile!"))
-              } else {
-                rc.complete(JsArray(pIds.map(idx => JsNumber(idx)).toVector))
+              if (pIds.size == 1) {
+                pIds.append(0)
               }
+              rc.complete(JsArray(pIds.map(idx => JsNumber(idx)).toVector))
           }
         }
       } catch {

@@ -29,6 +29,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   val myPages = mutable.ArrayBuffer[Page]()
   val myFriends = mutable.ArrayBuffer[Int]()
   val myRealFriends = mutable.HashMap[ActorRef, Int]()
+  val waitForIdFriends = mutable.Set[ActorRef]()
+  val returnHandshake = mutable.Set[ActorRef]()
   var me: User = null
   var mePage: Page = null
   var myBaseObj: BaseObject = null
@@ -59,44 +61,39 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
     // Do some activity every second
     case false =>
-      if (myBaseObj == null) {
-        context.system.scheduler.scheduleOnce(durationSeconds(1), self, false)
-      } else {
-        //        log.info(myBaseObj.id + " starting activity")
-        val probability = Random.nextInt(101)
-        if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
+      //      log.info(myBaseObj.id + " starting activity")
+      if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
 
-        if (probability < putPercent) {
-          val rand = random(4)
-          rand match {
-            case 0 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePost(status, -1))
-            case 1 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeAlbum)
-            case 2 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicture(-1))
-            case 3 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicturePost)
-            case _ =>
-          }
+      if (random(101) < putPercent) {
+        random(4) match {
+          case 0 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePost(status, -1))
+          case 1 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeAlbum)
+          case 2 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicture(-1))
+          case 3 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicturePost)
         }
-
-        if (probability < getPercent) {
-          if (numPosts > 50) {
-            context.system.scheduler.scheduleOnce(randomDuration(5), self, GetFriendsPost)
-          }
-        }
-
-        if (probability < friendPercent) {
-          context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
-        }
-
-        if (probability < updatePercent) {
-          context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
-          if (numAlbums > 0) {
-            context.system.scheduler.scheduleOnce(randomDuration(3), self, AddPictureToAlbum)
-          }
-        }
-
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, false)
       }
 
+
+      if (random(101) < getPercent) {
+        myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
+          if (ProfileMap.obj(id)) get(s"page/$id", "page") else get(s"user/$id", "user")
+          if (random(1) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+          if (random(1) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+        }
+      }
+
+      if (random(101) < friendPercent) {
+        context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
+      }
+
+      if (random(101) < updatePercent) {
+        context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
+        if (numAlbums > 0) {
+          context.system.scheduler.scheduleOnce(randomDuration(3), self, AddPictureToAlbum)
+        }
+      }
+
+      context.system.scheduler.scheduleOnce(randomDuration(3), self, falseBool)
     /*TODO
     case UpdatePicture(pictureID) =>
 
@@ -124,47 +121,61 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       put(newAlbum.toJson.asJsObject, "album")
     // From matchmaker
     case aNewFriend: ActorRef =>
-      log.info(myBaseObj.id + " just met someone")
-      aNewFriend ! Handshake(trueBool, myBaseObj.id)
+      if (myBaseObj == null) {
+        waitForIdFriends.add(aNewFriend)
+      } else {
+        //        log.info(myBaseObj.id + " just met someone")
+        aNewFriend ! Handshake(trueBool, myBaseObj.id)
+      }
     // From new friend
     case Handshake(needResponse, id) =>
-      myRealFriends.put(sender, id)
-      self ! MakeFriend(id)
-      if (needResponse) {
-        sender ! Handshake(falseBool, myBaseObj.id)
+      if (myBaseObj == null) {
+        returnHandshake.add(sender)
+      } else {
+        myRealFriends.put(sender, id)
+        self ! MakeFriend(id)
+        if (needResponse) {
+          sender ! Handshake(falseBool, myBaseObj.id)
+        }
       }
 
     /*TODO check this*/
     case MakeFriend(id) =>
-      if (!isPage) {
+      if (isPage) {
+        if (id != -1) {
+          putRoute(s"like/${myBaseObj.id}/page/-1/$id", "likepage")
+        }
+      } else {
         val friendId = if (id == -1) Random.nextInt(myBaseObj.id) else id
-        if (PageMap.obj(friendId)) {
+        if (ProfileMap.obj(friendId)) {
           putRoute(s"like/$friendId/page/-1/${myBaseObj.id}", "likepage")
         } else {
           val updatedList = UpdateFriendList(myBaseObj.id, friendId)
           post(updatedList.toJson.asJsObject, "addfriend")
         }
       }
-    case GetFriendsPost =>
-      var friendId = Random.nextInt(myBaseObj.id)
-      if (myFriends.nonEmpty) {
-        friendId = myFriends(Random.nextInt(myFriends.length))
-      }
-      get(s"post/$friendId", "getfriendpost")
     case PutMsg(response, reaction) =>
       reaction match {
         case "user" =>
           me = response ~> unmarshal[User]
           myBaseObj = me.baseObject
-          context.system.scheduler.scheduleOnce(durationSeconds(10), self, false)
-          PageMap.obj.put(myBaseObj.id, isPage)
-          log.info("Printing {}", me)
+          ProfileMap.obj.put(myBaseObj.id, isPage)
+          waitForIdFriends.foreach(f => self ! f)
+          waitForIdFriends.clear()
+          returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
+          returnHandshake.clear()
+          log.info(s"Printing $me - $myBaseObj")
+          self ! falseBool
         case "page" =>
           mePage = response ~> unmarshal[Page]
           myBaseObj = mePage.baseObject
-          context.system.scheduler.scheduleOnce(durationSeconds(10), self, false)
-          PageMap.obj.put(myBaseObj.id, isPage)
-          log.info("Printing {}", mePage)
+          ProfileMap.obj.put(myBaseObj.id, isPage)
+          waitForIdFriends.foreach(f => self ! f)
+          waitForIdFriends.clear()
+          returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
+          returnHandshake.clear()
+          log.info(s"Printing $mePage - $myBaseObj")
+          self ! falseBool
         case "post" =>
           numPosts += 1
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
@@ -176,17 +187,31 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           context.system.scheduler.scheduleOnce(durationSeconds(1), self, MakePost(photo, picture.baseObject.id))
         case "picture" =>
         //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture)
-        case "likepage"=>
+        case "likepage" =>
       }
     case GetMsg(response, reaction) =>
       reaction match {
         case "user" =>
         case "page" =>
+        case "feed" =>
+          val arr = response ~> unmarshal[Array[Int]]
+          (1 until arr.length).foreach(pIdx => get(s"post/${arr(0)}/${arr(pIdx)}", "feedpost"))
+        case "feedpost" =>
+
+        case "picture" =>
+        //          val picture = response ~> unmarshal[Picture]
+
+        case "post" =>
+          val post = response ~> unmarshal[Post]
+          val id = post.baseObject.id
+          if (random(1) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
           context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture(album.baseObject.id))
         case "getfriendpost" =>
         //            context.system.scheduler.scheduleOnce(randomDuration(5), self, GetFriendsPost)
+        case "album" =>
+        case x => log.error("Unmatched getmsg case {}", x)
       }
     case PostMsg(response, reaction) =>
       try {
@@ -215,8 +240,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   }
 
 
-  def putRoute(route: String, returnSupport: String = ""):Unit = {
-    val returnClass = if (returnSupport.nonEmpty) returnSupport else route
+  def putRoute(route: String, inputReaction: String = ""): Unit = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
 
     val future = pipeline {
@@ -224,13 +249,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
 
     future onComplete {
-      case Success(response) => self ! PutMsg(response, returnClass)
+      case Success(response) => self ! PutMsg(response, reaction)
       case Failure(error) => log.error(error, s"Couldn't create using $route")
     }
   }
 
-  def put(json: JsObject, route: String, returnSupport: String = ""):Unit = {
-    val returnClass = if (returnSupport.nonEmpty) returnSupport else route
+  def put(json: JsObject, route: String, inputReaction: String = ""): Unit = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
 
     val future = pipeline {
@@ -238,13 +263,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
 
     future onComplete {
-      case Success(response) => self ! PutMsg(response, returnClass)
+      case Success(response) => self ! PutMsg(response, reaction)
       case Failure(error) => log.error(error, s"Couldn't create $json using $route")
     }
   }
 
-  def get(route: String, returnSupport: String = "") = {
-    val returnClass = if (returnSupport.nonEmpty) returnSupport else route
+  def get(route: String, inputReaction: String = "") = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
 
     val future = pipeline {
@@ -252,13 +277,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
 
     future onComplete {
-      case Success(response) => self ! GetMsg(response, returnClass)
+      case Success(response) => self ! GetMsg(response, reaction)
       case Failure(error) => log.error(error, s"Couldn't get $route")
     }
   }
 
-  def post(json: JsObject, route: String, returnSupport: String = "") = {
-    val returnClass = if (returnSupport.nonEmpty) returnSupport else route
+  def post(json: JsObject, route: String, inputReaction: String = "") = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
 
     val future = pipeline {
@@ -266,7 +291,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
 
     future onComplete {
-      case Success(response) => self ! PostMsg(response, returnClass)
+      case Success(response) => self ! PostMsg(response, reaction)
       case Failure(error) => log.error(error, s"Couldn't post $json using $route")
     }
   }
