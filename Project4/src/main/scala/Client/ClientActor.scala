@@ -203,7 +203,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           val arr = response ~> unmarshal[Array[Int]]
           if (arr.nonEmpty) {
             val makeFriendIdx = random(arr.length)
-
+            if(!myFriends.contains(arr(makeFriendIdx))) {
+              post(UpdateFriendList(myBaseObj.id, arr(makeFriendIdx)).toJson.asJsObject(), "addfriend")
+            }
           }
         case "feed" =>
           val arr = response ~> unmarshal[Array[Int]]
