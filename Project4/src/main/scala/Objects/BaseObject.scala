@@ -13,7 +13,6 @@ case class BaseObject(var id: Int = -1, var deleted: Boolean = false) {
 
   def appendLike(pid: Int) = likes.add(pid)
 
-
   def delete(rc: RequestContext, msg: String = "") = {
     if (deleted) {
       rc.complete(ResponseMessage(s"$msg Already deleted!"))

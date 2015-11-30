@@ -10,6 +10,7 @@ import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
+import Utils.Constants
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
@@ -23,9 +24,6 @@ import scala.util.{Failure, Random, Success, Try}
 
 
 class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor with ActorLogging {
-
-  val trueBool = true
-  val falseBool = false
   val myPages = mutable.ArrayBuffer[Page]()
   val myFriends = mutable.ArrayBuffer[Int]()
   val myRealFriends = mutable.HashMap[ActorRef, Int]()
@@ -36,6 +34,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   var myBaseObj: BaseObject = null
   var numPosts = 0
   var numAlbums = 0
+  var numPictures = 0
 
   val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
     case ClientType.Active => (80, 50, 90, 50)
@@ -66,9 +65,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
       if (random(1001) <= 5) {
         random(3) match {
-          case 0 => get(s"post/${myBaseObj.id}/${random(numPosts) + 1}", "postdelete")
-          case 1 => get(s"album/${myBaseObj.id}/${random(numAlbums) + 1}", "albumdelete")
-          case 2 => get(s"picture/${myBaseObj.id}/${random(numAlbums) + 1}", "picturedelete")
+          case 0 => if (numPosts > 0) get(s"post/${myBaseObj.id}/${random(numPosts) + 2}", "postdelete")
+          case 1 => if (numAlbums > 0) get(s"album/${myBaseObj.id}/${random(numAlbums) + 2}", "albumdelete")
+          case 2 => if (numPictures > 0) get(s"picture/${myBaseObj.id}/${random(numPictures) + 2}", "picturedelete")
         }
       }
 
@@ -105,10 +104,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
       }
 
-      context.system.scheduler.scheduleOnce(randomDuration(3), self, falseBool)
+      context.system.scheduler.scheduleOnce(randomDuration(3), self, Constants.falseBool)
       if (random(100001) < 5) {
         if (isPage) delete(mePage.toJson.asJsObject, "page")
-        else delete(mePage.toJson.asJsObject, "user")
+        else delete(me.toJson.asJsObject, "user")
       }
     /*TODO
     case UpdatePicture(pictureID) =>
@@ -141,7 +140,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         waitForIdFriends.add(aNewFriend)
       } else {
         //        log.info(myBaseObj.id + " just met someone")
-        aNewFriend ! Handshake(trueBool, myBaseObj.id)
+        aNewFriend ! Handshake(Constants.trueBool, myBaseObj.id)
       }
     // From new friend
     case Handshake(needResponse, id) =>
@@ -151,7 +150,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         myRealFriends.put(sender, id)
         self ! MakeFriend(id)
         if (needResponse) {
-          sender ! Handshake(falseBool, myBaseObj.id)
+          sender ! Handshake(Constants.falseBool, myBaseObj.id)
         }
       }
 
@@ -178,10 +177,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           ProfileMap.obj.put(myBaseObj.id, isPage)
           waitForIdFriends.foreach(f => self ! f)
           waitForIdFriends.clear()
-          returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
+          returnHandshake.foreach(f => self.tell(Handshake(Constants.trueBool, myBaseObj.id), f))
           returnHandshake.clear()
           //          log.info(s"Printing $me - $myBaseObj")
-          self ! falseBool
+          self ! Constants.falseBool
           if (myBaseObj.id == 0) get("debug")
         case "page" =>
           mePage = response ~> unmarshal[Page]
@@ -189,10 +188,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           ProfileMap.obj.put(myBaseObj.id, isPage)
           waitForIdFriends.foreach(f => self ! f)
           waitForIdFriends.clear()
-          returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
+          returnHandshake.foreach(f => self.tell(Handshake(Constants.trueBool, myBaseObj.id), f))
           returnHandshake.clear()
           //          log.info(s"Printing $mePage - $myBaseObj")
-          self ! falseBool
+          self ! Constants.falseBool
           if (myBaseObj.id == 0) get("debug")
         case "post" =>
           numPosts += 1
@@ -201,9 +200,11 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           numAlbums += 1
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakeAlbum)
         case "picturePost" =>
+          numPictures += 1
           val picture = response ~> unmarshal[Picture]
           context.system.scheduler.scheduleOnce(durationSeconds(1), self, MakePost(photo, picture.baseObject.id))
         case "picture" =>
+          numPictures += 1
         //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture)
         case "likepage" =>
         case "like" =>
@@ -236,10 +237,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           val picture = response ~> unmarshal[Picture]
           if (random(2) == 0) putRoute(s"like/${picture.from}/$reaction/${picture.baseObject.id}/${myBaseObj.id}", "like")
         case "post" =>
-          val post = response ~> unmarshal[Post]
-          val id = post.baseObject.id
-          if (random(2) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
-          if (random(2) == 0) putRoute(s"like/${post.from}/$reaction/${post.baseObject.id}/${myBaseObj.id}", "like")
+          try {
+            val post = response ~> unmarshal[Post]
+            val id = post.baseObject.id
+            if (random(2) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
+            if (random(2) == 0) putRoute(s"like/${post.from}/$reaction/${post.baseObject.id}/${myBaseObj.id}", "like")
+          } catch {
+            case e: Throwable => log.info(s"$response")
+          }
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
           context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture(album.baseObject.id))

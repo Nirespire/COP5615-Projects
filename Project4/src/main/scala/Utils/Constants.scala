@@ -16,4 +16,6 @@ object Constants {
   val getFeedChar = 'e'
   val likeChar = 'l'
   val nano = 1000000000.0
+  val trueBool = true
+  val falseBool = false
 }
