@@ -60,9 +60,17 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case true => registerMyself()
 
     // Do some activity every second
-    case false =>
+    case false if !myBaseObj.deleted =>
       //      log.info(myBaseObj.id + " starting activity")
       if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
+
+      if (random(1001) <= 5) {
+        random(3) match {
+          case 0 => get(s"post/${myBaseObj.id}/${random(numPosts) + 1}", "postdelete")
+          case 1 => get(s"album/${myBaseObj.id}/${random(numAlbums) + 1}", "albumdelete")
+          case 2 => get(s"picture/${myBaseObj.id}/${random(numAlbums) + 1}", "picturedelete")
+        }
+      }
 
       if (random(101) < putPercent) {
         random(4) match {
@@ -98,6 +106,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
 
       context.system.scheduler.scheduleOnce(randomDuration(3), self, falseBool)
+      if (random(100001) < 5) {
+        if (isPage) delete(mePage.toJson.asJsObject, "page")
+        else delete(mePage.toJson.asJsObject, "user")
+      }
     /*TODO
     case UpdatePicture(pictureID) =>
 
@@ -198,6 +210,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     case GetMsg(response, reaction) =>
       reaction match {
+        case "postdelete" => delete(response.entity.asString.parseJson.asJsObject, "post")
+        case "albumdelete" => delete(response.entity.asString.parseJson.asJsObject, "album")
+        case "picturedelete" => delete(response.entity.asString.parseJson.asJsObject, "picture")
         case "debug" =>
           log.info(s"${response.entity.asString}")
           context.system.scheduler.scheduleOnce(durationSeconds(2), self, DebugMsg)
@@ -253,6 +268,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         case e: Throwable => log.error(e, "Error for response {}", response)
       }
     case DebugMsg => get("debug")
+
+    case DeleteMsg(response, reaction) =>
+      reaction match {
+        case "user" | "page" => myBaseObj.deleted = true
+        case _ => log.info(s"${myBaseObj.id} - ${response.entity.asString}")
+      }
   }
 
   def registerMyself() {
@@ -271,7 +292,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def putRoute(route: String, inputReaction: String = ""): Unit = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
-
     val future = pipeline {
       pipelining.Put(s"http://$serviceHost:$servicePort/$route")
     }
@@ -285,7 +305,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def put(json: JsObject, route: String, inputReaction: String = ""): Unit = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
-
     val future = pipeline {
       pipelining.Put(s"http://$serviceHost:$servicePort/$route", json)
     }
@@ -299,7 +318,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def get(route: String, inputReaction: String = "") = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
-
     val future = pipeline {
       pipelining.Get(s"http://$serviceHost:$servicePort/$route")
     }
@@ -313,13 +331,25 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def post(json: JsObject, route: String, inputReaction: String = "") = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
-
     val future = pipeline {
       pipelining.Post(s"http://$serviceHost:$servicePort/$route", json)
     }
 
     future onComplete {
       case Success(response) => self ! PostMsg(response, reaction)
+      case Failure(error) => log.error(error, s"Couldn't post $json using $route")
+    }
+  }
+
+  def delete(json: JsObject, route: String, inputReaction: String = "") = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
+    val pipeline = sendReceive
+    val future = pipeline {
+      pipelining.Delete(s"http://$serviceHost:$servicePort/$route", json)
+    }
+
+    future onComplete {
+      case Success(response) => self ! DeleteMsg(response, reaction)
       case Failure(error) => log.error(error, s"Couldn't post $json using $route")
     }
   }

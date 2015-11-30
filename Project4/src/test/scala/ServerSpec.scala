@@ -15,19 +15,19 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(0)
-          println(entity.toString())
+          println(entity.toString)
         }
 
         Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(1)
-          println(entity.toString())
+          println(entity.toString)
         }
 
         Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(2)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -39,7 +39,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/page", Page(BaseObject(), "about", "category", -1)) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].baseObject.id should equal(3)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -48,10 +48,10 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put Post" - {
     "when calling PUT /post" - {
       "should return a post object" in {
-        Put("/post", Objects.Post(BaseObject(), 0, new DateTime().toString(), 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
+        Put("/post", Objects.Post(BaseObject(), 0, new DateTime().toString, 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Post].baseObject.id should equal(0)
-          println(entity.toString())
+          responseAs[Post].baseObject.id should equal(1)
+          println(entity.toString)
         }
       }
     }
@@ -62,8 +62,8 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a picture object" in {
         Put("/picture", Picture(BaseObject(), 0, -1, "filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Picture].baseObject.id should equal(0)
-          println(entity.toString())
+          responseAs[Picture].baseObject.id should equal(1)
+          println(entity.toString)
         }
       }
     }
@@ -72,10 +72,10 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put Album" - {
     "when calling PUT /album" - {
       "should return a album object" in {
-        Put("/album", Album(BaseObject(), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
+        Put("/album", Album(BaseObject(), 0, new DateTime().toString, new DateTime().toString, 0, "description")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Album].baseObject.id should equal(1)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -87,7 +87,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].about should equal("something updated")
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -100,7 +100,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           responseAs[Page].about should equal("something updated")
           responseAs[Page].cover should equal(0)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -112,7 +112,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Post("/picture", Picture(BaseObject(0), 0, -1, "updated filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Picture].filename should equal("updated filename")
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -121,10 +121,10 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Album" - {
     "when calling Post /album" - {
       "should return a album object" in {
-        Post("/album", Album(BaseObject(0), 0, new DateTime().toString(), new DateTime().toString(), 0, "updated description")) ~> myRoute ~> check {
+        Post("/album", Album(BaseObject(0), 0, new DateTime().toString, new DateTime().toString, 0, "updated description")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Album].description should equal("updated description")
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -133,14 +133,14 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Create friendship between 0 and 1" - {
     "when calling Post /friendlist" - {
       "should return an UpdateFriendlist object" in {
-        Post("/addfriend", UpdateFriendList(0,1)) ~> myRoute ~> check {
+        Post("/addfriend", UpdateFriendList(0, 1)) ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
         }
 
-        Post("/addfriend", UpdateFriendList(1,0)) ~> myRoute ~> check {
+        Post("/addfriend", UpdateFriendList(1, 0)) ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
         }
 
       }
@@ -153,7 +153,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Get("/user/0") ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(0)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -165,26 +165,26 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return latest post object" in {
         Get("/feed/0") ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Seq[Int]] should contain(0)
-          println(entity.toString())
+          responseAs[Seq[Int]] should contain(1)
+          println(entity.toString)
 
-          Get("/post/0/0") ~> myRoute ~> check{
+          Get("/post/0/1") ~> myRoute ~> check {
             status should equal(OK)
-            responseAs[Post].baseObject.id should equal(0)
-            println(entity.toString())
+            responseAs[Post].baseObject.id should equal(1)
+            println(entity.toString)
           }
         }
       }
     }
   }
 
-  "Get post 0 for 0" - {
+  "Get post 0 for 1" - {
     "when getting post 0 for user 0" - {
       "should return post 0 object" in {
-        Get("/post/0/0") ~> myRoute ~> check {
+        Get("/post/0/1") ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Post].baseObject.id should equal(0)
-          println(entity.toString())
+          responseAs[Post].baseObject.id should equal(1)
+          println(entity.toString)
         }
       }
     }
@@ -195,18 +195,18 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Get("/album/0/0") ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Album].baseObject.id should equal(0)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
   }
-  "Get picture 0 for 0" - {
-    "when getting picture 0 for user 0" - {
-      "should return picture 0 object" in {
-        Get("/picture/0/0") ~> myRoute ~> check {
+  "Get picture 1 for profile 0" - {
+    "when getting picture 1 for user 0" - {
+      "should return picture 1 object" in {
+        Get("/picture/0/1") ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Picture].baseObject.id should equal(0)
-          println(entity.toString())
+          responseAs[Picture].baseObject.id should equal(1)
+          println(entity.toString)
         }
       }
     }
@@ -215,38 +215,15 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "1 likes 0's post" - {
     "when calling PUT /like for a post" - {
       "should return a post object" in {
-        Put("/like/0/post/0/1") ~> myRoute ~> check {
+        Put("/like/0/post/1/1") ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
 
-          Get("/post/0/0") ~> myRoute ~> check {
+          Get("/post/0/1") ~> myRoute ~> check {
             status should equal(OK)
             responseAs[Post].baseObject.likes.contains(1)
-            println(entity.toString())
+            println(entity.toString)
           }
-        }
-      }
-    }
-  }
-
-
-  "Delete User" - {
-    "when calling DELETE /user" - {
-      "should return a user object each" in {
-        Delete("/user", User(BaseObject(id=0), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
-          status should equal(OK)
-          println(entity.toString())
-        }
-      }
-    }
-  }
-
-  "Delete Page" - {
-    "when calling DELETE /page" - {
-      "should return a page object" in {
-        Delete("/page", Page(BaseObject(id=3), "about", "category", -1)) ~> myRoute ~> check {
-          status should equal(OK)
-          println(entity.toString())
         }
       }
     }
@@ -255,9 +232,9 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete Post" - {
     "when calling DELETE /post" - {
       "should return a post object" in {
-        Delete("/post", Objects.Post(BaseObject(), 0, new DateTime().toString(), 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
+        Delete("/post", Objects.Post(BaseObject(), 0, new DateTime().toString, 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -268,7 +245,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a picture object" in {
         Delete("/picture", Picture(BaseObject(), 0, -1, "filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
@@ -277,13 +254,33 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete Album" - {
     "when calling DELETE /album" - {
       "should return a album object" in {
-        Delete("/album", Album(BaseObject(), 0, new DateTime().toString(), new DateTime().toString(), 0, "description")) ~> myRoute ~> check {
+        Delete("/album", Album(BaseObject(), 0, new DateTime().toString, new DateTime().toString, 0, "description")) ~> myRoute ~> check {
           status should equal(OK)
-          println(entity.toString())
+          println(entity.toString)
         }
       }
     }
   }
 
-}
+  "Delete User" - {
+    "when calling DELETE /user" - {
+      "should return a user object each" in {
+        Delete("/user", User(BaseObject(id = 0), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString)
+        }
+      }
+    }
+  }
 
+  "Delete Page" - {
+    "when calling DELETE /page" - {
+      "should return a page object" in {
+        Delete("/page", Page(BaseObject(id = 3), "about", "category", -1)) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity.toString)
+        }
+      }
+    }
+  }
+}
