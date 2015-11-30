@@ -39,6 +39,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       "get-pictures" -> JsNumber(da.debugVar(Constants.getPicturesChar)),
       "get-friendlistUpdates" -> JsNumber(da.debugVar(Constants.getFlChar)),
       "get-requestPersecond" -> JsNumber(da.getRequestPerSecond()),
+      "get-feed" -> JsNumber(da.debugVar(Constants.getFeedChar)),
       "all-requestPersecond" -> JsNumber(da.allRequestPerSecond())
     )
 
@@ -46,7 +47,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       val da = DebugInfo()
       value.asJsObject.getFields("post-profiles", "post-posts", "post-albums", "post-pictures",
         "post-friendlistUpdates", "get-profiles", "get-posts", "get-albums",
-        "get-pictures", "get-friendlistUpdates") match {
+        "get-pictures", "get-friendlistUpdates", "get-feed") match {
         case Seq(JsNumber(post_profiles),
         JsNumber(post_posts),
         JsNumber(post_albums),
@@ -56,7 +57,8 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
         JsNumber(get_posts),
         JsNumber(get_albums),
         JsNumber(get_pictures),
-        JsNumber(get_friendlistUpdates)) =>
+        JsNumber(get_friendlistUpdates),
+        JsNumber(get_feed)) =>
           da.debugVar(Constants.profilesChar) = post_profiles.toInt
           da.debugVar(Constants.postsChar) = post_posts.toInt
           da.debugVar(Constants.albumsChar) = post_albums.toInt
@@ -67,6 +69,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
           da.debugVar(Constants.getAlbumsChar) = get_albums.toInt
           da.debugVar(Constants.getPicturesChar) = get_pictures.toInt
           da.debugVar(Constants.getFlChar) = get_friendlistUpdates.toInt
+          da.debugVar(Constants.getFeedChar) = get_feed.toInt
           da
         case _ => throw new DeserializationException("Debug Actor expected")
       }

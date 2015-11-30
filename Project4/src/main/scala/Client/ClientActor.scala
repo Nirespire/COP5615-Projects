@@ -65,20 +65,20 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
 
       if (random(101) < putPercent) {
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePost(status, -1))
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeAlbum)
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicture(-1))
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicturePost)
+        random(4) match {
+          case 0 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePost(status, -1))
+          case 1 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeAlbum)
+          case 2 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicture(-1))
+          case 3 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePicturePost)
+        }
       }
 
 
       if (random(101) < getPercent) {
         myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
           if (ProfileMap.obj(id)) get(s"page/$id", "page") else get(s"user/$id", "user")
-          if (random(1) == 0) get(s"post/$id", "post")
-          if (random(1) == 0) get(s"feed/$id", "feed")
-          if (random(1) == 0) get(s"picture/$id", "picture")
-          if (random(1) == 0) get(s"album/$id", "album")
+          if (random(1) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+          if (random(1) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
         }
       }
 
@@ -194,17 +194,17 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         case "user" =>
         case "page" =>
         case "feed" =>
+          val arr = response ~> unmarshal[Array[Int]]
+          (1 until arr.length).foreach(pIdx => get(s"post/${arr(0)}/${arr(pIdx)}", "feedpost"))
+        case "feedpost" =>
+
         case "picture" =>
         //          val picture = response ~> unmarshal[Picture]
 
         case "post" =>
-          try {
-            val post = response ~> unmarshal[Post]
-            val id = post.baseObject.id
-            if (random(1) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
-          } catch {
-            case e: Throwable => log.error(s"response $response ")
-          }
+          val post = response ~> unmarshal[Post]
+          val id = post.baseObject.id
+          if (random(1) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
           context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture(album.baseObject.id))

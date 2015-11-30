@@ -10,8 +10,9 @@ object Constants {
   val flChar = 'F'
   val getProfilesChar = 'p'
   val getPostsChar = 'o'
-  val getAlbumsChar = 'a'
   val getPicturesChar = 'i'
+  val getAlbumsChar = 'a'
   val getFlChar = 'f'
+  val getFeedChar = 'e'
   val nano = 1000000000.0
 }
