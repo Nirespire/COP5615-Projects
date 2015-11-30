@@ -77,8 +77,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       if (random(101) < getPercent) {
         myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
           if (ProfileMap.obj(id)) get(s"page/$id", "page") else get(s"user/$id", "user")
-          if (random(1) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
-          if (random(1) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+          if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+          if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
         }
       }
 
@@ -197,20 +197,24 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           val arr = response ~> unmarshal[Array[Int]]
           (1 until arr.length).foreach(pIdx => get(s"post/${arr(0)}/${arr(pIdx)}", "feedpost"))
         case "feedpost" =>
-
+          val post = response ~> unmarshal[Post]
         case "picture" =>
-        //          val picture = response ~> unmarshal[Picture]
+          val picture = response ~> unmarshal[Picture]
 
         case "post" =>
           val post = response ~> unmarshal[Post]
           val id = post.baseObject.id
-          if (random(1) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
+          if (random(2) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
           context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture(album.baseObject.id))
         case "getfriendpost" =>
         //            context.system.scheduler.scheduleOnce(randomDuration(5), self, GetFriendsPost)
         case "album" =>
+//          val album = response ~> unmarshal[Album]
+//          log.info(s"$album")
+//          (0 until random(album.pictures.size)).foreach(pIdx => get(s"picture/${album.from}/pIdx"))
+
         case x => log.error("Unmatched getmsg case {}", x)
       }
     case PostMsg(response, reaction) =>

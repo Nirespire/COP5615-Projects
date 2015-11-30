@@ -13,10 +13,9 @@ import com.typesafe.config.ConfigFactory
 import spray.can.Http
 
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Random, Try}
 
 object project4 extends App {
-
   val config = ConfigFactory.load()
   lazy val servicePort = Try(config.getInt("service.port")).getOrElse(8080)
   lazy val serviceHost = Try(config.getString("service.host")).getOrElse("localhost")
@@ -46,19 +45,19 @@ object project4 extends App {
     val numCelebrity = numClients - numActive + numPassive
 
     (1 to numActive).foreach { idx =>
-      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Active)), "client" + idx)
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false, ClientType.Active)), "client" + idx)
       matchmaker ! actor
       actor ! true
     }
 
     (numActive + 1 to numActive + numPassive).foreach { idx =>
-      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Passive)), "client" + idx)
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false, ClientType.Passive)), "client" + idx)
       matchmaker ! actor
       actor ! true
     }
 
     (numActive + numPassive + 1 to numClients).foreach { idx =>
-      val actor = clientSystem.actorOf(Props(new Client.ClientActor(true,ClientType.ContentCreator)), "client" + idx)
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(true, ClientType.ContentCreator)), "client" + idx)
       matchmaker ! actor
       actor ! true
     }
