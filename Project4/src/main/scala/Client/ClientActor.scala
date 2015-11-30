@@ -170,6 +170,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           returnHandshake.clear()
           //          log.info(s"Printing $me - $myBaseObj")
           self ! falseBool
+          if (myBaseObj.id == 0) get("debug")
         case "page" =>
           mePage = response ~> unmarshal[Page]
           myBaseObj = mePage.baseObject
@@ -180,6 +181,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           returnHandshake.clear()
           //          log.info(s"Printing $mePage - $myBaseObj")
           self ! falseBool
+          if (myBaseObj.id == 0) get("debug")
         case "post" =>
           numPosts += 1
         //          context.system.scheduler.scheduleOnce(Random.nextInt(5) second, self, MakePost)
@@ -196,6 +198,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     case GetMsg(response, reaction) =>
       reaction match {
+        case "debug" =>
+          log.info(s"${response.entity.asString}")
+          context.system.scheduler.scheduleOnce(durationSeconds(2), self, DebugMsg)
         case "user" =>
         case "page" =>
         case "friendlist" =>
@@ -247,6 +252,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       } catch {
         case e: Throwable => log.error(e, "Error for response {}", response)
       }
+    case DebugMsg => get("debug")
   }
 
   def registerMyself() {

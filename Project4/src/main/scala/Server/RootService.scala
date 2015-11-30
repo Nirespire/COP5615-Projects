@@ -11,6 +11,7 @@ import akka.util.Timeout
 import com.google.common.io.BaseEncoding
 import spray.http.MediaTypes.`application/json`
 import spray.routing._
+import spray.json._
 
 import scala.concurrent.duration._
 
@@ -56,7 +57,7 @@ trait RootService extends HttpService {
         } ~ { rc => routeTypes(pid, ts, tsId, rc) }
       } ~
         path(Segment / IntNumber) { (ts, pid) => rc => routeTypes(pid, ts, -1, rc) } ~
-        path("debug") { rc => rc.complete(da) }
+        path("debug") { rc => rc.complete(da.toJson.compactPrint) }
     } ~
       put {
         path("like" / IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
