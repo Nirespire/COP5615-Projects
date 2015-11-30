@@ -33,11 +33,11 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       "post-pictures" -> JsNumber(da.debugVar(Constants.picturesChar)),
       "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.flChar)),
       "post-requestPersecond" -> JsNumber(da.postRequestPerSecond()),
-      "get-profiles" -> JsNumber(da.debugVar(Constants.profilesChar)),
-      "get-posts" -> JsNumber(da.debugVar(Constants.postsChar)),
-      "get-albums" -> JsNumber(da.debugVar(Constants.albumsChar)),
-      "get-pictures" -> JsNumber(da.debugVar(Constants.picturesChar)),
-      "get-friendlistUpdates" -> JsNumber(da.debugVar(Constants.flChar)),
+      "get-profiles" -> JsNumber(da.debugVar(Constants.getProfilesChar)),
+      "get-posts" -> JsNumber(da.debugVar(Constants.getPostsChar)),
+      "get-albums" -> JsNumber(da.debugVar(Constants.getAlbumsChar)),
+      "get-pictures" -> JsNumber(da.debugVar(Constants.getPicturesChar)),
+      "get-friendlistUpdates" -> JsNumber(da.debugVar(Constants.getFlChar)),
       "get-requestPersecond" -> JsNumber(da.getRequestPerSecond()),
       "all-requestPersecond" -> JsNumber(da.allRequestPerSecond())
     )
@@ -62,11 +62,11 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
           da.debugVar(Constants.albumsChar) = post_albums.toInt
           da.debugVar(Constants.picturesChar) = post_pictures.toInt
           da.debugVar(Constants.flChar) = post_friendlistUpdates.toInt
-          da.debugVar(Constants.profilesChar) = get_profiles.toInt
-          da.debugVar(Constants.postsChar) = get_posts.toInt
-          da.debugVar(Constants.albumsChar) = get_albums.toInt
-          da.debugVar(Constants.picturesChar) = get_pictures.toInt
-          da.debugVar(Constants.flChar) = get_friendlistUpdates.toInt
+          da.debugVar(Constants.getProfilesChar) = get_profiles.toInt
+          da.debugVar(Constants.getPostsChar) = get_posts.toInt
+          da.debugVar(Constants.getAlbumsChar) = get_albums.toInt
+          da.debugVar(Constants.getPicturesChar) = get_pictures.toInt
+          da.debugVar(Constants.getFlChar) = get_friendlistUpdates.toInt
           da
         case _ => throw new DeserializationException("Debug Actor expected")
       }

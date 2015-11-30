@@ -55,7 +55,6 @@ object project4 extends App {
       val actor = clientSystem.actorOf(Props(new Client.ClientActor(false,ClientType.Passive)), "client" + idx)
       matchmaker ! actor
       actor ! true
-
     }
 
     (numActive + numPassive + 1 to numClients).foreach { idx =>
@@ -65,8 +64,6 @@ object project4 extends App {
     }
 
     matchmaker ! true
-
-
     println("End Loop")
   }
 }

@@ -1,6 +1,7 @@
 package Server.Actors
 
 import Objects.ObjectJsonSupport._
+import Objects.ObjectTypes.PostType
 import Objects.{BaseObject, Picture, Album, Post}
 import Server.Messages._
 import akka.actor.{Actor, ActorRef}
@@ -15,9 +16,9 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
   val createdTime = new DateTime().toString()
   val defaultAlbum = Album(BaseObject(0), pid, createdTime, createdTime, -1, "Default Album")
   val albums = mutable.ArrayBuffer[Album](defaultAlbum)
-  val posts = mutable.ArrayBuffer[Post]()
-  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
-  val pictures = mutable.ArrayBuffer[Picture]()
+  val posts = mutable.ArrayBuffer[Post](Post(BaseObject(), pid, "", pid, "No Posts", PostType.empty, -1))
+  //  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
+  val pictures = mutable.ArrayBuffer[Picture](Picture(BaseObject(), pid, -1, "", ""))
   //  val friendLists = mutable.ArrayBuffer[FriendList]()
 
   def receive = {

@@ -4,7 +4,7 @@ import spray.json.{DeserializationException, JsString, JsValue, RootJsonFormat}
 
 object PostType extends Enumeration {
   type PostType = Value
-  val link, status, photo = Value
+  val empty,link, status, photo = Value
 
   implicit object PostTypeJsonFormat extends RootJsonFormat[PostType.PostType] {
     def write(obj: PostType.PostType): JsValue = JsString(obj.toString)

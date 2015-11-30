@@ -2,6 +2,6 @@ package Client
 
 import scala.collection.mutable
 
-object PageMap {
+object ProfileMap {
   val obj = mutable.HashMap[Int, Boolean]()
 }
