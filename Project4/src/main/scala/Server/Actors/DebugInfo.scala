@@ -8,10 +8,12 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
                      mutable.HashMap[Char, Int]().withDefaultValue(0)) {
   val start = System.nanoTime()
 
-  def putRequestPerSecond() = (debugVar(Constants.putProfilesChar) +
+  def putRequestPerSecond() = (
+    debugVar(Constants.putProfilesChar) +
     debugVar(Constants.putAlbumsChar) +
     debugVar(Constants.putPicturesChar) +
-    debugVar(Constants.putPostsChar)
+    debugVar(Constants.putPostsChar)+
+    debugVar(Constants.postLikeChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
   def postRequestPerSecond() = (debugVar(Constants.postFlChar) +
@@ -29,7 +31,9 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.deleteAlbumChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
-  def getRequestPerSecond() = (debugVar(Constants.getProfilesChar) +
+
+  def getRequestPerSecond() = (
+    debugVar(Constants.getProfilesChar) +
     debugVar(Constants.getAlbumsChar) +
     debugVar(Constants.getFlChar) +
     debugVar(Constants.getPicturesChar) +
@@ -58,6 +62,6 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.getPicturesChar) +
     debugVar(Constants.getPostsChar) +
     debugVar(Constants.getFeedChar) +
-    debugVar(Constants.likeChar)
+    debugVar(Constants.postLikeChar)
     ) * Constants.nano / (System.nanoTime() - start)
 }

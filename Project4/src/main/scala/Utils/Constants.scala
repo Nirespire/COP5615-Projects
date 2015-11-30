@@ -27,6 +27,7 @@ object Constants {
   val deleteAlbumChar = '5'
 
   val likeChar = 'l'
+  val postLikeChar = 'q'
 
   val nano = 1000000000.0
   val trueBool = true

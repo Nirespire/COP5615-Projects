@@ -52,7 +52,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       "get-friendlistUpdates" -> JsNumber(da.debugVar(Constants.getFlChar)),
       "get-requestPersecond" -> JsNumber(da.getRequestPerSecond()),
       "get-feed" -> JsNumber(da.debugVar(Constants.getFeedChar)),
-      "likes" -> JsNumber(da.debugVar(Constants.likeChar)),
+      "likes" -> JsNumber(da.debugVar(Constants.postLikeChar)),
       "all-requestPersecond" -> JsNumber(da.allRequestPerSecond())
     )
 
@@ -105,7 +105,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
           da.debugVar(Constants.getPicturesChar) = get_pictures.toInt
           da.debugVar(Constants.getFlChar) = get_friendlistUpdates.toInt
           da.debugVar(Constants.getFeedChar) = get_feed.toInt
-          da.debugVar(Constants.likeChar) = likes.toInt
+          da.debugVar(Constants.postLikeChar) = likes.toInt
           da
         case _ => throw new DeserializationException("Debug Actor expected")
       }

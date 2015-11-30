@@ -61,7 +61,7 @@ trait RootService extends HttpService {
     } ~
       put {
         path("like" / IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
-          da.debugVar(Constants.likeChar) += 1
+          da.debugVar(Constants.postLikeChar) += 1
           dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
         } ~
           path("user") {
