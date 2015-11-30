@@ -203,7 +203,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
             val id = post.baseObject.id
             if (random(1) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
           } catch {
-            case e: Throwable => log.error(s"response $url - $response ")
+            case e: Throwable => log.error(s"response $response ")
           }
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
