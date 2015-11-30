@@ -8,11 +8,11 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
                      mutable.HashMap[Char, Int]().withDefaultValue(0)) {
   val start = System.nanoTime()
 
-  def postRequestPerSecond() = (debugVar(Constants.profilesChar) +
-    debugVar(Constants.albumsChar) +
-    debugVar(Constants.flChar) +
-    debugVar(Constants.picturesChar) +
-    debugVar(Constants.postsChar)
+  def putRequestPerSecond() = (debugVar(Constants.putProfilesChar) +
+    debugVar(Constants.putAlbumsChar) +
+    debugVar(Constants.postFlChar) +
+    debugVar(Constants.putPicturesChar) +
+    debugVar(Constants.putPostsChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
   def getRequestPerSecond() = (debugVar(Constants.getProfilesChar) +
@@ -23,11 +23,11 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.getFeedChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
-  def allRequestPerSecond() = (debugVar(Constants.profilesChar) +
-    debugVar(Constants.albumsChar) +
-    debugVar(Constants.flChar) +
-    debugVar(Constants.picturesChar) +
-    debugVar(Constants.postsChar) +
+  def allRequestPerSecond() = (debugVar(Constants.putProfilesChar) +
+    debugVar(Constants.putAlbumsChar) +
+    debugVar(Constants.postFlChar) +
+    debugVar(Constants.putPicturesChar) +
+    debugVar(Constants.putPostsChar) +
     debugVar(Constants.getProfilesChar) +
     debugVar(Constants.getAlbumsChar) +
     debugVar(Constants.getFlChar) +

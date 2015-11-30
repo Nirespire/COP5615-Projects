@@ -33,6 +33,13 @@ class PageActor(var page: Page, debugActor: ActorRef)
         rc.complete(page)
       }
     case deleteMsg@DeleteMsg(rc, _, None) => baseObject.delete(rc, s"Page ${page.baseObject.id}")
+    case likeMsg@LikeMsg(rc, _, fid, ("page", _)) =>
+      if (baseObject.deleted) {
+        rc.complete(ResponseMessage(s"Profile $pid already deleted"))
+      } else {
+        baseObject.appendLike(fid)
+        rc.complete(ResponseMessage("Page liked"))
+      }
   }
 
   override def receive = pageReceive orElse super.receive

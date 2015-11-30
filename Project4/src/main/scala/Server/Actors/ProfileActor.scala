@@ -258,13 +258,6 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
               rc.complete(pic)
             }
           }
-        case ("page", _) =>
-          if (baseObject.deleted) {
-            rc.complete(ResponseMessage(s"Profile $pid already deleted"))
-          } else {
-            baseObject.appendLike(fid)
-            rc.complete(ResponseMessage("Page liked"))
-          }
       }
     } catch {
       case e: Throwable => rc.complete(ResponseMessage(e.getMessage))

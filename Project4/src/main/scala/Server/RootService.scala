@@ -66,33 +66,33 @@ trait RootService extends HttpService {
         } ~
           path("user") {
             entity(as[User]) { user => rc =>
-              user.baseObject.updateId(da.debugVar(Constants.profilesChar))
-              da.debugVar(Constants.profilesChar) += 1
+              user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+              da.debugVar(Constants.putProfilesChar) += 1
               dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
             }
           } ~
           path("page") {
             entity(as[Page]) { page => rc =>
-              page.baseObject.updateId(da.debugVar(Constants.profilesChar))
-              da.debugVar(Constants.profilesChar) += 1
+              page.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+              da.debugVar(Constants.putProfilesChar) += 1
               dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
             }
           } ~
           path("post") {
             entity(as[Post]) { post => rc =>
-              da.debugVar(Constants.postsChar) += 1
+              da.debugVar(Constants.putPostsChar) += 1
               dActor(post.creator) ! CreateMsg[Post](rc, post.creator, post)
             }
           } ~
           path("album") {
             entity(as[Album]) { album => rc =>
-              da.debugVar(Constants.albumsChar) += 1
+              da.debugVar(Constants.putAlbumsChar) += 1
               dActor(album.from) ! CreateMsg[Album](rc, album.from, album)
             }
           } ~
           path("picture") {
             entity(as[Picture]) { pic => rc =>
-              da.debugVar(Constants.picturesChar) += 1
+              da.debugVar(Constants.putPicturesChar) += 1
               dActor(pic.from) ! CreateMsg[Picture](rc, pic.from, pic)
             }
           }
@@ -127,7 +127,7 @@ trait RootService extends HttpService {
       post {
         path("addfriend") {
           entity(as[UpdateFriendList]) { updFL => rc =>
-            da.debugVar(Constants.flChar) += 1
+            da.debugVar(Constants.postFlChar) += 1
             dActor(updFL.pid) ! UpdateMsg(rc, updFL.pid, updFL)
           }
         } ~

@@ -27,12 +27,12 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
 
   implicit object DebugActorJsonFormat extends RootJsonFormat[DebugInfo] {
     def write(da: DebugInfo) = JsObject(
-      "post-profiles" -> JsNumber(da.debugVar(Constants.profilesChar)),
-      "post-posts" -> JsNumber(da.debugVar(Constants.postsChar)),
-      "post-albums" -> JsNumber(da.debugVar(Constants.albumsChar)),
-      "post-pictures" -> JsNumber(da.debugVar(Constants.picturesChar)),
-      "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.flChar)),
-      "post-requestPersecond" -> JsNumber(da.postRequestPerSecond()),
+      "put-profiles" -> JsNumber(da.debugVar(Constants.putProfilesChar)),
+      "put-posts" -> JsNumber(da.debugVar(Constants.putPostsChar)),
+      "put-albums" -> JsNumber(da.debugVar(Constants.putAlbumsChar)),
+      "put-pictures" -> JsNumber(da.debugVar(Constants.putPicturesChar)),
+      "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.postFlChar)),
+      "put-requestPersecond" -> JsNumber(da.putRequestPerSecond()),
       "get-profiles" -> JsNumber(da.debugVar(Constants.getProfilesChar)),
       "get-posts" -> JsNumber(da.debugVar(Constants.getPostsChar)),
       "get-albums" -> JsNumber(da.debugVar(Constants.getAlbumsChar)),
@@ -46,13 +46,13 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
 
     def read(value: JsValue) = {
       val da = DebugInfo()
-      value.asJsObject.getFields("post-profiles", "post-posts", "post-albums", "post-pictures",
+      value.asJsObject.getFields("put-profiles", "put-posts", "put-albums", "put-pictures",
         "post-friendlistUpdates", "get-profiles", "get-posts", "get-albums",
         "get-pictures", "get-friendlistUpdates", "get-feed", "likes") match {
-        case Seq(JsNumber(post_profiles),
-        JsNumber(post_posts),
-        JsNumber(post_albums),
-        JsNumber(post_pictures),
+        case Seq(JsNumber(put_profiles),
+        JsNumber(put_posts),
+        JsNumber(put_albums),
+        JsNumber(put_pictures),
         JsNumber(post_friendlistUpdates),
         JsNumber(get_profiles),
         JsNumber(get_posts),
@@ -60,12 +60,12 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
         JsNumber(get_pictures),
         JsNumber(get_friendlistUpdates),
         JsNumber(get_feed),
-        JsNumber(likes))=>
-          da.debugVar(Constants.profilesChar) = post_profiles.toInt
-          da.debugVar(Constants.postsChar) = post_posts.toInt
-          da.debugVar(Constants.albumsChar) = post_albums.toInt
-          da.debugVar(Constants.picturesChar) = post_pictures.toInt
-          da.debugVar(Constants.flChar) = post_friendlistUpdates.toInt
+        JsNumber(likes)) =>
+          da.debugVar(Constants.putProfilesChar) = put_profiles.toInt
+          da.debugVar(Constants.putPostsChar) = put_posts.toInt
+          da.debugVar(Constants.putAlbumsChar) = put_albums.toInt
+          da.debugVar(Constants.putPicturesChar) = put_pictures.toInt
+          da.debugVar(Constants.postFlChar) = post_friendlistUpdates.toInt
           da.debugVar(Constants.getProfilesChar) = get_profiles.toInt
           da.debugVar(Constants.getPostsChar) = get_posts.toInt
           da.debugVar(Constants.getAlbumsChar) = get_albums.toInt

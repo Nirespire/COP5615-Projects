@@ -3,11 +3,11 @@ package Utils
 import spray.json.JsNumber
 
 object Constants {
-  val profilesChar = 'P'
-  val postsChar = 'O'
-  val albumsChar = 'A'
-  val picturesChar = 'I'
-  val flChar = 'F'
+  val putProfilesChar = 'P'
+  val putPostsChar = 'O'
+  val putAlbumsChar = 'A'
+  val putPicturesChar = 'I'
+  val postFlChar = 'F'
   val getProfilesChar = 'p'
   val getPostsChar = 'o'
   val getPicturesChar = 'i'
