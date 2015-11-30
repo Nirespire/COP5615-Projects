@@ -55,7 +55,8 @@ class UserActor(var user: User, debugActor: ActorRef)
       }
     case getMsg@GetMsg(rc, _, ("friendlist", listTypeIdx: Int)) =>
       if (baseObject.deleted) {
-        rc.complete(deletedUser)
+        rc.complete(JsArray())
+//        rc.complete(deletedUser)
       } else {
         val listType = ListType(listTypeIdx)
         rc.complete(JsArray(friendsMap.getOrElse(listType, Set()).map(f => JsNumber(f)).toVector))

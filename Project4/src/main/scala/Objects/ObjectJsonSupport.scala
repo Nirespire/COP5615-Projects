@@ -31,8 +31,20 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       "put-posts" -> JsNumber(da.debugVar(Constants.putPostsChar)),
       "put-albums" -> JsNumber(da.debugVar(Constants.putAlbumsChar)),
       "put-pictures" -> JsNumber(da.debugVar(Constants.putPicturesChar)),
-      "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.postFlChar)),
       "put-requestPersecond" -> JsNumber(da.putRequestPerSecond()),
+      "post-friendlistUpdates" -> JsNumber(da.debugVar(Constants.postFlChar)),
+      "post-userUpdates" -> JsNumber(da.debugVar(Constants.postUserChar)),
+      "post-pageUpdates" -> JsNumber(da.debugVar(Constants.postPageChar)),
+      "post-pictureUpdates" -> JsNumber(da.debugVar(Constants.postPictureChar)),
+      "post-postUpdates" -> JsNumber(da.debugVar(Constants.postPostChar)),
+      "post-albumUpdates" -> JsNumber(da.debugVar(Constants.postAlbumChar)),
+      "post-requestPersecond" -> JsNumber(da.postRequestPerSecond()),
+      "delete-users" -> JsNumber(da.debugVar(Constants.deleteUserChar)),
+      "delete-pages" -> JsNumber(da.debugVar(Constants.deletePageChar)),
+      "delete-posts" -> JsNumber(da.debugVar(Constants.deletePostChar)),
+      "delete-pictures" -> JsNumber(da.debugVar(Constants.deletePictureChar)),
+      "delete-albums" -> JsNumber(da.debugVar(Constants.deleteAlbumChar)),
+      "delete-requestPersecond" -> JsNumber(da.deleteRequestPerSecond()),
       "get-profiles" -> JsNumber(da.debugVar(Constants.getProfilesChar)),
       "get-posts" -> JsNumber(da.debugVar(Constants.getPostsChar)),
       "get-albums" -> JsNumber(da.debugVar(Constants.getAlbumsChar)),
@@ -47,13 +59,24 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
     def read(value: JsValue) = {
       val da = DebugInfo()
       value.asJsObject.getFields("put-profiles", "put-posts", "put-albums", "put-pictures",
-        "post-friendlistUpdates", "get-profiles", "get-posts", "get-albums",
-        "get-pictures", "get-friendlistUpdates", "get-feed", "likes") match {
+        "post-friendlistUpdates", "post-userUpdates", "post-pageUpdates", "post-pictureUpdates", "post-postUpdates", "post-albumUpdates",
+        "delete-users", "delete-pages", "delete-posts", "delete-pictures", "delete-albums",
+        "get-profiles", "get-posts", "get-albums", "get-pictures", "get-friendlistUpdates", "get-feed", "likes") match {
         case Seq(JsNumber(put_profiles),
         JsNumber(put_posts),
         JsNumber(put_albums),
         JsNumber(put_pictures),
         JsNumber(post_friendlistUpdates),
+        JsNumber(post_userUpdates),
+        JsNumber(post_pageUpdates),
+        JsNumber(post_postUpdates),
+        JsNumber(post_pictureUpdates),
+        JsNumber(post_albumUpdates),
+        JsNumber(delete_users),
+        JsNumber(delete_pages),
+        JsNumber(delete_posts),
+        JsNumber(delete_pictures),
+        JsNumber(delete_albums),
         JsNumber(get_profiles),
         JsNumber(get_posts),
         JsNumber(get_albums),
@@ -66,6 +89,16 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
           da.debugVar(Constants.putAlbumsChar) = put_albums.toInt
           da.debugVar(Constants.putPicturesChar) = put_pictures.toInt
           da.debugVar(Constants.postFlChar) = post_friendlistUpdates.toInt
+          da.debugVar(Constants.postUserChar) = post_userUpdates.toInt
+          da.debugVar(Constants.postPageChar) = post_pageUpdates.toInt
+          da.debugVar(Constants.postPostChar) = post_postUpdates.toInt
+          da.debugVar(Constants.postPictureChar) = post_pictureUpdates.toInt
+          da.debugVar(Constants.postAlbumChar) = post_albumUpdates.toInt
+          da.debugVar(Constants.deleteUserChar) = delete_users.toInt
+          da.debugVar(Constants.deletePageChar) = delete_pages.toInt
+          da.debugVar(Constants.deletePostChar) = delete_posts.toInt
+          da.debugVar(Constants.deletePictureChar) = delete_pictures.toInt
+          da.debugVar(Constants.deleteAlbumChar) = delete_albums.toInt
           da.debugVar(Constants.getProfilesChar) = get_profiles.toInt
           da.debugVar(Constants.getPostsChar) = get_posts.toInt
           da.debugVar(Constants.getAlbumsChar) = get_albums.toInt

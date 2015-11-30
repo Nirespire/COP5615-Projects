@@ -100,26 +100,31 @@ trait RootService extends HttpService {
       delete {
         path("user") {
           entity(as[User]) { user => rc =>
+            da.debugVar(Constants.deleteUserChar) += 1
             dActor(user.baseObject.id) ! DeleteMsg(rc, user.baseObject.id, None)
           }
         } ~
           path("page") {
             entity(as[Page]) { page => rc =>
+              da.debugVar(Constants.deletePageChar) += 1
               dActor(page.baseObject.id) ! DeleteMsg(rc, page.baseObject.id, None)
             }
           } ~
           path("post") {
             entity(as[Post]) { post => rc =>
+              da.debugVar(Constants.deletePostChar) += 1
               dActor(post.creator) ! DeleteMsg(rc, post.creator, ("post", post.baseObject.id))
             }
           } ~
           path("album") {
             entity(as[Album]) { album => rc =>
+              da.debugVar(Constants.deleteAlbumChar) += 1
               dActor(album.from) ! DeleteMsg(rc, album.from, ("album", album.baseObject.id))
             }
           } ~
           path("picture") {
             entity(as[Picture]) { pic => rc =>
+              da.debugVar(Constants.deletePictureChar) += 1
               dActor(pic.from) ! DeleteMsg(rc, pic.from, ("picture", pic.baseObject.id))
             }
           }
@@ -132,18 +137,23 @@ trait RootService extends HttpService {
           }
         } ~
           path("user") {
+            da.debugVar(Constants.postUserChar) += 1
             entity(as[User]) { user => rc => dActor(user.baseObject.id) ! UpdateMsg(rc, user.baseObject.id, user) }
           } ~
           path("page") {
+            da.debugVar(Constants.postPageChar) += 1
             entity(as[Page]) { page => rc => dActor(page.baseObject.id) ! UpdateMsg(rc, page.baseObject.id, page) }
           } ~
           path("post") {
+            da.debugVar(Constants.postPostChar) += 1
             entity(as[Post]) { post => rc => dActor(post.creator) ! UpdateMsg(rc, post.creator, post) }
           } ~
           path("album") {
+            da.debugVar(Constants.postAlbumChar) += 1
             entity(as[Album]) { album => rc => dActor(album.from) ! UpdateMsg(rc, album.from, album) }
           } ~
           path("picture") {
+            da.debugVar(Constants.postPictureChar) += 1
             entity(as[Picture]) { pic => rc => dActor(pic.from) ! UpdateMsg(rc, pic.from, pic) }
           }
       }

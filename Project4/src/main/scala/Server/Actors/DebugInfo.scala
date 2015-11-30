@@ -10,9 +10,23 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
 
   def putRequestPerSecond() = (debugVar(Constants.putProfilesChar) +
     debugVar(Constants.putAlbumsChar) +
-    debugVar(Constants.postFlChar) +
     debugVar(Constants.putPicturesChar) +
     debugVar(Constants.putPostsChar)
+    ) * Constants.nano / (System.nanoTime() - start)
+
+  def postRequestPerSecond() = (debugVar(Constants.postFlChar) +
+    debugVar(Constants.postUserChar) +
+    debugVar(Constants.postPageChar) +
+    debugVar(Constants.postPictureChar) +
+    debugVar(Constants.postPostChar) +
+    debugVar(Constants.postAlbumChar)
+    ) * Constants.nano / (System.nanoTime() - start)
+
+  def deleteRequestPerSecond() = (debugVar(Constants.deleteUserChar) +
+    debugVar(Constants.deletePageChar) +
+    debugVar(Constants.deletePostChar) +
+    debugVar(Constants.deletePictureChar) +
+    debugVar(Constants.deleteAlbumChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
   def getRequestPerSecond() = (debugVar(Constants.getProfilesChar) +
@@ -25,9 +39,19 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
 
   def allRequestPerSecond() = (debugVar(Constants.putProfilesChar) +
     debugVar(Constants.putAlbumsChar) +
-    debugVar(Constants.postFlChar) +
     debugVar(Constants.putPicturesChar) +
     debugVar(Constants.putPostsChar) +
+    debugVar(Constants.postFlChar) +
+    debugVar(Constants.postUserChar) +
+    debugVar(Constants.postPageChar) +
+    debugVar(Constants.postPictureChar) +
+    debugVar(Constants.postPostChar) +
+    debugVar(Constants.postAlbumChar) +
+    debugVar(Constants.deleteUserChar) +
+    debugVar(Constants.deletePageChar) +
+    debugVar(Constants.deletePostChar) +
+    debugVar(Constants.deletePictureChar) +
+    debugVar(Constants.deleteAlbumChar) +
     debugVar(Constants.getProfilesChar) +
     debugVar(Constants.getAlbumsChar) +
     debugVar(Constants.getFlChar) +
