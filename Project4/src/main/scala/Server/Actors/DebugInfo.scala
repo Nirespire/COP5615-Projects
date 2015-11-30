@@ -33,6 +33,7 @@ case class DebugInfo(debugVar: scala.collection.mutable.Map[Char, Int] =
     debugVar(Constants.getFlChar) +
     debugVar(Constants.getPicturesChar) +
     debugVar(Constants.getPostsChar) +
-    debugVar(Constants.getFeedChar)
+    debugVar(Constants.getFeedChar) +
+    debugVar(Constants.likeChar)
     ) * Constants.nano / (System.nanoTime() - start)
 }

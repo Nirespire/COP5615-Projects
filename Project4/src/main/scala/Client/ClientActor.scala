@@ -164,7 +164,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           waitForIdFriends.clear()
           returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
           returnHandshake.clear()
-          log.info(s"Printing $me - $myBaseObj")
+//          log.info(s"Printing $me - $myBaseObj")
           self ! falseBool
         case "page" =>
           mePage = response ~> unmarshal[Page]
@@ -174,7 +174,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           waitForIdFriends.clear()
           returnHandshake.foreach(f => self.tell(Handshake(trueBool, myBaseObj.id), f))
           returnHandshake.clear()
-          log.info(s"Printing $mePage - $myBaseObj")
+//          log.info(s"Printing $mePage - $myBaseObj")
           self ! falseBool
         case "post" =>
           numPosts += 1
@@ -188,8 +188,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         case "picture" =>
         //          context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture)
         case "likepage" =>
+        case "like" =>
       }
     case GetMsg(response, reaction) =>
+
       reaction match {
         case "user" =>
         case "page" =>
@@ -200,20 +202,22 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           val post = response ~> unmarshal[Post]
         case "picture" =>
           val picture = response ~> unmarshal[Picture]
-
+          if (random(2) == 0) putRoute(s"like/${picture.from}/$reaction/${picture.baseObject.id}/${myBaseObj.id}", "like")
         case "post" =>
           val post = response ~> unmarshal[Post]
           val id = post.baseObject.id
           if (random(2) == 0 && id > 0) get(s"post/${post.creator}/${id - 1}", "post")
+          if (random(2) == 0) putRoute(s"like/${post.from}/$reaction/${post.baseObject.id}/${myBaseObj.id}", "like")
         case "getalbumaddpicture" =>
           val album = response ~> unmarshal[Album]
           context.system.scheduler.scheduleOnce(randomDuration(5), self, MakePicture(album.baseObject.id))
         case "getfriendpost" =>
         //            context.system.scheduler.scheduleOnce(randomDuration(5), self, GetFriendsPost)
         case "album" =>
-//          val album = response ~> unmarshal[Album]
-//          log.info(s"$album")
-//          (0 until random(album.pictures.size)).foreach(pIdx => get(s"picture/${album.from}/pIdx"))
+          val album = response ~> unmarshal[Album]
+          if (random(2) == 0) putRoute(s"like/${album.from}/$reaction/${album.baseObject.id}/${myBaseObj.id}", "like")
+        //          log.info(s"$album")
+        //          (0 until random(album.pictures.size)).foreach(pIdx => get(s"picture/${album.from}/pIdx"))
 
         case x => log.error("Unmatched getmsg case {}", x)
       }

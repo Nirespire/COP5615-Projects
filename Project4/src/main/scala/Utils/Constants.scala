@@ -14,5 +14,6 @@ object Constants {
   val getAlbumsChar = 'a'
   val getFlChar = 'f'
   val getFeedChar = 'e'
+  val likeChar = 'l'
   val nano = 1000000000.0
 }
