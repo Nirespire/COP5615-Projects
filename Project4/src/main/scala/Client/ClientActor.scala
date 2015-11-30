@@ -73,14 +73,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
       }
 
-
       if (random(101) < getPercent) {
         myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
           if (ProfileMap.obj(id)) {
             get(s"page/$id", "page")
           } else {
             get(s"user/$id", "user")
-            if (random(2) == 0) get(s"friendlist/$id/0", "friendlist")
+            if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
           }
           if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
           if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
@@ -203,7 +202,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           val arr = response ~> unmarshal[Array[Int]]
           if (arr.nonEmpty) {
             val makeFriendIdx = random(arr.length)
-            if(!myFriends.contains(arr(makeFriendIdx))) {
+            if (!myFriends.contains(arr(makeFriendIdx))) {
               post(UpdateFriendList(myBaseObj.id, arr(makeFriendIdx)).toJson.asJsObject(), "addfriend")
             }
           }
