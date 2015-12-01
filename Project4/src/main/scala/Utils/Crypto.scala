@@ -27,20 +27,20 @@ object Crypto {
   }
 
 
-  def privateToString(pk:PrivateKey) : String = {
+  def privateToString(pk: PrivateKey): String = {
     val privateString = new StringBuffer()
     val privateKey = pk.getEncoded()
-    for(i <- privateKey) {
+    for (i <- privateKey) {
       privateString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
     }
 
     privateString.toString()
   }
 
-  def publicToString(pk:PublicKey) : String = {
+  def publicToString(pk: PublicKey): String = {
     val privateString = new StringBuffer()
     val privateKey = pk.getEncoded()
-    for(i <- privateKey) {
+    for (i <- privateKey) {
       privateString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
     }
 
@@ -48,10 +48,31 @@ object Crypto {
   }
 
 
-  def buildKey(password: Array[Byte]) : Key = {
+  def buildKey(password: Array[Byte]): Key = {
     val digester = MessageDigest.getInstance("SHA-256")
     digester.update(password)
     val key = digester.digest()
     new SecretKeySpec(key, "AES")
   }
+
+  def byteArrayToString(bytes: Array[Byte]): String = {
+    val keyString = new StringBuffer()
+    for (i <- bytes) {
+      keyString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
+    }
+    keyString.toString()
+  }
+
+  def md5(bytes: Array[Byte]): Array[Byte] = {
+    MessageDigest.getInstance("MD5").digest(bytes)
+  }
+
+  def sha256(bytes: Array[Byte]): Array[Byte] = {
+    MessageDigest.getInstance("SHA-256").digest(bytes)
+  }
+
+  def sha512(bytes: Array[Byte]): Array[Byte] = {
+    MessageDigest.getInstance("SHA-512").digest(bytes)
+  }
+
 }

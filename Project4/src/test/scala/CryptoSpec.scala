@@ -5,23 +5,29 @@ import org.scalatest.{Matchers, FlatSpec}
 
 class CryptoSpec extends FlatSpec with Matchers {
   "The public key pair generator" should "generate 2 keys" in {
+
     val pair = Crypto.generateKeys()
 
     val privateKey = pair.getPrivate().getEncoded()
     val publicKey = pair.getPublic().getEncoded()
 
-    val privateString = new StringBuffer()
-    val publicString = new StringBuffer()
-    for(i <- privateKey) {
-      privateString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
-    }
+    val md5Private = Crypto.md5(privateKey)
+    val md5Public = Crypto.md5(publicKey)
 
-    for(i <- publicKey) {
-      publicString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
-    }
+    val sha256Private = Crypto.sha256(privateKey)
+    val sha256Public = Crypto.sha256(publicKey)
 
-    println(privateString)
-    println(publicString)
+    println(Crypto.byteArrayToString(md5Private))
+    md5Private.length * 8 should equal(128)
+    println(Crypto.byteArrayToString(sha256Private))
+    sha256Private.length * 8 should equal(256)
+
+    println(Crypto.byteArrayToString(md5Public))
+    md5Public.length * 8 should equal(128)
+    println(Crypto.byteArrayToString(sha256Public))
+    sha256Public.length * 8 should equal(256)
+
+
   }
 
   "Encryption Decryption Test" should "work" in {
@@ -32,15 +38,14 @@ class CryptoSpec extends FlatSpec with Matchers {
     println(Crypto.buildKey(privateKey.getEncoded()).getEncoded.length)
     val encrypted = Crypto.encrypt("Testing".getBytes(), Crypto.buildKey(privateKey.getEncoded()))
 
-//    println(util.Arrays.toString(encrypted))
-//
-//    val decrypted = Crypto.decrypt(encrypted, Crypto.buildKey(publicKey.getEncoded()))
-//
-//    println(util.Arrays.toString(decrypted))
+    //    println(util.Arrays.toString(encrypted))
+    //
+    //    val decrypted = Crypto.decrypt(encrypted, Crypto.buildKey(publicKey.getEncoded()))
+    //
+    //    println(util.Arrays.toString(decrypted))
 
 
   }
-
 
 
 }
