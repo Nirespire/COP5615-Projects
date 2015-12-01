@@ -1,12 +1,10 @@
-import java.util
-
 import Utils.Crypto
 import org.scalatest.{Matchers, FlatSpec}
 
 class CryptoSpec extends FlatSpec with Matchers {
   "The public key pair generator" should "generate 2 keys" in {
 
-    val pair = Crypto.generateKeys()
+    val pair = Crypto.generateRSAKeys()
 
     val privateKey = pair.getPrivate().getEncoded()
     val publicKey = pair.getPublic().getEncoded()
@@ -17,34 +15,49 @@ class CryptoSpec extends FlatSpec with Matchers {
     val sha256Private = Crypto.sha256(privateKey)
     val sha256Public = Crypto.sha256(publicKey)
 
-    println(Crypto.byteArrayToString(md5Private))
+    println("MD5(privateKey)  " + Crypto.byteArrayToString(md5Private))
     md5Private.length * 8 should equal(128)
-    println(Crypto.byteArrayToString(sha256Private))
+    println("SHA256(privateKey)  " + Crypto.byteArrayToString(sha256Private))
     sha256Private.length * 8 should equal(256)
 
-    println(Crypto.byteArrayToString(md5Public))
+    println("MD5(publicKey)  " + Crypto.byteArrayToString(md5Public))
     md5Public.length * 8 should equal(128)
-    println(Crypto.byteArrayToString(sha256Public))
+    println("SHA256(publicKey)  " + Crypto.byteArrayToString(sha256Public))
     sha256Public.length * 8 should equal(256)
-
-
   }
 
-  "Encryption Decryption Test" should "work" in {
-    val pair = Crypto.generateKeys()
+  "RSA Encryption Decryption Test" should "work" in {
+    val pair = Crypto.generateRSAKeys()
     val privateKey = pair.getPrivate()
     val publicKey = pair.getPublic
+    val secretMessage = "You found my secret!"
 
-    println(Crypto.buildKey(privateKey.getEncoded()).getEncoded.length)
-    val encrypted = Crypto.encrypt("Testing".getBytes(), Crypto.buildKey(privateKey.getEncoded()))
+    val encrypted = Crypto.encryptRSA(secretMessage.getBytes(), privateKey)
 
-    //    println(util.Arrays.toString(encrypted))
-    //
-    //    val decrypted = Crypto.decrypt(encrypted, Crypto.buildKey(publicKey.getEncoded()))
-    //
-    //    println(util.Arrays.toString(decrypted))
+    println("Encrypted output:  " + Crypto.byteArrayToString(encrypted))
 
+    val decrypted = Crypto.decryptRSA(encrypted, publicKey)
+    val result = new String(decrypted)
 
+    println("Decrypted output:  "  + result)
+    result should equal(secretMessage)
+  }
+
+  "AES Encryption Decryption Test" should "work" in {
+    val key = Crypto.generateAESKey()
+    val secretMessage = "You found my secret!"
+
+    val iv = Array[Byte]( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )
+
+    val encrypted = Crypto.encryptAES(secretMessage.getBytes(), key, iv)
+
+    println("Encrypted output:  " + Crypto.byteArrayToString(encrypted))
+
+    val decrypted = Crypto.decryptAES(encrypted, key, iv)
+    val result = new String(decrypted)
+
+    println("Decrypted output:  "  + result)
+    result should equal(secretMessage)
   }
 
 

@@ -1,58 +1,50 @@
 package Utils
 
 import java.security._
-import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
+import javax.crypto.{KeyGenerator, Cipher}
+import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
 
 object Crypto {
-  def generateKeys(): KeyPair = {
-    // EC = Elliptic curve
-    val keyGen = KeyPairGenerator.getInstance("EC")
-    val random = SecureRandom.getInstance("SHA1PRNG");
-    keyGen.initialize(256, random)
+  def generateRSAKeys(): KeyPair = {
+    val keyGen = KeyPairGenerator.getInstance("RSA")
+    val random = SecureRandom.getInstance("SHA1PRNG")
+    keyGen.initialize(1024, random)
     keyGen.generateKeyPair()
   }
 
-  def encrypt(bytes: Array[Byte], secret: Key): Array[Byte] = {
-    val encipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-    encipher.init(Cipher.ENCRYPT_MODE, secret)
+  def generateAESKey(): Key = {
+    val keyGen = KeyGenerator.getInstance("AES")
+    keyGen.init(128)
+    keyGen.generateKey()
+  }
+
+  def encryptRSA(bytes: Array[Byte], publicKey: Key): Array[Byte] = {
+    val encipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+    encipher.init(Cipher.ENCRYPT_MODE, publicKey)
     encipher.doFinal(bytes)
   }
 
-  def decrypt(bytes: Array[Byte], secret: Key): Array[Byte] = {
-    val encipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-    encipher.init(Cipher.DECRYPT_MODE, secret)
+  def decryptRSA(bytes: Array[Byte], privateKey: Key): Array[Byte] = {
+    val encipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+    encipher.init(Cipher.DECRYPT_MODE, privateKey)
     encipher.doFinal(bytes)
   }
 
-
-  def privateToString(pk: PrivateKey): String = {
-    val privateString = new StringBuffer()
-    val privateKey = pk.getEncoded()
-    for (i <- privateKey) {
-      privateString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
-    }
-
-    privateString.toString()
+  def encryptAES(bytes: Array[Byte], secret: Key, iv:Array[Byte]): Array[Byte] = {
+    val encipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+    val skeySpec = new SecretKeySpec(secret.getEncoded(), "AES")
+    val ivSpec = new IvParameterSpec(iv)
+    encipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec)
+    encipher.doFinal(bytes)
   }
 
-  def publicToString(pk: PublicKey): String = {
-    val privateString = new StringBuffer()
-    val privateKey = pk.getEncoded()
-    for (i <- privateKey) {
-      privateString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))
-    }
-
-    privateString.toString()
-  }
-
-
-  def buildKey(password: Array[Byte]): Key = {
-    val digester = MessageDigest.getInstance("SHA-256")
-    digester.update(password)
-    val key = digester.digest()
-    new SecretKeySpec(key, "AES")
+  def decryptAES(bytes: Array[Byte], secret: Key, iv:Array[Byte]): Array[Byte] = {
+    val encipher = Cipher.getInstance("AES/CBC/PKCS5PADDING")
+    val skeySpec = new SecretKeySpec(secret.getEncoded(), "AES")
+    val ivSpec = new IvParameterSpec(iv)
+    encipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec)
+    encipher.doFinal(bytes)
   }
 
   def byteArrayToString(bytes: Array[Byte]): String = {
