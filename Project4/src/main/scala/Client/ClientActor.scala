@@ -10,7 +10,7 @@ import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
-import Utils.Constants
+import Utils.{Crypto, Constants}
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
@@ -36,6 +36,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   var numPosts = 0
   var numAlbums = 0
   var numPictures = 0
+
+  private val keyPair = Crypto.generateRSAKeys()
+  private val privateKey = Crypto.generateAESKey()
 
   val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
     case ClientType.Active => (80, 50, 90, 50)

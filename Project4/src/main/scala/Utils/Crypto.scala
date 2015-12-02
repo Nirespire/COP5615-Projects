@@ -4,7 +4,6 @@ import java.security._
 import javax.crypto.{KeyGenerator, Cipher}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
-
 object Crypto {
   def generateRSAKeys(): KeyPair = {
     val keyGen = KeyPairGenerator.getInstance("RSA")
@@ -47,7 +46,7 @@ object Crypto {
     encipher.doFinal(bytes)
   }
 
-  def byteArrayToString(bytes: Array[Byte]): String = {
+  def byteArrayToHexString(bytes: Array[Byte]): String = {
     val keyString = new StringBuffer()
     for (i <- bytes) {
       keyString.append(Integer.toHexString(0x0100 + (i & 0x00FF)).substring(1))

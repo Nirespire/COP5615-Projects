@@ -1,5 +1,7 @@
-import Utils.Crypto
+import Utils.{Base64Util, Crypto}
 import org.scalatest.{Matchers, FlatSpec}
+
+import scala.util.Random
 
 class CryptoSpec extends FlatSpec with Matchers {
   "The public key pair generator" should "generate 2 keys" in {
@@ -15,14 +17,14 @@ class CryptoSpec extends FlatSpec with Matchers {
     val sha256Private = Crypto.sha256(privateKey)
     val sha256Public = Crypto.sha256(publicKey)
 
-    println("MD5(privateKey)  " + Crypto.byteArrayToString(md5Private))
+    println("MD5(privateKey)  " + Crypto.byteArrayToHexString(md5Private))
     md5Private.length * 8 should equal(128)
-    println("SHA256(privateKey)  " + Crypto.byteArrayToString(sha256Private))
+    println("SHA256(privateKey)  " + Crypto.byteArrayToHexString(sha256Private))
     sha256Private.length * 8 should equal(256)
 
-    println("MD5(publicKey)  " + Crypto.byteArrayToString(md5Public))
+    println("MD5(publicKey)  " + Crypto.byteArrayToHexString(md5Public))
     md5Public.length * 8 should equal(128)
-    println("SHA256(publicKey)  " + Crypto.byteArrayToString(sha256Public))
+    println("SHA256(publicKey)  " + Crypto.byteArrayToHexString(sha256Public))
     sha256Public.length * 8 should equal(256)
   }
 
@@ -34,7 +36,7 @@ class CryptoSpec extends FlatSpec with Matchers {
 
     val encrypted = Crypto.encryptRSA(secretMessage.getBytes(), privateKey)
 
-    println("Encrypted output:  " + Crypto.byteArrayToString(encrypted))
+    println("Encrypted output:  " + Crypto.byteArrayToHexString(encrypted))
 
     val decrypted = Crypto.decryptRSA(encrypted, publicKey)
     val result = new String(decrypted)
@@ -51,13 +53,23 @@ class CryptoSpec extends FlatSpec with Matchers {
 
     val encrypted = Crypto.encryptAES(secretMessage.getBytes(), key, iv)
 
-    println("Encrypted output:  " + Crypto.byteArrayToString(encrypted))
+    println("Encrypted output:  " + Crypto.byteArrayToHexString(encrypted))
 
     val decrypted = Crypto.decryptAES(encrypted, key, iv)
     val result = new String(decrypted)
 
     println("Decrypted output:  "  + result)
     result should equal(secretMessage)
+  }
+
+  "Base64 encode and decode" should "encode and decode a string from base64" in {
+    val randomString = Random.nextString(10)
+
+    val encoded = Base64Util.encodeString(randomString)
+    val decoded = Base64Util.decodeString(encoded)
+
+    println(decoded)
+    decoded should equal(randomString)
   }
 
 

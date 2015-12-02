@@ -1,6 +1,7 @@
 package Objects
 
 import Server.Messages.ResponseMessage
+import Utils.Crypto
 import spray.json._
 import spray.routing.RequestContext
 import ObjectJsonSupport._
