@@ -54,6 +54,14 @@ object Crypto {
     keyString.toString()
   }
 
+  def constructAESKeyFromBytes(bytes: Array[Byte]): Key ={
+    new SecretKeySpec(bytes,0, bytes.length, "AES")
+  }
+
+  def constructRSAKeyFromBytes(bytes: Array[Byte]): Key ={
+    new SecretKeySpec(bytes,0, bytes.length, "RSA")
+  }
+
   def md5(bytes: Array[Byte]): Array[Byte] = {
     MessageDigest.getInstance("MD5").digest(bytes)
   }

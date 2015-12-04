@@ -16,7 +16,7 @@ class UserActor(var user: User, debugActor: ActorRef)
 
   val friendsMap = mutable.Map[ListType.Value, Set[Int]]()
 
-  val deletedUser = User(BaseObject(deletedIdx, Constants.trueBool), "deleted", "00-00-0000", 'M', "deleted", "deleted")
+  val deletedUser = User(BaseObject(deletedIdx, Constants.trueBool), "deleted", "00-00-0000", 'M', "deleted", "deleted", "deleted")
 
   def baseObject = user.baseObject
 

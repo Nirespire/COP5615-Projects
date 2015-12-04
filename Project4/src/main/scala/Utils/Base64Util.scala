@@ -6,6 +6,8 @@ package Utils
   */
 
 import org.apache.commons.codec.binary.Base64
+import scala.pickling.Defaults._
+import scala.pickling.binary._
 
 object Base64Util {
   final private val b64 = new Base64
@@ -33,4 +35,13 @@ object Base64Util {
 
   /** Decodes the given Base64-ByteArray into a ByteArray. **/
   def decodeBinary(in: Array[Byte]): Array[Byte] = (new Base64).decode(in)
+
+  def objectToBytes(obj: Any): Array[Byte] = {
+    obj.pickle.value
+  }
+
+  def bytesToObj(obj: Array[Byte]): Any = {
+    obj.unpickle[Any]
+  }
+
 }

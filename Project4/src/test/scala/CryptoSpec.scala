@@ -1,5 +1,10 @@
-import Utils.{Base64Util, Crypto}
+import javax.crypto.spec.SecretKeySpec
+
+import Objects.{SecureObjectUtil, SecureObject, Album, BaseObject}
+import Objects.ObjectJsonSupport._
+import Utils.{Constants, Base64Util, Crypto}
 import org.scalatest.{Matchers, FlatSpec}
+import spray.json._
 
 import scala.util.Random
 
@@ -70,6 +75,34 @@ class CryptoSpec extends FlatSpec with Matchers {
 
     println(decoded)
     decoded should equal(randomString)
+  }
+
+  "Encrypting and decrypting SecureObjects" should "allow encryption and decryption of all object types" in {
+    val pair = Crypto.generateRSAKeys()
+    val aesKey = Crypto.generateAESKey()
+
+    val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
+
+    val so = SecureObjectUtil.constructSecureObject[Album](a.baseObject,a ,aesKey, pair.getPublic())
+
+    println(so)
+
+    val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKey)
+    val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate())
+
+    val reconstructKey = Crypto.constructAESKeyFromBytes(decryptedAESKeyBytes)
+
+    reconstructKey should equal(aesKey)
+    reconstructKey.getEncoded() should equal(aesKey.getEncoded())
+
+    val decryptedAlbumBytes = Crypto.decryptAES(Base64Util.decodeBinary(so.base64Content), reconstructKey, Constants.iv)
+
+    val reconstructedAlbum = Base64Util.bytesToObj(decryptedAlbumBytes)
+
+    println(reconstructedAlbum.asInstanceOf[Album])
+
+    reconstructedAlbum should equal(a)
+
   }
 
 

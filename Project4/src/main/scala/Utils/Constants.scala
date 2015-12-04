@@ -32,4 +32,6 @@ object Constants {
   val nano = 1000000000.0
   val trueBool = true
   val falseBool = false
+
+  val iv = Array[Byte](1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
 }

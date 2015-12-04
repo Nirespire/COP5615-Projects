@@ -5,4 +5,5 @@ case class User(baseObject: BaseObject,
                 birthday: String,
                 gender: Char,
                 first_name: String,
-                last_name: String)
+                last_name: String,
+                publicKey: String)

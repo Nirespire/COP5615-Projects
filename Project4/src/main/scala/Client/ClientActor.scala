@@ -1,16 +1,12 @@
 package Client
 
-import java.security.KeyPairGenerator
-import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
-
 import Client.ClientType.ClientType
 import Client.Messages._
 import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
-import Utils.{Crypto, Constants}
+import Utils.{Base64Util, Crypto, Constants}
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
@@ -142,7 +138,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     } else {
       val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
       val gender = Random.nextInt(2)
-      val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0))
+      val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0), Base64Util.encodeString(keyPair.getPublic().getEncoded()))
       put(newUser.toJson.asJsObject, "user")
     }
   }

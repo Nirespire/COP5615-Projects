@@ -12,19 +12,19 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put 3 Users" - {
     "when calling PUT /user" - {
       "should return a user object each" in {
-        Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1", "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(0)
           println(entity.toString)
         }
 
-        Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2")) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2", "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(1)
           println(entity.toString)
         }
 
-        Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3")) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3", "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(2)
           println(entity.toString)
@@ -84,7 +84,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post User" - {
     "when calling POST /user" - {
       "should return a user object" in {
-        Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name")) ~> myRoute ~> check {
+        Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name", "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].about should equal("something updated")
           println(entity.toString)
@@ -265,7 +265,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete User" - {
     "when calling DELETE /user" - {
       "should return a user object each" in {
-        Delete("/user", User(BaseObject(id = 0), "Im user 1", "birthday", 'M', "first name1", "last name1")) ~> myRoute ~> check {
+        Delete("/user", User(BaseObject(id = 0), "Im user 1", "birthday", 'M', "first name1", "last name1", "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString)
         }
