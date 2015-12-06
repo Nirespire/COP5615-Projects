@@ -78,30 +78,33 @@ class CryptoSpec extends FlatSpec with Matchers {
   }
 
   "Encrypting and decrypting SecureObjects" should "allow encryption and decryption of all object types" in {
-    val pair = Crypto.generateRSAKeys()
-    val aesKey = Crypto.generateAESKey()
 
-    val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
+    for(i <- 1 to 100) {
+      val pair = Crypto.generateRSAKeys()
+      val aesKey = Crypto.generateAESKey()
 
-    val so = SecureObjectUtil.constructSecureObject[Album](a.baseObject,a ,aesKey, pair.getPublic())
+      val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
 
-    println(so)
+      val so = SecureObjectUtil.constructSecureObject[Album](a.baseObject, a, aesKey, pair.getPublic())
 
-    val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKey)
-    val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate())
+//      println(so)
 
-    val reconstructKey = Crypto.constructAESKeyFromBytes(decryptedAESKeyBytes)
+      val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKey)
+      val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate())
 
-    reconstructKey should equal(aesKey)
-    reconstructKey.getEncoded() should equal(aesKey.getEncoded())
+      val reconstructKey = Crypto.constructAESKeyFromBytes(decryptedAESKeyBytes)
 
-    val decryptedAlbumBytes = Crypto.decryptAES(Base64Util.decodeBinary(so.base64Content), reconstructKey, Constants.iv)
+      reconstructKey should equal(aesKey)
+      reconstructKey.getEncoded() should equal(aesKey.getEncoded())
 
-    val reconstructedAlbum = Base64Util.bytesToObj(decryptedAlbumBytes)
+      val decryptedAlbumBytes = Crypto.decryptAES(Base64Util.decodeBinary(so.base64Content), reconstructKey, Constants.iv)
 
-    println(reconstructedAlbum.asInstanceOf[Album])
+      val reconstructedAlbum = Base64Util.bytesToObj(decryptedAlbumBytes)
 
-    reconstructedAlbum should equal(a)
+//      println(reconstructedAlbum.asInstanceOf[Album])
+
+      reconstructedAlbum should equal(a)
+    }
 
   }
 

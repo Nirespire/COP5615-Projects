@@ -1,4 +1,6 @@
+import Server.Messages.ResponseMessage
 import Server.RootService
+import Utils.{Base64Util, Crypto}
 import org.joda.time.DateTime
 import org.scalatest.{FreeSpec, Matchers}
 import spray.testkit.ScalatestRouteTest
@@ -45,12 +47,25 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
+  "Register User" - {
+    "when calling PUT /register" - {
+      "should return a random string to sign" in {
+        var randomString:String = null
+        Put("/register", User(BaseObject(), "Im user 4", "birthday", 'M', "first name14", "last name4", "testkey")) ~> myRoute ~> check {
+          status should equal(OK)
+          responseAs[User].baseObject.id should equal(0)
+          println(response.headers.mkString(","))
+        }
+      }
+    }
+  }
+
   "Put Post" - {
     "when calling PUT /post" - {
       "should return a post object" in {
         Put("/post", Objects.Post(BaseObject(), 0, new DateTime().toString, 0, "status", Objects.ObjectTypes.PostType.status, -1)) ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Post].baseObject.id should equal(1)
+          responseAs[Post].baseObject.id should equal(2)
           println(entity.toString)
         }
       }
@@ -62,7 +77,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a picture object" in {
         Put("/picture", Picture(BaseObject(), 0, -1, "filename", "blah")) ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Picture].baseObject.id should equal(1)
+          responseAs[Picture].baseObject.id should equal(2)
           println(entity.toString)
         }
       }
@@ -74,7 +89,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should return a album object" in {
         Put("/album", Album(BaseObject(), 0, new DateTime().toString, new DateTime().toString, 0, "description")) ~> myRoute ~> check {
           status should equal(OK)
-          responseAs[Album].baseObject.id should equal(1)
+          responseAs[Album].baseObject.id should equal(3)
           println(entity.toString)
         }
       }

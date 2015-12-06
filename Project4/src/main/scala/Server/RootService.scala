@@ -5,16 +5,21 @@ import Objects.ObjectTypes.ListType.ListType
 import Objects._
 import Server.Actors.{DebugInfo, DelegatorActor}
 import Server.Messages._
-import Utils.Constants
+import Utils.{Crypto, Base64Util, Constants}
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import com.google.common.io.BaseEncoding
 import spray.http.HttpHeaders.RawHeader
 import spray.http.MediaTypes.`application/json`
+import spray.io.ServerSSLEngineProvider
 import spray.routing._
 import spray.json._
+import spray.routing.authentication.UserPass
 
+import scala.collection.mutable
+import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Random
 
 trait RootService extends HttpService {
   val split = 8
@@ -22,11 +27,21 @@ trait RootService extends HttpService {
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val timeout = Timeout(5 seconds)
+
+  implicit val myEngineProvider = ServerSSLEngineProvider { engine =>
+    engine.setEnabledCipherSuites(Array("TLS_RSA_WITH_AES_256_CBC_SHA"))
+    engine.setEnabledProtocols(Array("SSLv3", "TLSv1"))
+    engine
+  }
+
   val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null))))
   val da = DebugInfo()
 
   def dActor(pid: Int) = delegatorActor(pid % split)
 
+  val userTokens = mutable.HashMap[Int, String]()
+  val userRandomStrings = mutable.HashMap[Int, String]()
+  val userPublicKeys = mutable.HashMap[Int, String]()
 
   def routeTypes(pid: Int, ts: String, tsId: Int, rc: RequestContext) = {
     //    val profileType = profileStr match {
@@ -58,22 +73,37 @@ trait RootService extends HttpService {
         } ~ { rc => routeTypes(pid, ts, tsId, rc) }
       } ~
         path(Segment / IntNumber) { (ts, pid) => rc => routeTypes(pid, ts, -1, rc) } ~
-        path("debug") {
-          respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
-            rc => rc.complete(da.toJson.compactPrint)
-          }
-        }
+        path("debug") { rc => rc.complete(da.toJson.compactPrint) }
     } ~
       put {
         path("like" / IntNumber / Segment / IntNumber / IntNumber) { (pid, ts, pId, fid) => rc =>
           da.debugVar(Constants.postLikeChar) += 1
           dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
         } ~
+        path("register"){
+          entity(as[User]){user =>
+            user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+            da.debugVar(Constants.putProfilesChar) += 1
+            // Generate random string and respond
+            val randomString = Random.nextString(25)
+            userRandomStrings.put(user.baseObject.id, randomString)
+            userPublicKeys.put(user.baseObject.id, user.publicKey)
+
+            respondWithHeader(RawHeader("RandomString", randomString)){
+              complete(user)
+            }
+          }
+        } ~
           path("user") {
             entity(as[User]) { user => rc =>
-              user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
-              da.debugVar(Constants.putProfilesChar) += 1
-              dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
+//              headerValueByName("SignedString") {ss => rc =>
+//                val userKey = Crypto.constructRSAKeyFromBytes(Base64Util.decodeBinary(user.publicKey))
+//                if(userRandomStrings.get(user.baseObject.id).equals(Crypto.decryptRSA(Base64Util.encodeBinary(ss), userKey))){
+                  user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+                  da.debugVar(Constants.putProfilesChar) += 1
+                  dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
+//                }
+//              }
             }
           } ~
           path("page") {
@@ -144,27 +174,32 @@ trait RootService extends HttpService {
           path("user") {
             entity(as[User]) { user => rc =>
               da.debugVar(Constants.postUserChar) += 1
-              dActor(user.baseObject.id) ! UpdateMsg(rc, user.baseObject.id, user) }
+              dActor(user.baseObject.id) ! UpdateMsg(rc, user.baseObject.id, user)
+            }
           } ~
           path("page") {
             entity(as[Page]) { page => rc =>
               da.debugVar(Constants.postPageChar) += 1
-              dActor(page.baseObject.id) ! UpdateMsg(rc, page.baseObject.id, page) }
+              dActor(page.baseObject.id) ! UpdateMsg(rc, page.baseObject.id, page)
+            }
           } ~
           path("post") {
             entity(as[Post]) { post => rc =>
               da.debugVar(Constants.postPostChar) += 1
-              dActor(post.creator) ! UpdateMsg(rc, post.creator, post) }
+              dActor(post.creator) ! UpdateMsg(rc, post.creator, post)
+            }
           } ~
           path("album") {
             entity(as[Album]) { album => rc =>
               da.debugVar(Constants.postAlbumChar) += 1
-              dActor(album.from) ! UpdateMsg(rc, album.from, album) }
+              dActor(album.from) ! UpdateMsg(rc, album.from, album)
+            }
           } ~
           path("picture") {
             entity(as[Picture]) { pic => rc =>
               da.debugVar(Constants.postPictureChar) += 1
-              dActor(pic.from) ! UpdateMsg(rc, pic.from, pic) }
+              dActor(pic.from) ! UpdateMsg(rc, pic.from, pic)
+            }
           }
       }
   }

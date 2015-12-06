@@ -6,6 +6,7 @@ import Client.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
+import Server.Messages.ResponseMessage
 import Utils.{Base64Util, Crypto, Constants}
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
@@ -34,7 +35,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   var numPictures = 0
 
   private val keyPair = Crypto.generateRSAKeys()
-  private val privateKey = Crypto.generateAESKey()
 
   val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
     case ClientType.Active => (80, 50, 90, 50)
@@ -140,6 +140,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       val gender = Random.nextInt(2)
       val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0), Base64Util.encodeString(keyPair.getPublic().getEncoded()))
       put(newUser.toJson.asJsObject, "user")
+//      put(newUser.toJson.asJsObject, "register")
     }
   }
 
@@ -265,6 +266,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val updateRequest = random(101) < updatePercent
 
     reaction match {
+      case "register" =>
+        me = response ~> unmarshal[User]
+        myBaseObj = me.baseObject
+
       case "user" | "page" =>
         if (reaction == "user") {
           me = response ~> unmarshal[User]
