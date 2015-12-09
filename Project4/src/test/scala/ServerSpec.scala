@@ -7,6 +7,7 @@ import spray.testkit.ScalatestRouteTest
 import spray.http.StatusCodes._
 import Objects._
 import Objects.ObjectJsonSupport._
+import java.security.Signature
 
 class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with RootService {
   def actorRefFactory = system
@@ -51,10 +52,36 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     "when calling PUT /register" - {
       "should return a random string to sign" in {
         var randomString:String = null
-        Put("/register", User(BaseObject(), "Im user 4", "birthday", 'M', "first name14", "last name4", "testkey")) ~> myRoute ~> check {
+        val clientPair = Crypto.generateRSAKeys()
+        val newUser = User(BaseObject(), "Im user 4", "birthday", 'M', "first name14", "last name4", Base64Util.encodeString(clientPair.getPublic().getEncoded()))
+
+        Put("/register", newUser) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(0)
-          println(response.headers.mkString(","))
+
+          response.headers.foreach{i =>
+            if(i.lowercaseName == "randomstring"){
+              randomString = i.value
+            }
+          }
+          println(randomString)
+
+          val signedData = Crypto.signData(clientPair.getPrivate(), Base64Util.encodeBinary(randomString))
+
+          val signedString = Base64Util.encodeString(signedData)
+
+          println(signedString)
+
+          // TO SERVER
+
+          val clientSignedData = Base64Util.decodeBinary(signedString)
+
+          val clientPublicKey = Crypto.constructRSAPublicKeyFromBytes(clientPair.getPublic().getEncoded())
+
+          val isVerified = Crypto.verifySign(clientPublicKey, clientSignedData, Base64Util.encodeBinary(randomString))
+
+          isVerified should equal(true)
+
         }
       }
     }

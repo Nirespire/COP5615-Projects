@@ -35,6 +35,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   var numPictures = 0
 
   private val keyPair = Crypto.generateRSAKeys()
+  private var authToken:String = null
 
   val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
     case ClientType.Active => (80, 50, 90, 50)
@@ -139,8 +140,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
       val gender = Random.nextInt(2)
       val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0), Base64Util.encodeString(keyPair.getPublic().getEncoded()))
-      put(newUser.toJson.asJsObject, "user")
-//      put(newUser.toJson.asJsObject, "register")
+//      put(newUser.toJson.asJsObject, "user")
+      put(newUser.toJson.asJsObject, "register")
     }
   }
 
@@ -163,6 +164,19 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val pipeline = sendReceive
     val future = pipeline {
       pipelining.Put(s"http://$serviceHost:$servicePort/$route", json)
+    }
+
+    future onComplete {
+      case Success(response) => self ! PutMsg(response, reaction)
+      case Failure(error) => log.error(error, s"Couldn't create $json using $route")
+    }
+  }
+
+  def putWithHeader(json: JsObject, route: String, inputReaction: String = "", header: Tuple2[String,String]): Unit = {
+    val reaction = if (inputReaction.nonEmpty) inputReaction else route
+    val pipeline = sendReceive
+    val future = pipeline {
+      pipelining.Put(s"http://$serviceHost:$servicePort/$route", json) ~> addHeader(header._1, header._2)
     }
 
     future onComplete {
@@ -267,13 +281,36 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
     reaction match {
       case "register" =>
+//        log.info("got register response")
         me = response ~> unmarshal[User]
         myBaseObj = me.baseObject
+
+        // TODO better way to get RandomString out of the headers?
+        var randomString:String = null
+        response.headers.foreach{i =>
+          if(i.lowercaseName == "randomstring"){
+            randomString = i.value
+          }
+        }
+//        log.info(randomString)
+
+        val signedBytes = Crypto.signData(keyPair.getPrivate(), Base64Util.encodeBinary(randomString))
+
+        putWithHeader(me.toJson.asJsObject, "user", "user", ("SignedString", Base64Util.encodeString(signedBytes)))
 
       case "user" | "page" =>
         if (reaction == "user") {
           me = response ~> unmarshal[User]
           myBaseObj = me.baseObject
+
+          // TODO better way to get AuthToken out of the headers?
+          response.headers.foreach{i =>
+            if(i.lowercaseName == "authtoken"){
+              authToken = i.value
+//              log.info(authToken)
+            }
+          }
+
         } else {
           mePage = response ~> unmarshal[Page]
           myBaseObj = mePage.baseObject

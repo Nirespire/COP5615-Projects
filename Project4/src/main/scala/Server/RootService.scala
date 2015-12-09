@@ -1,5 +1,8 @@
 package Server
 
+import java.math.BigInteger
+import java.security.SecureRandom
+
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.ListType.ListType
 import Objects._
@@ -27,6 +30,8 @@ trait RootService extends HttpService {
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val timeout = Timeout(5 seconds)
+
+  private val random = new SecureRandom()
 
   implicit val myEngineProvider = ServerSSLEngineProvider { engine =>
     engine.setEnabledCipherSuites(Array("TLS_RSA_WITH_AES_256_CBC_SHA"))
@@ -85,7 +90,7 @@ trait RootService extends HttpService {
             user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
             da.debugVar(Constants.putProfilesChar) += 1
             // Generate random string and respond
-            val randomString = Random.nextString(25)
+            val randomString = new BigInteger(130, random).toString(32);
             userRandomStrings.put(user.baseObject.id, randomString)
             userPublicKeys.put(user.baseObject.id, user.publicKey)
 
@@ -95,15 +100,20 @@ trait RootService extends HttpService {
           }
         } ~
           path("user") {
-            entity(as[User]) { user => rc =>
-//              headerValueByName("SignedString") {ss => rc =>
-//                val userKey = Crypto.constructRSAKeyFromBytes(Base64Util.decodeBinary(user.publicKey))
-//                if(userRandomStrings.get(user.baseObject.id).equals(Crypto.decryptRSA(Base64Util.encodeBinary(ss), userKey))){
-                  user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
-                  da.debugVar(Constants.putProfilesChar) += 1
+            entity(as[User]) { user =>
+              headerValueByName("SignedString") {ss => rc =>
+//                println("got user request")
+//                println(ss)
+                val userKey = Crypto.constructRSAPublicKeyFromBytes(Base64Util.decodeBinary(user.publicKey))
+                val randomString = userRandomStrings(user.baseObject.id)
+                if(Crypto.verifySign(userKey, Base64Util.decodeBinary(ss), Base64Util.encodeBinary(randomString))){
+//                  user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+//                  da.debugVar(Constants.putProfilesChar) += 1
+//                  println("Verify")
                   dActor(user.baseObject.id) ! CreateMsg[User](rc, user.baseObject.id, user)
-//                }
-//              }
+                }
+                //TODO  else case
+              }
             }
           } ~
           path("page") {

@@ -3,8 +3,14 @@ package Server.Actors
 import Objects.ObjectJsonSupport._
 import Objects.{Page, User}
 import Server.Messages._
+import Utils.Crypto
 import akka.actor.{ActorLogging, Actor, ActorRef, Props}
 import java.security.Key
+import spray.http.HttpHeaders.RawHeader
+import spray.http._
+import spray.json._
+import ContentTypes.`application/json`
+
 import scala.collection.mutable
 
 class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
@@ -13,9 +19,11 @@ class DelegatorActor(debugActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case cMsg@CreateMsg(rc, pid, u: User) =>
       try {
-        profiles.put(pid, context.actorOf(Props(new UserActor(u, debugActor))))
+        val authToken = Crypto.generateSHAToken(u.first_name+u.last_name)
+        profiles.put(pid, context.actorOf(Props(new UserActor(u, debugActor, authToken))))
         profiles(pid) ! cMsg
-        rc.complete(u)
+        rc.complete(HttpResponse().withHeadersAndEntity(List(RawHeader("AuthToken", authToken)), HttpEntity(`application/json`,u.toJson.compactPrint)))
+
       } catch {
         case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
       }

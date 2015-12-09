@@ -1,6 +1,7 @@
 package Utils
 
 import java.security._
+import java.security.spec.X509EncodedKeySpec
 import javax.crypto.{KeyGenerator, Cipher}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
@@ -54,12 +55,30 @@ object Crypto {
     keyString.toString()
   }
 
+  def signData(privateKey: PrivateKey, data: Array[Byte]): Array[Byte] = {
+    val sig = Signature.getInstance("SHA256withRSA")
+    sig.initSign(privateKey)
+    sig.update(data)
+    sig.sign()
+  }
+
+  def verifySign(publicKey: PublicKey, signedData: Array[Byte], data: Array[Byte]): Boolean = {
+    val sig = Signature.getInstance("SHA256withRSA")
+    sig.initVerify(publicKey)
+    sig.update(data)
+    sig.verify(signedData)
+  }
+
   def constructAESKeyFromBytes(bytes: Array[Byte]): Key = {
     new SecretKeySpec(bytes, 0, bytes.length, "AES")
   }
 
   def constructRSAKeyFromBytes(bytes: Array[Byte]): Key = {
     new SecretKeySpec(bytes, 0, bytes.length, "RSA")
+  }
+
+  def constructRSAPublicKeyFromBytes(bytes: Array[Byte]): PublicKey = {
+    KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(bytes))
   }
 
   def md5(bytes: Array[Byte]): Array[Byte] = {

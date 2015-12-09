@@ -11,7 +11,7 @@ import spray.json._
 
 import scala.collection.mutable
 
-class UserActor(var user: User, debugActor: ActorRef)
+class UserActor(var user: User, debugActor: ActorRef, authToken:String)
   extends ProfileActor(user.baseObject.id, debugActor) {
 
   val friendsMap = mutable.Map[ListType.Value, Set[Int]]()
