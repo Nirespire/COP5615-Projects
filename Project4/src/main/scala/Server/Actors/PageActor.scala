@@ -12,7 +12,7 @@ class PageActor(var page: Page, debugActor: ActorRef)
 
   def baseObject = page.baseObject
 
-  val deletedPage = Page(BaseObject(deletedIdx, Constants.trueBool), "deleted", "deleted", -1)
+  val deletedPage = Page(BaseObject(deletedIdx, Constants.trueBool), "deleted", "deleted", -1, "deleted")
 
   def pageReceive: Receive = {
     case cMsg@CreateMsg(rc, _, p: Page) =>

@@ -34,4 +34,9 @@ object Constants {
   val falseBool = false
 
   val iv = Array[Byte](1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
+
+  val randomStringHeader = "RandomString"
+  val signedStringHeader = "SignedString"
+  val authTokenHeader = "AuthToken"
+  val serverPublicKeyHeader = "ServerPublicKey"
 }

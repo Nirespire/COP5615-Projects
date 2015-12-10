@@ -1,5 +1,7 @@
 package Client
 
+import java.security.PublicKey
+
 import Client.ClientType.ClientType
 import Client.Messages._
 import Client.Resources._
@@ -25,6 +27,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   val myPages = mutable.ArrayBuffer[Page]()
   val myFriends = mutable.ArrayBuffer[Int]()
   val myRealFriends = mutable.HashMap[ActorRef, Int]()
+  val myFriendPublicKeys = mutable.HashMap[String, Int]()
   val waitForIdFriends = mutable.Set[ActorRef]()
   val returnHandshake = mutable.Set[ActorRef]()
   var me: User = null
@@ -36,6 +39,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   private val keyPair = Crypto.generateRSAKeys()
   private var authToken:String = null
+  var serverPublicKey: PublicKey = null
 
   val (putPercent, getPercent, friendPercent, updatePercent) = clientType match {
     case ClientType.Active => (80, 50, 90, 50)
@@ -134,14 +138,15 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   def registerMyself() = {
     if (isPage) {
-      val newPage = Page(BaseObject(), "about", pageCategories(Random.nextInt(pageCategories.length)), -1)
-      put(newPage.toJson.asJsObject, "page")
+      val newPage = Page(BaseObject(), "about", pageCategories(Random.nextInt(pageCategories.length)), -1, Base64Util.encodeString(keyPair.getPublic().getEncoded()))
+      //      put(newPage.toJson.asJsObject, "page")
+      put(newPage.toJson.asJsObject, "registerPage")
     } else {
       val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
       val gender = Random.nextInt(2)
       val newUser = User(BaseObject(), "about me", Resources.randomBirthday(), if (gender == 0) 'M' else 'F', fullName(1), fullName(0), Base64Util.encodeString(keyPair.getPublic().getEncoded()))
 //      put(newUser.toJson.asJsObject, "user")
-      put(newUser.toJson.asJsObject, "register")
+      put(newUser.toJson.asJsObject, "registerUser")
     }
   }
 
@@ -150,7 +155,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Put(s"http://$serviceHost:$servicePort/$route")
+      pipelining.Put(s"http://$serviceHost:$servicePort/$route") ~> addHeader("AuthToken", if(authToken == null)"" else authToken)
     }
 
     future onComplete {
@@ -163,7 +168,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Put(s"http://$serviceHost:$servicePort/$route", json)
+      pipelining.Put(s"http://$serviceHost:$servicePort/$route", json) ~> addHeader(Constants.authTokenHeader, if(authToken == null)"" else authToken)
     }
 
     future onComplete {
@@ -189,7 +194,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Get(s"http://$serviceHost:$servicePort/$route")
+      pipelining.Get(s"http://$serviceHost:$servicePort/$route") ~> addHeader(Constants.authTokenHeader, if(authToken == null)"" else authToken)
     }
 
     future onComplete {
@@ -202,7 +207,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Post(s"http://$serviceHost:$servicePort/$route", json)
+      pipelining.Post(s"http://$serviceHost:$servicePort/$route", json) ~> addHeader(Constants.authTokenHeader, if(authToken == null)"" else authToken)
     }
 
     future onComplete {
@@ -215,7 +220,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Delete(s"http://$serviceHost:$servicePort/$route", json)
+      pipelining.Delete(s"http://$serviceHost:$servicePort/$route", json) ~> addHeader(Constants.authTokenHeader, if(authToken == null)"" else authToken)
     }
 
     future onComplete {
@@ -280,7 +285,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     val updateRequest = random(101) < updatePercent
 
     reaction match {
-      case "register" =>
+      case "registerUser" =>
 //        log.info("got register response")
         me = response ~> unmarshal[User]
         myBaseObj = me.baseObject
@@ -288,33 +293,56 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         // TODO better way to get RandomString out of the headers?
         var randomString:String = null
         response.headers.foreach{i =>
-          if(i.lowercaseName == "randomstring"){
+          if(i.name == Constants.randomStringHeader){
             randomString = i.value
+          }
+          else if(i.name == Constants.serverPublicKeyHeader){
+            serverPublicKey = Crypto.constructRSAPublicKeyFromBytes(Base64Util.decodeBinary(i.value))
           }
         }
 //        log.info(randomString)
 
         val signedBytes = Crypto.signData(keyPair.getPrivate(), Base64Util.encodeBinary(randomString))
 
-        putWithHeader(me.toJson.asJsObject, "user", "user", ("SignedString", Base64Util.encodeString(signedBytes)))
+        putWithHeader(me.toJson.asJsObject, "user", "user", (Constants.signedStringHeader, Base64Util.encodeString(signedBytes)))
+
+      case "registerPage" =>
+        mePage = response ~> unmarshal[Page]
+        myBaseObj = mePage.baseObject
+
+        // TODO better way to get RandomString out of the headers?
+        var randomString:String = null
+        response.headers.foreach{i =>
+          if(i.name == Constants.randomStringHeader){
+            randomString = i.value
+          }
+          else if(i.name == Constants.serverPublicKeyHeader){
+            serverPublicKey = Crypto.constructRSAPublicKeyFromBytes(Base64Util.decodeBinary(i.value))
+          }
+        }
+        //        log.info(randomString)
+
+        val signedBytes = Crypto.signData(keyPair.getPrivate(), Base64Util.encodeBinary(randomString))
+
+        putWithHeader(mePage.toJson.asJsObject, "page", "page", (Constants.signedStringHeader, Base64Util.encodeString(signedBytes)))
 
       case "user" | "page" =>
         if (reaction == "user") {
           me = response ~> unmarshal[User]
           myBaseObj = me.baseObject
 
-          // TODO better way to get AuthToken out of the headers?
-          response.headers.foreach{i =>
-            if(i.lowercaseName == "authtoken"){
-              authToken = i.value
-//              log.info(authToken)
-            }
-          }
-
         } else {
           mePage = response ~> unmarshal[Page]
           myBaseObj = mePage.baseObject
         }
+        // TODO better way to get AuthToken out of the headers?
+        response.headers.foreach{i =>
+          if(i.name == Constants.authTokenHeader){
+            authToken = i.value
+            //              log.info(authToken)
+          }
+        }
+
         ProfileMap.obj.put(myBaseObj.id, isPage)
         waitForIdFriends.foreach(f => self ! f)
         waitForIdFriends.clear()

@@ -33,20 +33,22 @@ trait RootService extends HttpService {
 
   private val random = new SecureRandom()
 
+  private val serverKeyPair = Crypto.generateRSAKeys()
+
   implicit val myEngineProvider = ServerSSLEngineProvider { engine =>
     engine.setEnabledCipherSuites(Array("TLS_RSA_WITH_AES_256_CBC_SHA"))
     engine.setEnabledProtocols(Array("SSLv3", "TLSv1"))
     engine
   }
 
-  val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null))))
+  val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null, serverKeyPair.getPublic))))
   val da = DebugInfo()
 
   def dActor(pid: Int) = delegatorActor(pid % split)
 
-  val userTokens = mutable.HashMap[Int, String]()
   val userRandomStrings = mutable.HashMap[Int, String]()
   val userPublicKeys = mutable.HashMap[Int, String]()
+
 
   def routeTypes(pid: Int, ts: String, tsId: Int, rc: RequestContext) = {
     //    val profileType = profileStr match {
@@ -85,7 +87,7 @@ trait RootService extends HttpService {
           da.debugVar(Constants.postLikeChar) += 1
           dActor(pid) ! LikeMsg(rc, pid, fid, (ts, pId))
         } ~
-        path("register"){
+        path("registerUser"){
           entity(as[User]){user =>
             user.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
             da.debugVar(Constants.putProfilesChar) += 1
@@ -94,14 +96,28 @@ trait RootService extends HttpService {
             userRandomStrings.put(user.baseObject.id, randomString)
             userPublicKeys.put(user.baseObject.id, user.publicKey)
 
-            respondWithHeader(RawHeader("RandomString", randomString)){
+            respondWithHeaders(List(RawHeader(Constants.randomStringHeader, randomString), RawHeader(Constants.serverPublicKeyHeader, Base64Util.encodeString(serverKeyPair.getPublic.getEncoded)))){
               complete(user)
+            }
+          }
+        } ~
+        path("registerPage"){
+          entity(as[Page]){page =>
+            page.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+            da.debugVar(Constants.putProfilesChar) += 1
+            // Generate random string and respond
+            val randomString = new BigInteger(130, random).toString(32);
+            userRandomStrings.put(page.baseObject.id, randomString)
+            userPublicKeys.put(page.baseObject.id, page.publicKey)
+
+            respondWithHeaders(List(RawHeader(Constants.randomStringHeader, randomString), RawHeader(Constants.serverPublicKeyHeader, Base64Util.encodeString(serverKeyPair.getPublic.getEncoded)))){
+              complete(page)
             }
           }
         } ~
           path("user") {
             entity(as[User]) { user =>
-              headerValueByName("SignedString") {ss => rc =>
+              headerValueByName(Constants.signedStringHeader) {ss => rc =>
 //                println("got user request")
 //                println(ss)
                 val userKey = Crypto.constructRSAPublicKeyFromBytes(Base64Util.decodeBinary(user.publicKey))
@@ -117,10 +133,18 @@ trait RootService extends HttpService {
             }
           } ~
           path("page") {
-            entity(as[Page]) { page => rc =>
-              page.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
-              da.debugVar(Constants.putProfilesChar) += 1
-              dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
+            entity(as[Page]) { page =>
+              headerValueByName(Constants.signedStringHeader) { ss => rc =>
+                val pageKey = Crypto.constructRSAPublicKeyFromBytes(Base64Util.decodeBinary(page.publicKey))
+                val randomString = userRandomStrings(page.baseObject.id)
+                if(Crypto.verifySign(pageKey, Base64Util.decodeBinary(ss), Base64Util.encodeBinary(randomString))){
+                  //                page.baseObject.updateId(da.debugVar(Constants.putProfilesChar))
+                  //                da.debugVar(Constants.putProfilesChar) += 1
+                  //                  println("Verify")
+                  dActor(page.baseObject.id) ! CreateMsg[Page](rc, page.baseObject.id, page)
+                }
+
+              }
             }
           } ~
           path("post") {

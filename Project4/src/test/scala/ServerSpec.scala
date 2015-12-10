@@ -39,7 +39,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put Page" - {
     "when calling PUT /page" - {
       "should return a page object" in {
-        Put("/page", Page(BaseObject(), "about", "category", -1)) ~> myRoute ~> check {
+        Put("/page", Page(BaseObject(), "about", "category", -1, "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].baseObject.id should equal(3)
           println(entity.toString)
@@ -138,7 +138,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Page" - {
     "when calling POST /page" - {
       "should return a page object" in {
-        Post("/page", Page(BaseObject(3), "something updated", "category", 0)) ~> myRoute ~> check {
+        Post("/page", Page(BaseObject(3), "something updated", "category", 0, "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].about should equal("something updated")
           responseAs[Page].cover should equal(0)
@@ -318,7 +318,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete Page" - {
     "when calling DELETE /page" - {
       "should return a page object" in {
-        Delete("/page", Page(BaseObject(id = 3), "about", "category", -1)) ~> myRoute ~> check {
+        Delete("/page", Page(BaseObject(id = 3), "about", "category", -1, "testkey")) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString)
         }
