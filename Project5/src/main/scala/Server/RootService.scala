@@ -5,6 +5,7 @@ import java.security.{PublicKey, SecureRandom}
 import Objects.ObjectJsonSupport._
 import Objects._
 import Server.Actors.{DebugInfo, DelegatorActor}
+import Server.Messages.PutMsg
 import Utils.{Base64Util, Constants, Crypto}
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
@@ -33,7 +34,11 @@ trait RootService extends HttpService {
     engine
   }
 
-  val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null, serverKeyPair.getPublic))))
+  val delegatorActor = Array.fill[ActorRef](split)(
+    actorRefFactory.actorOf(
+      Props(new DelegatorActor(null, serverKeyPair.getPublic))
+    )
+  )
   val da = DebugInfo()
 
   def dActor(pid: Int) = delegatorActor(pid % split)
@@ -75,11 +80,7 @@ trait RootService extends HttpService {
             val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
             if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
               val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
-              val jsonMsg = Base64Util.decodeString(
-                Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-              )
-              val secureObject = JsonParser(jsonMsg).convertTo[SecureObject]
-
+              dActor(secureMsg.from) ! PutMsg(rc, secureMsg.message, requestKey)
             } else {
               rc.complete(defaultResponse)
             }

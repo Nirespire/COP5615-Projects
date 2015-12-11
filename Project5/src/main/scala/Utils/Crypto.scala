@@ -71,7 +71,7 @@ object Crypto {
     sig.verify(signedData)
   }
 
-  def constructAESKeyFromBytes(bytes: Array[Byte]): Key = {
+  def constructAESKeyFromBytes(bytes: Array[Byte]): SecretKey = {
     new SecretKeySpec(bytes, 0, bytes.length, "AES")
   }
 
