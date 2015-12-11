@@ -40,21 +40,24 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
 
           Put("/register", keyPair.getPublic.getEncoded) ~> myRoute ~> check{
             status should equal(OK)
-
             val secureMsg = responseAs[SecureMessage]
             val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
             Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
-
             val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
-
             val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-
             val userID = ByteBuffer.wrap(requestJson).getInt
-
             println(userID)
 
           }
         }
+      }
+    }
+  }
+
+  "Put User" - {
+    "when calling PUT /user" - {
+      "should create the new user assumming register has already happened" in {
+
       }
     }
   }
