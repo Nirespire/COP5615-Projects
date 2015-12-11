@@ -4,9 +4,9 @@ import java.security.{PublicKey, SecureRandom}
 
 import Objects.ObjectJsonSupport._
 import Objects._
-import Server.Actors.{DebugInfo, DelegatorActor}
+import Server.Actors.DelegatorActor
 import Server.Messages.PutMsg
-import Utils.{Base64Util, Constants, Crypto}
+import Utils.{DebugInfo, Base64Util, Constants, Crypto}
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import spray.http.MediaTypes.`application/json`
@@ -34,12 +34,13 @@ trait RootService extends HttpService {
     engine
   }
 
+  val da = DebugInfo()
+
   val delegatorActor = Array.fill[ActorRef](split)(
     actorRefFactory.actorOf(
-      Props(new DelegatorActor(null, serverKeyPair.getPublic))
+      Props(new DelegatorActor(da, serverKeyPair.getPublic))
     )
   )
-  val da = DebugInfo()
 
   def dActor(pid: Int) = delegatorActor(pid % split)
 
@@ -60,6 +61,16 @@ trait RootService extends HttpService {
                 Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
               )
               val secureRequest = JsonParser(requestJson).convertTo[SecureRequest]
+            } else {
+              rc.complete(defaultResponse)
+            }
+          }
+        } ~
+        path("friends") {
+          entity(as[SecureMessage]) { secureMsg => rc =>
+            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
+
+            if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
             } else {
               rc.complete(defaultResponse)
             }

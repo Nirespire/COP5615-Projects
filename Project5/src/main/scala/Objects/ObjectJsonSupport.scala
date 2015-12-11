@@ -1,8 +1,7 @@
 package Objects
 
-import Utils.Constants
+import Utils.{DebugInfo, Constants}
 import Server.Messages.ResponseMessage
-import Server.Actors.DebugInfo
 import spray.httpx.SprayJsonSupport
 import spray.json._
 

@@ -83,6 +83,10 @@ object Crypto {
     KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(bytes))
   }
 
+  def constructRSAPrivateKeyFromBytes(bytes: Array[Byte]): PrivateKey = {
+    KeyFactory.getInstance("RSA").generatePrivate(new X509EncodedKeySpec(bytes))
+  }
+
   def md5(bytes: Array[Byte]): Array[Byte] = {
     MessageDigest.getInstance("MD5").digest(bytes)
   }
@@ -102,7 +106,7 @@ object Crypto {
                              publicKeys: Map[Int, PublicKey]
                            ) = {
     val aesKey = generateAESKey()
-    val encryptedKeys = publicKeys.map{case (pid, pubKey) => (pid, Crypto.encryptRSA(aesKey.getEncoded, pubKey))}
+    val encryptedKeys = publicKeys.map { case (pid, pubKey) => (pid, Crypto.encryptRSA(aesKey.getEncoded, pubKey)) }
 
     SecureObject(
       baseObj,
@@ -126,4 +130,5 @@ object Crypto {
       Crypto.encryptRSA(aesKey.getEncoded, theirPublicKey)
     )
   }
+
 }

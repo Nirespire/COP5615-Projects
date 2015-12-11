@@ -33,10 +33,14 @@ object Constants {
   val trueBool = true
   val falseBool = false
 
-  val IV = Array[Byte](1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)
+  val IV = Array[Byte](1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
 
   val randomStringHeader = "RandomString"
   val signedStringHeader = "SignedString"
   val authTokenHeader = "AuthToken"
   val serverPublicKeyHeader = "ServerPublicKey"
+
+  val defaultPublicKey = Crypto.constructRSAPublicKeyFromBytes("".getBytes)
+  val defaultPrivateKey = Crypto.constructRSAPrivateKeyFromBytes("".getBytes)
+
 }

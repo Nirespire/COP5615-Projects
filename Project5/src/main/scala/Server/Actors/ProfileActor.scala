@@ -4,7 +4,7 @@ import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType
 import Objects._
 import Server.Messages._
-import Utils.Constants
+import Utils.{DebugInfo, Constants}
 import akka.actor.{Actor, ActorRef}
 import org.joda.time.DateTime
 import spray.json._
@@ -12,19 +12,19 @@ import spray.routing.RequestContext
 
 import scala.collection.mutable
 
-abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
+abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Actor {
   val nothingIdx = 1
   val deletedIdx = 0
   val defaultAlbumIdx = 2
   val createdTime = new DateTime().toString()
   // TODO CHECK THIS
-  val albums = mutable.ArrayBuffer[Album/*SecureObject[Album]*/](
+  val albums = mutable.ArrayBuffer[Album /*SecureObject[Album]*/ ](
     Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Profile Deleted"),
     Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted"),
     Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album")
-//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
-//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
-//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album").toJson.compactPrint, null)
+    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
+    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
+    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album").toJson.compactPrint, null)
   )
   val posts = mutable.ArrayBuffer[Post](
     Post(BaseObject(deletedIdx, Constants.trueBool), pid, "", pid, "Profile Deleted", PostType.empty, -1),

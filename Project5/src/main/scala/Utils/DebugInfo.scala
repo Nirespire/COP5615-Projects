@@ -1,6 +1,4 @@
-package Server.Actors
-
-import Utils.Constants
+package Utils
 
 import scala.collection.mutable
 
