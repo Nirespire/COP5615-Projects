@@ -8,6 +8,7 @@ import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 import ObjectJsonSupport._
 import spray.json._
+import Objects.ObjectTypes.ObjectType
 
 import scala.util.Random
 
@@ -61,6 +62,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should create the new user assuming register has already happened" in {
         val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
         val userObject = User(new BaseObject(id = myUserId), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), myKeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(myUserId -> myKeyPair.getPublic))
         val secureMessage = Crypto.constructSecureMessage(myUserId, userObject.toJson.compactPrint, serverKey, myKeyPair.getPrivate)
         Put("/user", secureMessage) ~> myRoute ~> check{
           status should equal(OK)

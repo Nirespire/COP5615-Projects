@@ -1,3 +1,4 @@
+import Objects.ObjectTypes.ObjectType
 import Objects.{Album, BaseObject}
 import Objects.ObjectJsonSupport._
 import Utils.{Base64Util, Constants, Crypto}
@@ -84,11 +85,11 @@ class CryptoSpec extends FlatSpec with Matchers {
 
       val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
 
-      val so = Crypto.constructSecureObject(a.baseObject, "album", a.toJson.prettyPrint, pair.getPublic)
+      val so = Crypto.constructSecureObject(a.baseObject, ObjectType.album.id, a.toJson.prettyPrint, Map(a.baseObject.id -> pair.getPublic))
 
       //      println(so)
 
-      val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKey)
+      val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKeys(a.baseObject.id))
       val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate)
 
       val reconstructKey = Crypto.constructAESKeyFromBytes(decryptedAESKeyBytes)

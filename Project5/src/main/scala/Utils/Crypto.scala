@@ -97,16 +97,18 @@ object Crypto {
 
   def constructSecureObject(
                              baseObj: BaseObject,
-                             objType: String,
+                             objType: Int,
                              json: String,
-                             publicKey: PublicKey
+                             publicKeys: Map[Int, PublicKey]
                            ) = {
     val aesKey = generateAESKey()
+    val encryptedKeys = publicKeys.map{case (pid, pubKey) => (pid, Crypto.encryptRSA(aesKey.getEncoded, pubKey))}
+
     SecureObject(
       baseObj,
       objType,
       Crypto.encryptAES(Base64Util.encodeBinary(json), aesKey, Constants.IV),
-      Crypto.encryptRSA(aesKey.getEncoded, publicKey)
+      encryptedKeys
     )
   }
 
