@@ -1,14 +1,15 @@
-import java.nio.ByteBuffer
 import java.security.PublicKey
 import Objects._
 import Server.RootService
 import Utils.{Resources, Constants, Base64Util, Crypto}
+import org.joda.time.DateTime
 import org.scalatest.{Matchers, FreeSpec}
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 import ObjectJsonSupport._
 import spray.json._
 import Objects.ObjectTypes.ObjectType
+import Objects.ObjectTypes.PostType
 
 import scala.util.Random
 
@@ -16,9 +17,11 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   def actorRefFactory = system
 
   var serverKey: PublicKey = null
-  var myUserId = -1
+  var user1Id = -1
+  var user2Id = -1
   var myPageId = -1
-  val userKeyPair = Crypto.generateRSAKeys()
+  val user1KeyPair = Crypto.generateRSAKeys()
+  val user2KeyPair = Crypto.generateRSAKeys()
   val pageKeyPair = Crypto.generateRSAKeys()
 
   "Get Server Key" - {
@@ -34,30 +37,62 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-  "Register User" - {
+  "Register User1" - {
     "when calling PUT /register" - {
       "should return user id" in {
-        Put("/register", userKeyPair.getPublic.getEncoded) ~> myRoute ~> check{
+        Put("/register", user1KeyPair.getPublic.getEncoded) ~> myRoute ~> check{
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
-          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, userKeyPair.getPrivate)
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user1KeyPair.getPrivate)
           Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-          myUserId = Base64Util.decodeString(requestJson).toInt
-          println(myUserId)
+          user1Id = Base64Util.decodeString(requestJson).toInt
+          println(user1Id)
         }
       }
     }
   }
 
-  "Put User" - {
+  "Put User1" - {
     "when calling PUT /user" - {
       "should create the new user assuming register has already happened" in {
         val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
-        val userObject = User(new BaseObject(id = myUserId), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), userKeyPair.getPublic.getEncoded)
-        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(myUserId.toString -> userKeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(myUserId, secureObject.toJson.compactPrint, serverKey, userKeyPair.getPrivate)
+        val userObject = User(new BaseObject(id = user1Id), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        Put("/user", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+        }
+      }
+    }
+  }
+
+  "Register User2" - {
+    "when calling PUT /register" - {
+      "should return user id" in {
+        Put("/register", user2KeyPair.getPublic.getEncoded) ~> myRoute ~> check{
+          status should equal(OK)
+          val secureMsg = responseAs[SecureMessage]
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
+          Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+          val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
+          user2Id = Base64Util.decodeString(requestJson).toInt
+          println(user2Id)
+        }
+      }
+    }
+  }
+
+  "Put User2" - {
+    "when calling PUT /user" - {
+      "should create the new user assuming register has already happened" in {
+        val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+        val userObject = User(new BaseObject(id = user2Id), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user2KeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
         Put("/user", secureMessage) ~> myRoute ~> check{
           status should equal(OK)
           println(entity)
@@ -97,52 +132,136 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
+  "Post UpdateFriendList by User1" - {
+    "when calling Post /addFriend" - {
+      "should add a profile to that user's friend list and allow them to view that user's content" in {
+
+      }
+    }
+  }
 
 
-//  "Put Post" - {
-//    "when calling PUT /post" - {
-//      "should return a post object" in {
-//
-//      }
-//    }
-//  }
-//
-//  "Put Picture" - {
-//    "when calling PUT /picture" - {
-//      "should return a picture object" in {
-//
-//      }
-//    }
-//  }
-//
-//  "Put Album" - {
-//    "when calling PUT /album" - {
-//      "should return a album object" in {
-//
-//      }
-//    }
-//  }
-//
-//  "Post User" - {
-//    "when calling POST /user" - {
-//      "should return a user object" in {
-//
-//      }
-//    }
-//  }
-//
-//  "Post Page" - {
-//    "when calling POST /page" - {
-//      "should return a page object" in {
-//
-//      }
-//    }
-//  }
-//
-//  "Post Picture" - {
+  "Put Post by User1 viewable only by this user" - {
+    "when calling PUT /post" - {
+      "should return a post object viewable only by this user" in {
+        val postObject = Objects.Post(new BaseObject(), user1Id, new DateTime().toString, user1Id, Resources.getRandomStatus(), PostType.status, -1)
+        val secureObject = Crypto.constructSecureObject(postObject.baseObject, ObjectType.post.id, postObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+
+        Put("/post", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+
+          // TODO do 2 gets here, one this succeeds because they are authorized, the next that fails
+        }
+      }
+    }
+  }
+
+  "Put Post by User1 viewable by all others" - {
+    "when calling PUT /post" - {
+      "should return a post object viewable this user, user2, and page" in {
+        val postObject = Objects.Post(new BaseObject(), user1Id, new DateTime().toString, user1Id, Resources.getRandomStatus(), PostType.status, -1)
+        val secureObject = Crypto.constructSecureObject(postObject.baseObject, ObjectType.post.id, postObject.toJson.compactPrint,
+          Map(user1Id.toString -> user1KeyPair.getPublic, user2Id.toString -> user2KeyPair.getPublic, myPageId.toString -> pageKeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+
+        Put("/post", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+
+          // TODO do 2 gets here, both should succeed
+        }
+      }
+    }
+  }
+
+  "Put Post by Page" - {
+    "when calling PUT /post" - {
+      "should return a post object viewable by everyone" in {
+        val postObject = Objects.Post(new BaseObject(), myPageId, new DateTime().toString, myPageId, Resources.getRandomStatus(), PostType.status, -1)
+        val secureObject = Crypto.constructSecureObject(postObject.baseObject, ObjectType.post.id, postObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
+
+        Put("/post", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+        }
+      }
+    }
+  }
+
+  "Put Picture by User2 viewable only by this user" - {
+    "when calling PUT /picture" - {
+      "should return a picture object viewable only by this user" in {
+        val pictureObject = Picture(BaseObject(), user2Id, -1, "filename.png", "")
+        val secureObject = Crypto.constructSecureObject(pictureObject.baseObject, ObjectType.post.id, pictureObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+        Put("/post", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+          // TODO do 2 gets here, one this succeeds because they are authorized, the next that fails
+        }
+      }
+    }
+  }
+
+  "Put Album by User2 viewable only by this user" - {
+    "when calling PUT /album" - {
+      "should return a album object viewable by only this user" in {
+        val albumObject = Album(BaseObject(), user2Id, new DateTime().toString, new DateTime().toString, -1, "desc")
+        val secureObject = Crypto.constructSecureObject(albumObject.baseObject, ObjectType.post.id, albumObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+        Put("/album", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+          // TODO do 2 gets here, one this succeeds because they are authorized, the next that fails
+        }
+
+      }
+    }
+  }
+
+  "Post User1" - {
+    "when calling POST /user" - {
+      "should update User object" in {
+        val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+        val userObject = User(new BaseObject(id = user1Id), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        Post("/user", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+        }
+      }
+    }
+  }
+
+  "Post Page by page" - {
+    "when calling POST /page" - {
+      "should update Page object" in {
+        val pageObject = Page(new BaseObject(id = myPageId), "about", Resources.getRandomPageCategory(), -1, pageKeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(pageObject.baseObject, ObjectType.page.id, pageObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
+        Post("/page", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
+          println(entity)
+        }
+      }
+    }
+  }
+
+//  "Post Picture by User2" - {
 //    "when calling POST /picture" - {
-//      "should return a picture object" in {
-//
+//      "should update Picture object" in {
+//        val pictureObject = Picture(BaseObject(), user2Id, -1, "filename.png", "")
+//        val secureObject = Crypto.constructSecureObject(pictureObject.baseObject, ObjectType.post.id, pictureObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
+//        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+//        Post("/picture", secureMessage) ~> myRoute ~> check{
+//          status should equal(OK)
+//          println(entity)
+//          // TODO do 2 gets here, one this succeeds because they are authorized, the next that fails
+//        }
 //      }
 //    }
 //  }

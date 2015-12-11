@@ -19,6 +19,7 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
     case putMsg@PutMsg(rc, message, aesKey) =>
       val jsonMsg = Base64Util.decodeString(Crypto.decryptAES(message, aesKey, Constants.IV))
       val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
+      val id = secureObj.baseObj.id
 
       ObjectType(secureObj.objectType) match {
         case ObjectType.user =>
@@ -27,17 +28,21 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
             context.actorOf(Props(new UserActor(secureObj, debugInfo)))
           )
           log.info("user created")
-          rc.complete("")
+
         case ObjectType.page =>
           profiles.put(
             secureObj.baseObj.id,
             context.actorOf(Props(new UserActor(secureObj, debugInfo)))
           )
           log.info("page created")
-          rc.complete("")
+        case ObjectType.post =>
+        case ObjectType.picture =>
+        case ObjectType.album =>
+        case ObjectType.updateFriendList =>
       }
+      // Should return generated ID of object to user so they can reference it later
+      rc.complete(id.toString)
 
-
-    case x => println(s"Unhandled in DelegatorActor  $x")
+    case x => log.error(s"Unhandled in DelegatorActor  $x")
   }
 }

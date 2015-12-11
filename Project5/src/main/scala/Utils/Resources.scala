@@ -122,6 +122,10 @@ object Resources {
     "I’m so stoked on my friends status updates. Going to the gym? Awesome! Pursuing your career in Babysitting? Rad! Going to sleep? Tell me more!!!"
   )
 
+  def getRandomStatus(): String = {
+    statuses(Random.nextInt(statuses.size))
+  }
+
   val pageCategories = Seq(
     "Book or Magazine",
     "Brand or Product",
