@@ -40,7 +40,8 @@ object Constants {
   val authTokenHeader = "AuthToken"
   val serverPublicKeyHeader = "ServerPublicKey"
 
-  val defaultPublicKey = Crypto.constructRSAPublicKeyFromBytes("".getBytes)
-  val defaultPrivateKey = Crypto.constructRSAPrivateKeyFromBytes("".getBytes)
+  val defaultKeyPair = Crypto.generateRSAKeys()
+  val defaultPublicKey = defaultKeyPair.getPublic
+  val defaultPrivateKey = defaultKeyPair.getPrivate
 
 }

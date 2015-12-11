@@ -5,6 +5,8 @@ import java.util.GregorianCalendar
 
 import com.google.common.io.BaseEncoding
 
+import scala.util.Random
+
 
 object Resources {
   val statuses = Seq(
@@ -133,6 +135,10 @@ object Resources {
     "Television",
     "Website or Blog"
   )
+
+  def getRandomPageCategory(): String = {
+    pageCategories(Random.nextInt(pageCategories.size))
+  }
 
 
   val names = Seq(
