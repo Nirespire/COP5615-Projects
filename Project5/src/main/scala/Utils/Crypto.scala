@@ -2,10 +2,10 @@ package Utils
 
 import java.security._
 import java.security.spec.X509EncodedKeySpec
-import javax.crypto.{KeyGenerator, Cipher}
+import javax.crypto.{SecretKey, KeyGenerator, Cipher}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
-import Objects.SecureObject
+import Objects.{BaseObject, SecureMessage, SecureObject}
 
 object Crypto {
   def generateRSAKeys(): KeyPair = {
@@ -15,7 +15,7 @@ object Crypto {
     keyGen.generateKeyPair()
   }
 
-  def generateAESKey(): Key = {
+  def generateAESKey(): SecretKey = {
     val keyGen = KeyGenerator.getInstance("AES")
     keyGen.init(128)
     keyGen.generateKey()
@@ -95,13 +95,33 @@ object Crypto {
     MessageDigest.getInstance("SHA-512").digest(bytes)
   }
 
-  def constructSecureObject(pid: Long, objType: String, json: String, publicKey: PublicKey) = {
+  def constructSecureObject(
+                             baseObj: BaseObject,
+                             objType: String,
+                             json: String,
+                             publicKey: PublicKey
+                           ) = {
     val aesKey = generateAESKey()
     SecureObject(
-      pid,
+      baseObj,
       objType,
       Crypto.encryptAES(json.getBytes(), aesKey, Constants.IV),
       Crypto.encryptRSA(aesKey.getEncoded, publicKey)
+    )
+  }
+
+  def constructSecureMessage(
+                              pid: Long,
+                              json: String,
+                              theirPublicKey: PublicKey,
+                              myPrivateKey: PrivateKey
+                            ) = {
+    val aesKey = generateAESKey()
+    SecureMessage(
+      pid,
+      Crypto.encryptAES(json.getBytes(), aesKey, Constants.IV),
+      Crypto.signData(myPrivateKey, aesKey.getEncoded),
+      Crypto.encryptRSA(aesKey.getEncoded, theirPublicKey)
     )
   }
 

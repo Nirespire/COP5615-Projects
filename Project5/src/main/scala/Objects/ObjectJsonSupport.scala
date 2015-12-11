@@ -140,7 +140,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val PictureJsonFormat = jsonFormat5(Picture)
   implicit val UserJsonFormat = jsonFormat7(User)
   implicit val SecureObjectJsonFormat = jsonFormat4(SecureObject)
-  implicit val SecureServerRequestJsonFormat = jsonFormat4(SecureServerRequest)
+  implicit val SecureServerRequestJsonFormat = jsonFormat4(SecureMessage)
   implicit val SecureRequestJsonFormat = jsonFormat5(SecureRequest)
 }
 

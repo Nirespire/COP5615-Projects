@@ -45,7 +45,7 @@ class CryptoSpec extends FlatSpec with Matchers {
     val decrypted = Crypto.decryptRSA(encrypted, publicKey)
     val result = new String(decrypted)
 
-    println("Decrypted output:  "  + result)
+    println("Decrypted output:  " + result)
     result should equal(secretMessage)
   }
 
@@ -53,7 +53,7 @@ class CryptoSpec extends FlatSpec with Matchers {
     val key = Crypto.generateAESKey()
     val secretMessage = "You found my secret!"
 
-    val iv = Array[Byte]( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 )
+    val iv = Array[Byte](0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     val encrypted = Crypto.encryptAES(secretMessage.getBytes(), key, iv)
 
@@ -62,7 +62,7 @@ class CryptoSpec extends FlatSpec with Matchers {
     val decrypted = Crypto.decryptAES(encrypted, key, iv)
     val result = new String(decrypted)
 
-    println("Decrypted output:  "  + result)
+    println("Decrypted output:  " + result)
     result should equal(secretMessage)
   }
 
@@ -78,15 +78,15 @@ class CryptoSpec extends FlatSpec with Matchers {
 
   "Encrypting and decrypting SecureObjects" should "allow encryption and decryption of all object types" in {
 
-    for(i <- 1 to 100) {
+    for (i <- 1 to 100) {
       val pair = Crypto.generateRSAKeys()
       val aesKey = Crypto.generateAESKey()
 
       val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
 
-      val so = Crypto.constructSecureObject(a.from, "album", a.toJson.prettyPrint, pair.getPublic)
+      val so = Crypto.constructSecureObject(a.baseObject, "album", a.toJson.prettyPrint, pair.getPublic)
 
-//      println(so)
+      //      println(so)
 
       val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKey)
       val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate)
@@ -100,7 +100,7 @@ class CryptoSpec extends FlatSpec with Matchers {
 
       val reconstructedAlbum = Base64Util.bytesToObj(decryptedAlbumBytes)
 
-//      println(reconstructedAlbum.asInstanceOf[Album])
+      //      println(reconstructedAlbum.asInstanceOf[Album])
 
       reconstructedAlbum should equal(a)
     }

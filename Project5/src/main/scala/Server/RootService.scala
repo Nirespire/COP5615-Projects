@@ -39,41 +39,42 @@ trait RootService extends HttpService {
   def dActor(pid: Long) = delegatorActor((pid % split).toInt)
 
   val userPublicKeys = mutable.HashMap[Long, PublicKey]()
+  val defaultResponse = Crypto.constructSecureMessage(-1, "defaultResponse", serverKeyPair.getPublic, serverKeyPair.getPrivate)
 
   val myRoute = respondWithMediaType(`application/json`) {
     get {
       path("server_key") { rc => rc.complete(serverKeyPair.getPublic.getEncoded) } ~
         path("debug") { rc => rc.complete(da.toJson.compactPrint) } ~
         path("request") {
-          entity(as[SecureServerRequest]) { secureServerRequest => rc =>
-            val requestKeyBytes = Crypto.decryptRSA(secureServerRequest.encryptedKey, serverKeyPair.getPrivate)
+          entity(as[SecureMessage]) { secureMsg => rc =>
+            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
 
-            if (Crypto.verifySign(userPublicKeys(secureServerRequest.from), secureServerRequest.signature, requestKeyBytes)) {
+            if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
               val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
-              val requestJson = Base64Util.encodeString(
-                Crypto.decryptAES(secureServerRequest.message, requestKey, Constants.IV)
-              )
+              val requestJson = Base64Util.encodeString(Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV))
               val secureRequest = JsonParser(requestJson).convertTo[SecureRequest]
-
-
+            } else {
+              rc.complete(defaultResponse)
             }
           }
         }
     } ~
       put {
-
         path("register") {
           entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
             val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
             var userId = random.nextLong()
             while (userPublicKeys.contains(userId)) userId = random.nextLong()
-            rc.complete(Crypto.constructSecureObject(-1, "register", s"""{"id": "$userId" }""", userPublicKey))
+            val jsonMsg = s"""{"id":"$userId"}"""
+            rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, serverKeyPair.getPrivate))
           }
         } ~
-          entity(as[SecureServerRequest]) { secureServerRequest => rc =>
-            val requestKey = Crypto.decryptRSA(secureServerRequest.encryptedKey, serverKeyPair.getPrivate)
-            if (Crypto.verifySign(userPublicKeys(secureServerRequest.from), secureServerRequest.signature, requestKey)) {
+          entity(as[SecureMessage]) { secureMsg => rc =>
+            val requestKey = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
+            if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKey)) {
 
+            } else {
+              rc.complete(defaultResponse)
             }
           }
       }
