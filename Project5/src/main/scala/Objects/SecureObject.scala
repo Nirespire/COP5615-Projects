@@ -7,7 +7,7 @@ case class SecureObject(
                          objectType: Int,
                          data: Array[Byte],
                          //                         encryptedKey: Map[Int, Array[Byte]]
-                         encryptedKeys: Map[Int, Array[Byte]]
+                         encryptedKeys: Map[String, Array[Byte]]
                        ) {
   override def toString(): String = {
     val sb = new StringBuilder()

@@ -26,12 +26,14 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
             secureObj.baseObj.id,
             context.actorOf(Props(new UserActor(secureObj, debugInfo)))
           )
+          log.info("user created")
           rc.complete("")
         case ObjectType.page =>
           profiles.put(
             secureObj.baseObj.id,
             context.actorOf(Props(new UserActor(secureObj, debugInfo)))
           )
+          log.info("page created")
           rc.complete("")
       }
 

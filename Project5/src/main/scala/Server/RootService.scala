@@ -81,11 +81,10 @@ trait RootService extends HttpService {
         path("register") {
           entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
             val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
-            var userId = random.nextInt()
-            while (userPublicKeys.contains(userId)) userId = random.nextInt()
+            var userId = Math.abs(random.nextInt())
+            while (userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())
             userPublicKeys.put(userId, userPublicKey)
             val jsonMsg = userId.toJson.compactPrint
-            println(userPublicKeys.mkString(","))
             rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, serverKeyPair.getPrivate))
           }
         } ~

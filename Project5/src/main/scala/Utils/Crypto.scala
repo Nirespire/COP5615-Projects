@@ -103,10 +103,10 @@ object Crypto {
                              baseObj: BaseObject,
                              objType: Int,
                              json: String,
-                             publicKeys: Map[Int, PublicKey]
+                             publicKeys: Map[String, PublicKey]
                            ) = {
     val aesKey = generateAESKey()
-    val encryptedKeys = publicKeys.map { case (pid, pubKey) => (pid, Crypto.encryptRSA(aesKey.getEncoded, pubKey)) }
+    val encryptedKeys = publicKeys.map { case (pid, pubKey) => (pid.toString, Crypto.encryptRSA(aesKey.getEncoded, pubKey)) }
 
     SecureObject(
       baseObj,

@@ -44,7 +44,6 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-          println(requestJson)
           myUserId = Base64Util.decodeString(requestJson).toInt
           println(myUserId)
         }
@@ -57,7 +56,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       "should create the new user assuming register has already happened" in {
         val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
         val userObject = User(new BaseObject(id = myUserId), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), userKeyPair.getPublic.getEncoded)
-        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(myUserId -> userKeyPair.getPublic))
+        val secureObject = Crypto.constructSecureObject(userObject.baseObject, ObjectType.user.id, userObject.toJson.compactPrint, Map(myUserId.toString -> userKeyPair.getPublic))
         val secureMessage = Crypto.constructSecureMessage(myUserId, secureObject.toJson.compactPrint, serverKey, userKeyPair.getPrivate)
         Put("/user", secureMessage) ~> myRoute ~> check{
           status should equal(OK)
@@ -77,7 +76,6 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-          println(requestJson)
           myPageId = Base64Util.decodeString(requestJson).toInt
           println(myPageId)
         }
@@ -89,7 +87,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     "when calling PUT /page" - {
       "should create the new page assuming register has already happened" in {
         val pageObject = Page(new BaseObject(id = myPageId), "about", Resources.getRandomPageCategory(), -1, pageKeyPair.getPublic.getEncoded)
-        val secureObject = Crypto.constructSecureObject(pageObject.baseObject, ObjectType.page.id, pageObject.toJson.compactPrint, Map(myPageId -> pageKeyPair.getPublic))
+        val secureObject = Crypto.constructSecureObject(pageObject.baseObject, ObjectType.page.id, pageObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
         val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
         Put("/page", secureMessage) ~> myRoute ~> check{
           status should equal(OK)
