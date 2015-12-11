@@ -4,13 +4,13 @@ import scala.collection.mutable
 
 case class Album(
                   baseObject: BaseObject,
-                  from: Long,
+                  from: Int,
                   var createdTime: String,
                   var updatedTime: String,
-                  var coverPhoto: Long,
+                  var coverPhoto: Int,
                   var description: String
                 ) {
-  val pictures = mutable.Set[Long]()
+  val pictures = mutable.Set[Int]()
 
-  def addPicture(picId: Long) = pictures.add(picId)
+  def addPicture(picId: Int) = pictures.add(picId)
 }

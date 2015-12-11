@@ -15,19 +15,19 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put 3 Users" - {
     "when calling PUT /user" - {
       "should return a user object each" in {
-        Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1", "testkey".getBytes)) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 1", "birthday", 'M', "first name1", "last name1", Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(0)
           println(entity.toString)
         }
 
-        Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2", "testkey".getBytes)) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 2", "birthday", 'M', "first name2", "last name2", Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(1)
           println(entity.toString)
         }
 
-        Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3", "testkey".getBytes())) ~> myRoute ~> check {
+        Put("/user", User(BaseObject(), "Im user 3", "birthday", 'M', "first name3", "last name3", Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].baseObject.id should equal(2)
           println(entity.toString)
@@ -39,7 +39,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Put Page" - {
     "when calling PUT /page" - {
       "should return a page object" in {
-        Put("/page", Page(BaseObject(), "about", "category", -1, "testkey".getBytes())) ~> myRoute ~> check {
+        Put("/page", Page(BaseObject(), "about", "category", -1, Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].baseObject.id should equal(3)
           println(entity.toString)
@@ -126,7 +126,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post User" - {
     "when calling POST /user" - {
       "should return a user object" in {
-        Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name", "testkey".getBytes())) ~> myRoute ~> check {
+        Post("/user", User(BaseObject(0), "something updated", "birthday", 'M', "first name", "last name", Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[User].about should equal("something updated")
           println(entity.toString)
@@ -138,7 +138,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post Page" - {
     "when calling POST /page" - {
       "should return a page object" in {
-        Post("/page", Page(BaseObject(3), "something updated", "category", 0, "testkey".getBytes())) ~> myRoute ~> check {
+        Post("/page", Page(BaseObject(3), "something updated", "category", 0, Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           responseAs[Page].about should equal("something updated")
           responseAs[Page].cover should equal(0)
@@ -307,7 +307,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete User" - {
     "when calling DELETE /user" - {
       "should return a user object each" in {
-        Delete("/user", User(BaseObject(id = 0), "Im user 1", "birthday", 'M', "first name1", "last name1", "testkey".getBytes)) ~> myRoute ~> check {
+        Delete("/user", User(BaseObject(id = 0), "Im user 1", "birthday", 'M', "first name1", "last name1", Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString)
         }
@@ -318,7 +318,7 @@ class ServerSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Delete Page" - {
     "when calling DELETE /page" - {
       "should return a page object" in {
-        Delete("/page", Page(BaseObject(id = 3), "about", "category", -1, "testkey".getBytes())) ~> myRoute ~> check {
+        Delete("/page", Page(BaseObject(id = 3), "about", "category", -1, Base64Util.encodeBinary("testkey"))) ~> myRoute ~> check {
           status should equal(OK)
           println(entity.toString)
         }

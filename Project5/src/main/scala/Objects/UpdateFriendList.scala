@@ -3,7 +3,7 @@ package Objects
 import Objects.ObjectTypes.ListType
 
 case class UpdateFriendList(
-                             pid: Long,
-                             fid: Long,
+                             pid: Int,
+                             fid: Int,
                              listType: ListType.Value = ListType.friend
                            )

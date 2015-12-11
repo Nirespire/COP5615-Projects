@@ -4,6 +4,5 @@ case class SecureRequest(
                           from: Int,
                           to: Int,
                           getType: String,
-                          getIdx: Int,
-                          signature: Array[Byte]
+                          getIdx: Int
                         )

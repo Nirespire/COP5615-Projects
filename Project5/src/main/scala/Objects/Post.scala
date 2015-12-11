@@ -3,9 +3,9 @@ package Objects
 import Objects.ObjectTypes.PostType.PostType
 
 case class Post(baseObject: BaseObject,
-                creator: Long,
+                creator: Int,
                 createdTime: String,
-                from: Long,
+                from: Int,
                 message: String,
                 postType: PostType,
-                attachmentId: Long)
+                attachmentId: Int)

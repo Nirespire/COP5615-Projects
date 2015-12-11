@@ -38,7 +38,7 @@ class CryptoSpec extends FlatSpec with Matchers {
     val publicKey = pair.getPublic
     val secretMessage = "You found my secret!"
 
-    val encrypted = Crypto.encryptRSA(secretMessage.getBytes(), privateKey)
+    val encrypted = Crypto.encryptRSA(Base64Util.encodeBinary(secretMessage), privateKey)
 
     println("Encrypted output:  " + Crypto.byteArrayToHexString(encrypted))
 
@@ -55,7 +55,7 @@ class CryptoSpec extends FlatSpec with Matchers {
 
     val iv = Array[Byte](0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    val encrypted = Crypto.encryptAES(secretMessage.getBytes(), key, iv)
+    val encrypted = Crypto.encryptAES(Base64Util.encodeBinary(secretMessage), key, iv)
 
     println("Encrypted output:  " + Crypto.byteArrayToHexString(encrypted))
 

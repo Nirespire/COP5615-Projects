@@ -8,7 +8,7 @@ import spray.httpx.SprayJsonSupport
 import spray.json._
 
 object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
-  def setToJsArray(setObj: scala.collection.mutable.Set[Long]) = JsArray(setObj.map(JsNumber(_)).toVector)
+  def setToJsArray(setObj: scala.collection.mutable.Set[Int]) = JsArray(setObj.map(JsNumber(_)).toVector)
 
 
   implicit object BaseObjectJsonFormat extends RootJsonFormat[BaseObject] {

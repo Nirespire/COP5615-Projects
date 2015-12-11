@@ -36,9 +36,9 @@ trait RootService extends HttpService {
   val delegatorActor = Array.fill[ActorRef](split)(actorRefFactory.actorOf(Props(new DelegatorActor(null, serverKeyPair.getPublic))))
   val da = DebugInfo()
 
-  def dActor(pid: Long) = delegatorActor((pid % split).toInt)
+  def dActor(pid: Int) = delegatorActor(pid % split)
 
-  val userPublicKeys = mutable.HashMap[Long, PublicKey]()
+  val userPublicKeys = mutable.HashMap[Int, PublicKey]()
   val defaultResponse = Crypto.constructSecureMessage(-1, "defaultResponse", serverKeyPair.getPublic, serverKeyPair.getPrivate)
 
   val myRoute = respondWithMediaType(`application/json`) {
@@ -51,7 +51,9 @@ trait RootService extends HttpService {
 
             if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
               val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
-              val requestJson = Base64Util.encodeString(Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV))
+              val requestJson = Base64Util.decodeString(
+                Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
+              )
               val secureRequest = JsonParser(requestJson).convertTo[SecureRequest]
             } else {
               rc.complete(defaultResponse)
@@ -63,15 +65,20 @@ trait RootService extends HttpService {
         path("register") {
           entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
             val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
-            var userId = random.nextLong()
-            while (userPublicKeys.contains(userId)) userId = random.nextLong()
-            val jsonMsg = s"""{"id":"$userId"}"""
+            var userId = random.nextInt()
+            while (userPublicKeys.contains(userId)) userId = random.nextInt()
+            val jsonMsg = userId.toJson.compactPrint
             rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, serverKeyPair.getPrivate))
           }
         } ~
           entity(as[SecureMessage]) { secureMsg => rc =>
-            val requestKey = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
-            if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKey)) {
+            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
+            if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
+              val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+              val jsonMsg = Base64Util.decodeString(
+                Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
+              )
+              val secureObject = JsonParser(jsonMsg).convertTo[SecureObject]
 
             } else {
               rc.complete(defaultResponse)

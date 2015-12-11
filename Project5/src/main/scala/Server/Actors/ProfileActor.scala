@@ -13,27 +13,27 @@ import spray.routing.RequestContext
 import scala.collection.mutable
 
 abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Actor {
-  val nothingIdx: Long = 1
-  val deletedIdx: Long = 0
-  val defaultAlbumIdx: Long = 2
+  val nothingIdx = 1
+  val deletedIdx = 0
+  val defaultAlbumIdx = 2
   val createdTime = new DateTime().toString()
   // TODO CHECK THIS
-  val albums = mutable.HashMap[Long, Album /*SecureObject[Album]*/ ](
-    deletedIdx -> Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Profile Deleted"),
-    nothingIdx -> Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted"),
-    defaultAlbumIdx -> Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album")
-    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
-    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
-    //      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album").toJson.compactPrint, null)
+  val albums = mutable.ArrayBuffer[Album/*SecureObject[Album]*/](
+    Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Profile Deleted"),
+    Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted"),
+    Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album")
+//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(deletedIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
+//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(nothingIdx, Constants.trueBool), pid, "", "", -1, "Album Deleted").toJson.compactPrint, null),
+//      SecureObject[Album](BaseObject(deletedIdx, Constants.trueBool), Album(BaseObject(defaultAlbumIdx), pid, createdTime, createdTime, -1, "Default Album").toJson.compactPrint, null)
   )
-  val posts = mutable.HashMap[Long, Post](
-    deletedIdx -> Post(BaseObject(deletedIdx, Constants.trueBool), pid, "", pid, "Profile Deleted", PostType.empty, -1),
-    nothingIdx -> Post(BaseObject(nothingIdx), pid, "", pid, "No Posts/Post deleted", PostType.empty, -1)
+  val posts = mutable.ArrayBuffer[Post](
+    Post(BaseObject(deletedIdx, Constants.trueBool), pid, "", pid, "Profile Deleted", PostType.empty, -1),
+    Post(BaseObject(nothingIdx), pid, "", pid, "No Posts/Post deleted", PostType.empty, -1)
   )
   //  val otherPosts = mutable.ArrayBuffer[(Int, Int)]()
-  val pictures = mutable.HashMap[Long, Picture](
-    deletedIdx -> Picture(BaseObject(deletedIdx, Constants.trueBool), pid, -1, "", ""),
-    nothingIdx -> Picture(BaseObject(nothingIdx), pid, -1, "", "")
+  val pictures = mutable.ArrayBuffer[Picture](
+    Picture(BaseObject(deletedIdx, Constants.trueBool), pid, -1, "", ""),
+    Picture(BaseObject(nothingIdx), pid, -1, "", "")
   )
   //  val friendLists = mutable.ArrayBuffer[FriendList]()
 
@@ -56,7 +56,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             rc.complete(posts(deletedIdx))
           } else {
             p.baseObject.updateId(posts.size)
-            posts.put(posts.size, p)
+            posts.append(p)
             rc.complete(p)
           }
         case a: Album =>
@@ -64,7 +64,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             rc.complete(albums(deletedIdx))
           } else {
             a.baseObject.updateId(albums.size)
-            albums.put(albums.size, a)
+            albums.append(a)
             rc.complete(a)
           }
         case p: Picture =>
@@ -74,7 +74,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             if (p.album == -1 || p.album > albums.size) p.album = defaultAlbumIdx
             if (albums(p.album).coverPhoto == -1) albums(p.album).coverPhoto = p.baseObject.id
             p.baseObject.updateId(pictures.size)
-            pictures.put(pictures.size, p)
+            pictures.append(p)
             albums(p.album).addPicture(p.baseObject.id)
             rc.complete(p)
           }
@@ -93,7 +93,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             rc.complete(posts(deletedIdx))
           } else {
             if (pId == -1) {
-              val lastPostId = getLastPost
+              val lastPostId = posts.lastIndexWhere(p => !p.baseObject.deleted)
               rc.complete(posts(lastPostId))
             } else {
               val post = posts(pId)
@@ -109,7 +109,7 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             rc.complete(albums(deletedIdx))
           } else {
             if (aId == -1) {
-              val lastPostId = getLastAlbum
+              val lastPostId = albums.lastIndexWhere(p => !p.baseObject.deleted)
               rc.complete(albums(lastPostId))
             } else {
               val album = albums(aId)
@@ -120,12 +120,12 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
               }
             }
           }
-        case ("picture", aId: Long) =>
+        case ("picture", aId: Int) =>
           if (baseObject.deleted) {
             rc.complete(pictures(deletedIdx))
           } else {
             if (aId == -1) {
-              val lastPostId = getLastPicture
+              val lastPostId = pictures.lastIndexWhere(p => !p.baseObject.deleted)
               rc.complete(pictures(lastPostId))
             } else {
               val pic = pictures(aId)
@@ -137,8 +137,8 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
             }
           }
 
-        case ("feed", fId) =>
-          val pIds = mutable.ArrayBuffer[Long](pid)
+        case ("feed", fId: Int) =>
+          val pIds = mutable.ArrayBuffer[Int](pid)
           var postsIdx = posts.size - 1
           while (pIds.size < 11 && postsIdx > 0) {
             if (!posts(postsIdx).baseObject.deleted) {
@@ -266,36 +266,5 @@ abstract class ProfileActor(val pid: Int, val debugActor: ActorRef) extends Acto
     } catch {
       case e: Throwable => rc.complete(ResponseMessage(e.getMessage))
     }
-  }
-
-  def getLastPost = {
-    var lastIdx = posts.size - 1
-    var p = posts(lastIdx)
-    while (lastIdx > nothingIdx && !p.baseObject.deleted) {
-      lastIdx -= 1
-      p = posts(lastIdx)
-    }
-    lastIdx
-  }
-
-  def getLastPicture = {
-    var lastIdx = pictures.size - 1
-    var p = pictures(lastIdx)
-    while (lastIdx > nothingIdx && !p.baseObject.deleted) {
-      lastIdx -= 1
-      p = pictures(lastIdx)
-    }
-    lastIdx
-  }
-
-
-  def getLastAlbum = {
-    var lastIdx = albums.size - 1
-    var p = albums(lastIdx)
-    while (lastIdx > defaultAlbumIdx && !p.baseObject.deleted) {
-      lastIdx -= 1
-      p = albums(lastIdx)
-    }
-    lastIdx
   }
 }

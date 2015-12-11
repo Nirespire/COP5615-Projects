@@ -7,12 +7,12 @@ import spray.routing.RequestContext
 import ObjectJsonSupport._
 import scala.collection.mutable
 
-case class BaseObject(var id: Long = -1, var deleted: Boolean = false) {
-  val likes = mutable.Set[Long]()
+case class BaseObject(var id: Int = -1, var deleted: Boolean = false) {
+  val likes = mutable.Set[Int]()
 
-  def updateId(newId: Long) = id = newId
+  def updateId(newId: Int) = id = newId
 
-  def appendLike(pid: Long) = likes.add(pid)
+  def appendLike(pid: Int) = likes.add(pid)
 
   def delete(rc: RequestContext, msg: String = "") = {
     if (deleted) {

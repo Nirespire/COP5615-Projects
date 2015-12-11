@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 import scala.collection.mutable
 
 class DelegatorActor(debugActor: ActorRef, serverPublicKey: Key) extends Actor with ActorLogging {
-  val profiles = mutable.HashMap[Long, ActorRef]()
+  val profiles = mutable.HashMap[Int, ActorRef]()
 
   def receive = {
     case x => println(s"Unhandled in DelegatorActor  $x")
