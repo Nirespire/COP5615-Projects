@@ -46,7 +46,8 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
             Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
             val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
             val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-            myUserId = ByteBuffer.wrap(requestJson).getInt
+            println(requestJson)
+            myUserId = Base64Util.decodeString(requestJson).toInt
             println(myUserId)
 
           }
