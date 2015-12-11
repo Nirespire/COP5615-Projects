@@ -1,17 +1,22 @@
 import java.nio.ByteBuffer
-
+import java.security.PublicKey
 import Objects._
 import Server.RootService
-import Utils.{Constants, Base64Util, Crypto}
-import org.joda.time.DateTime
+import Utils.{Resources, Constants, Base64Util, Crypto}
 import org.scalatest.{Matchers, FreeSpec}
 import spray.http.StatusCodes._
-import spray.json.JsonParser
 import spray.testkit.ScalatestRouteTest
 import ObjectJsonSupport._
+import spray.json._
+
+import scala.util.Random
 
 class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with RootService {
   def actorRefFactory = system
+
+  var serverKey: PublicKey = null
+  var myUserId = -1
+  val myKeyPair = Crypto.generateRSAKeys()
 
   "Get Server Key" - {
     "when calling GET /server_key" - {
@@ -26,27 +31,23 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-
-
   "Register User" - {
     "when calling PUT /register" - {
       "should return a random string to sign" in {
         Get("/server_key") ~> myRoute ~> check {
           status should equal(OK)
           val returnObject = responseAs[Array[Byte]]
-          val serverKey = Crypto.constructRSAPublicKeyFromBytes(returnObject)
+          serverKey = Crypto.constructRSAPublicKeyFromBytes(returnObject)
 
-          val keyPair = Crypto.generateRSAKeys()
-
-          Put("/register", keyPair.getPublic.getEncoded) ~> myRoute ~> check{
+          Put("/register", myKeyPair.getPublic.getEncoded) ~> myRoute ~> check{
             status should equal(OK)
             val secureMsg = responseAs[SecureMessage]
-            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, myKeyPair.getPrivate)
             Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
             val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
             val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
-            val userID = ByteBuffer.wrap(requestJson).getInt
-            println(userID)
+            myUserId = ByteBuffer.wrap(requestJson).getInt
+            println(myUserId)
 
           }
         }
@@ -56,8 +57,15 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
 
   "Put User" - {
     "when calling PUT /user" - {
-      "should create the new user assumming register has already happened" in {
+      "should create the new user assuming register has already happened" in {
+        val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+        val userObject = User(new BaseObject(id = myUserId), "about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), myKeyPair.getPublic.getEncoded)
+        val secureMessage = Crypto.constructSecureMessage(myUserId, userObject.toJson.compactPrint, serverKey, myKeyPair.getPrivate)
+        Put("/user", secureMessage) ~> myRoute ~> check{
+          status should equal(OK)
 
+
+        }
       }
     }
   }
