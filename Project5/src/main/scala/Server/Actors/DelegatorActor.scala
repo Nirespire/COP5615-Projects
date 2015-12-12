@@ -22,14 +22,24 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
 
       ObjectType(secureObj.objectType) match {
         case ObjectType.user =>
+          debugInfo.debugVar(Constants.putProfilesChar) += 1
           log.info(pid.toString)
           profiles.put(pid, context.actorOf(Props(new UserActor(secureObj, debugInfo))))
           rc.complete(pid.toString)
         case ObjectType.page =>
+          debugInfo.debugVar(Constants.putProfilesChar) += 1
           profiles.put(pid, context.actorOf(Props(new PageActor(secureObj, debugInfo))))
           rc.complete(pid.toString)
-        case _ =>
+        case ObjectType.post =>
+          debugInfo.debugVar(Constants.putPostsChar) += 1
           profiles(pid) ! PutSecureObjMsg(rc, secureObj)
+        case ObjectType.picture =>
+          debugInfo.debugVar(Constants.putPicturesChar) += 1
+          profiles(pid) ! PutSecureObjMsg(rc, secureObj)
+        case ObjectType.album =>
+          debugInfo.debugVar(Constants.putAlbumsChar) += 1
+          profiles(pid) ! PutSecureObjMsg(rc, secureObj)
+        case _ => profiles(pid) ! PutSecureObjMsg(rc, secureObj)
       }
     case PostEncryptedMsg(rc, pid, message, aesKey) =>
       val jsonMsg = Base64Util.decodeString(Crypto.decryptAES(message, aesKey, Constants.IV))

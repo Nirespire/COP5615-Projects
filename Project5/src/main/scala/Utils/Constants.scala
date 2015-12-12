@@ -29,6 +29,8 @@ object Constants {
   val likeChar = 'l'
   val postLikeChar = 'q'
 
+  val registerChar = 'X'
+
   val nano = 1000000000.0
   val trueBool = true
   val falseBool = false

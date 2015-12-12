@@ -9,6 +9,7 @@ import Server.Messages.{DeleteEncryptedMsg, PostEncryptedMsg, PutEncryptedMsg}
 import Utils.{DebugInfo, Base64Util, Constants, Crypto}
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
+import spray.http.HttpHeaders.RawHeader
 import spray.http.MediaTypes.`application/json`
 import spray.io.ServerSSLEngineProvider
 import spray.json._
@@ -49,8 +50,10 @@ trait RootService extends HttpService {
   val myRoute = respondWithMediaType(`application/json`) {
     get {
       path("server_key") { rc => rc.complete(serverKeyPair.getPublic.getEncoded) } ~
-        path("debug") { rc =>
-          rc.complete(da.toJson.compactPrint)
+        path("debug") {
+          respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) { rc =>
+            rc.complete(da.toJson.compactPrint)
+          }
         } ~ path("request") {
         entity(as[SecureMessage]) { secureMsg => rc =>
           val (verified, aesKey) = verifyMessage(rc, secureMsg)
@@ -72,6 +75,7 @@ trait RootService extends HttpService {
     } ~ put {
       path("register") {
         entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
+          da.debugVar(Constants.registerChar) += 1
           val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
           var userId = Math.abs(random.nextInt())
           while (userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())
