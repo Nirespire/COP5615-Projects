@@ -1,8 +1,7 @@
 package Objects
 
 case class SecureRequest(
-                          from: Int,
                           to: Int,
-                          getType: String,
+                          objectType: Int,
                           getIdx: Int
                         )

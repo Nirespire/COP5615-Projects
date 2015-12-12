@@ -83,13 +83,16 @@ class CryptoSpec extends FlatSpec with Matchers {
       val pair = Crypto.generateRSAKeys()
       val aesKey = Crypto.generateAESKey()
 
-      val a = Album(BaseObject(), 0, "now", "now", -1, "desc")
+      val baseObject = BaseObject()
+      val a = Album("now", "now", -1, "desc")
 
-      val so = Crypto.constructSecureObject(a.baseObject, ObjectType.album.id, a.toJson.prettyPrint, Map(a.baseObject.id.toString -> pair.getPublic))
+      val so = Crypto.constructSecureObject(
+        baseObject, ObjectType.album.id, a.toJson.prettyPrint, Map("0" -> pair.getPublic)
+      )
 
       //      println(so)
 
-      val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKeys(a.baseObject.id.toString))
+      val encryptedAESKeybytes = Base64Util.decodeBinary(so.encryptedKeys("0"))
       val decryptedAESKeyBytes = Crypto.decryptRSA(encryptedAESKeybytes, pair.getPrivate)
 
       val reconstructKey = Crypto.constructAESKeyFromBytes(decryptedAESKeyBytes)

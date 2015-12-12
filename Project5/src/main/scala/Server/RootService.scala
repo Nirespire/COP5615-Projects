@@ -1,10 +1,11 @@
 package Server
 
 import java.security.{PublicKey, SecureRandom}
+import javax.crypto.SecretKey
 import Objects.ObjectJsonSupport._
 import Objects._
 import Server.Actors.DelegatorActor
-import Server.Messages.PutMsg
+import Server.Messages.{DeleteEncryptedMsg, PostEncryptedMsg, PutEncryptedMsg}
 import Utils.{DebugInfo, Base64Util, Constants, Crypto}
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
@@ -48,34 +49,27 @@ trait RootService extends HttpService {
   val myRoute = respondWithMediaType(`application/json`) {
     get {
       path("server_key") { rc => rc.complete(serverKeyPair.getPublic.getEncoded) } ~
-      path("debug") { rc => rc.complete(da.toJson.compactPrint) } ~
-      path("request") {
+        path("debug") { rc =>
+          rc.complete(da.toJson.compactPrint)
+        } ~ path("request") {
         entity(as[SecureMessage]) { secureMsg => rc =>
-          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
-
-          if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-            val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+          val (verified, aesKey) = verifyMessage(rc, secureMsg)
+          if (verified) {
             val requestJson = Base64Util.decodeString(
-              Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
+              Crypto.decryptAES(secureMsg.message, aesKey, Constants.IV)
             )
             val secureRequest = JsonParser(requestJson).convertTo[SecureRequest]
-          } else {
-            rc.complete(defaultResponse)
           }
         }
-      } ~
-      path("friends") {
+      } ~ path("friends") {
         entity(as[SecureMessage]) { secureMsg => rc =>
-          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
+          val (verified, aesKey) = verifyMessage(rc, secureMsg)
+          if (verified) {
 
-          if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-          } else {
-            rc.complete(defaultResponse)
           }
         }
       }
-    } ~
-    put {
+    } ~ put {
       path("register") {
         entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
           val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
@@ -85,36 +79,36 @@ trait RootService extends HttpService {
           val jsonMsg = userId.toJson.compactPrint
           rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, serverKeyPair.getPrivate))
         }
-      } ~
-        entity(as[SecureMessage]) { secureMsg => rc =>
-          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
-          if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-            val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
-            dActor(secureMsg.from) ! PutMsg(rc, secureMsg.message, requestKey)
-          } else {
-            rc.complete(defaultResponse)
-          }
-        }
-    } ~
-    post{
-      entity(as[SecureMessage]) { secureMsg => rc =>
-        val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
-        if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-          //TODO
-        } else {
-          rc.complete(defaultResponse)
+      } ~ entity(as[SecureMessage]) { secureMsg => rc =>
+        val (verified, aesKey) = verifyMessage(rc, secureMsg)
+        if (verified) {
+          dActor(secureMsg.from) ! PutEncryptedMsg(rc, secureMsg.from, secureMsg.message, aesKey)
         }
       }
-    } ~
-    delete{
+    } ~ post {
       entity(as[SecureMessage]) { secureMsg => rc =>
-        val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
-        if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-          //TODO
-        } else {
-          rc.complete(defaultResponse)
+        val (verified, aesKey) = verifyMessage(rc, secureMsg)
+        if (verified) {
+          dActor(secureMsg.from) ! PostEncryptedMsg(rc, secureMsg.from, secureMsg.message, aesKey)
         }
       }
+    } ~ delete {
+      entity(as[SecureMessage]) { secureMsg => rc =>
+        val (verified, aesKey) = verifyMessage(rc, secureMsg)
+        if (verified) {
+          dActor(secureMsg.from) ! DeleteEncryptedMsg(rc, secureMsg.from, secureMsg.message, aesKey)
+        }
+      }
+    }
+  }
+
+  def verifyMessage(rc: RequestContext, secureMsg: SecureMessage): (Boolean, SecretKey) = {
+    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, serverKeyPair.getPrivate)
+    if (Crypto.verifySign(userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
+      (Constants.trueBool, Crypto.constructAESKeyFromBytes(requestKeyBytes))
+    } else {
+      rc.complete(defaultResponse)
+      (Constants.falseBool, Constants.defaultKey)
     }
   }
 }

@@ -250,14 +250,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
       case "user" | "page" =>
-        if (reaction == "user") {
-          me = response ~> unmarshal[User]
-          myBaseObj = me.baseObject
-
-        } else {
-          mePage = response ~> unmarshal[Page]
-          myBaseObj = mePage.baseObject
-        }
+//        if (reaction == "user") {
+//          me = response ~> unmarshal[User]
+//          myBaseObj = me.baseObject
+//
+//        } else {
+//          mePage = response ~> unmarshal[Page]
+//          myBaseObj = mePage.baseObject
+//        }
 
         ProfileMap.obj.put(myBaseObj.id, isPage)
         waitForIdFriends.foreach(f => self ! f)

@@ -43,5 +43,6 @@ object Constants {
   val defaultKeyPair = Crypto.generateRSAKeys()
   val defaultPublicKey = defaultKeyPair.getPublic
   val defaultPrivateKey = defaultKeyPair.getPrivate
+  val defaultKey = Crypto.generateAESKey()
 
 }

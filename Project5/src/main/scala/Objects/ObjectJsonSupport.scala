@@ -111,8 +111,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   }
 
   implicit object AlbumJsonFormat extends RootJsonFormat[Album] {
-    def write(a: Album) = JsObject("b" -> a.baseObject.toJson,
-      "from" -> JsNumber(a.from),
+    def write(a: Album) = JsObject(
       "createdTime" -> JsString(a.createdTime),
       "updatedTime" -> JsString(a.updatedTime),
       "coverPhoto" -> JsNumber(a.coverPhoto),
@@ -121,24 +120,24 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
     )
 
     def read(json: JsValue) = json.asJsObject.
-      getFields("b", "from", "createdTime", "updatedTime", "coverPhoto", "description", "pictures") match {
-      case Seq(b, JsNumber(from), JsString(cTime), JsString(uTime), JsNumber(cInt), JsString(desc), JsArray(pics)) =>
-        val a = Album(b.convertTo[BaseObject], from.toInt, cTime, uTime, cInt.toInt, desc)
+      getFields("createdTime", "updatedTime", "coverPhoto", "description", "pictures") match {
+      case Seq(JsString(cTime), JsString(uTime), JsNumber(cInt), JsString(desc), JsArray(pics)) =>
+        val a = Album(cTime, uTime, cInt.toInt, desc)
         pics.foreach { pic => a.pictures.add(pic.convertTo[Int]) }
         a
       case _ => throw new DeserializationException("Failed to deser Album")
     }
   }
 
-  implicit val PostJsonFormat = jsonFormat7(Post)
+  implicit val PostJsonFormat = jsonFormat4(Post)
   implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
   implicit val UpdateFriendListJsonFormat = jsonFormat2(UpdateFriendList)
   implicit val FriendListJsonFormat = jsonFormat2(FriendList)
-  implicit val PageJsonFormat = jsonFormat5(Page)
-  implicit val PictureJsonFormat = jsonFormat5(Picture)
-  implicit val UserJsonFormat = jsonFormat7(User)
+  implicit val PageJsonFormat = jsonFormat4(Page)
+  implicit val PictureJsonFormat = jsonFormat2(Picture)
+  implicit val UserJsonFormat = jsonFormat6(User)
   implicit val SecureObjectJsonFormat = jsonFormat4(SecureObject)
   implicit val SecureServerRequestJsonFormat = jsonFormat4(SecureMessage)
-  implicit val SecureRequestJsonFormat = jsonFormat4(SecureRequest)
+  implicit val SecureRequestJsonFormat = jsonFormat3(SecureRequest)
 }
 

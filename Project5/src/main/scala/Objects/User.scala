@@ -1,7 +1,6 @@
 package Objects
 
 case class User(
-                 baseObject: BaseObject,
                  about: String,
                  birthday: String,
                  gender: Char,
