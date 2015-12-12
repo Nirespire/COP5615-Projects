@@ -4,18 +4,20 @@ import java.security.PublicKey
 
 import Client.ClientType.ClientType
 import Client.Messages._
+import Objects.ObjectTypes.ObjectType
 import Utils.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
 import Server.Messages.ResponseMessage
-import Utils.{Base64Util, Crypto, Constants}
+import Utils.{Resources, Base64Util, Crypto, Constants}
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import spray.client.pipelining
 import spray.client.pipelining._
 import spray.http.HttpResponse
+import spray.http.StatusCodes._
 import spray.json._
 
 import scala.collection.mutable
@@ -89,8 +91,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case MakeFriend(id) =>
 
 
-
-
     case PutMsg(response, reaction) => handlePutResponse(response, reaction)
     case GetMsg(response, reaction) => handleGetResponse(response, reaction)
     case PostMsg(response, reaction) =>
@@ -113,12 +113,69 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
   def registerMyself() = {
+    val pipeline = sendReceive
 
-    if (isPage) {
-
-    } else {
-
+    val future = pipeline {
+      pipelining.Get(s"http://$serviceHost:$servicePort/server_key")
     }
+
+    future onComplete {
+      case Success(response) =>
+        val returnBytes = response ~> unmarshal[Array[Byte]]
+        serverPublicKey = Crypto.constructRSAPublicKeyFromBytes(returnBytes)
+
+        val future2 = pipeline {
+          pipelining.Put(s"http://$serviceHost:$servicePort/register", keyPair.getPublic.getEncoded)
+        }
+
+        future2 onComplete {
+          case Success(response) =>
+            val secureMsg = response ~> unmarshal[SecureMessage]
+            val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+            if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
+              val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+              val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
+              myBaseObj = BaseObject(id = Base64Util.decodeString(requestJson).toInt)
+
+
+              if (isPage) {
+                val newPage = Page("about", Resources.getRandomPageCategory(), -1, keyPair.getPublic.getEncoded)
+                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.page.id, newPage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+                val future3 = pipeline {
+                  pipelining.Put(s"http://$serviceHost:$servicePort/page", secureMessage)
+                }
+
+                future3 onComplete {
+                  case Success(response) =>
+                  case Failure(error) => log.error(error, s"Couldn't put Page")
+                }
+              }
+
+              else {
+                val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+                val newUser = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), keyPair.getPublic.getEncoded)
+                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.user.id, newUser.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+                val future3 = pipeline {
+                  pipelining.Put(s"http://$serviceHost:$servicePort/user", secureMessage)
+                }
+
+                future3 onComplete {
+                  case Success(response) =>
+                    //TODO
+                    //TODO self ! false
+                    //TODO
+                  case Failure(error) => log.error(error, s"Couldn't put User")
+                }
+              }
+            }
+          case Failure(error) => log.error(error, s"Couldn't register")
+        }
+      case Failure(error) => log.error(error, s"Couldn't get server_key")
+    }
+
+
   }
 
 
@@ -235,8 +292,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     context.system.scheduler.scheduleOnce(randomDuration(3), self, Constants.falseBool)
     // Delete case
     if (random(100001) < 5) {
-//      if (isPage)
-//      else
+      //      if (isPage)
+      //      else
     }
   }
 
@@ -250,14 +307,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
       case "user" | "page" =>
-//        if (reaction == "user") {
-//          me = response ~> unmarshal[User]
-//          myBaseObj = me.baseObject
-//
-//        } else {
-//          mePage = response ~> unmarshal[Page]
-//          myBaseObj = mePage.baseObject
-//        }
+        //        if (reaction == "user") {
+        //          me = response ~> unmarshal[User]
+        //          myBaseObj = me.baseObject
+        //
+        //        } else {
+        //          mePage = response ~> unmarshal[Page]
+        //          myBaseObj = mePage.baseObject
+        //        }
 
         ProfileMap.obj.put(myBaseObj.id, isPage)
         waitForIdFriends.foreach(f => self ! f)

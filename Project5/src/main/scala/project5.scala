@@ -1,3 +1,4 @@
+import Client.{ClientType, MatchMaker}
 import Server.Actors.RootServerActor
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
@@ -24,4 +25,39 @@ object project5 extends App {
   IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
   Thread.sleep(1000)
+
+  if (numClients > 0) {
+    println("Running with " + numClients + " clients")
+    println("Start clients!")
+
+    // Start up actor system of clients
+    val clientSystem = ActorSystem("client-spray-system")
+
+    val matchmaker = clientSystem.actorOf(Props(new MatchMaker), "MatchMaker")
+
+    val numActive = (0.15 * numClients).toInt
+    val numPassive = (0.80 * numClients).toInt
+    val numCelebrity = numClients - numActive + numPassive
+
+    (1 to numActive).foreach { idx =>
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false, ClientType.Active)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
+    }
+
+    (numActive + 1 to numActive + numPassive).foreach { idx =>
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(false, ClientType.Passive)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
+    }
+
+    (numActive + numPassive + 1 to numClients).foreach { idx =>
+      val actor = clientSystem.actorOf(Props(new Client.ClientActor(true, ClientType.ContentCreator)), "client" + idx)
+      matchmaker ! actor
+      actor ! true
+    }
+
+    matchmaker ! true
+    println("End Loop")
+  }
 }
