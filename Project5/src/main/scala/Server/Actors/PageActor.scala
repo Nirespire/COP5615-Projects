@@ -17,5 +17,5 @@ class PageActor(var page: SecureObject, debugInfo: DebugInfo)
     case _ =>
   }
 
-  override def receive = pageReceive orElse super.receive
+  override def receive = /*pageReceive orElse*/ super.receive
 }

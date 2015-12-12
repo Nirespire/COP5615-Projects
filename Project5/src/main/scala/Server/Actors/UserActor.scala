@@ -17,5 +17,5 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
     case _ =>
   }
 
-  override def receive = userReceive orElse super.receive
+  override def receive = /*userReceive orElse*/ super.receive
 }

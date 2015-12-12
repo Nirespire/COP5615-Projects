@@ -139,8 +139,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
 
               if (isPage) {
-                val newPage = Page("about", Resources.getRandomPageCategory(), -1, keyPair.getPublic.getEncoded)
-                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.page.id, newPage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                mePage = Page("about", Resources.getRandomPageCategory(), -1, keyPair.getPublic.getEncoded)
+                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.page.id, mePage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
                   pipelining.Put(s"http://$serviceHost:$servicePort/page", secureMessage)
@@ -154,8 +154,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
               else {
                 val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
-                val newUser = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), keyPair.getPublic.getEncoded)
-                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.user.id, newUser.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                me = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), keyPair.getPublic.getEncoded)
+                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.user.id, me.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
                   pipelining.Put(s"http://$serviceHost:$servicePort/user", secureMessage)

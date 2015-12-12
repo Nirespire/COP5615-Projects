@@ -34,7 +34,8 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
   def baseObject: BaseObject
 
   def receive = {
-    case PutSecureObjMsg(rc, secureObj) => put(rc, secureObj)
+    case PutSecureObjMsg(rc, secureObj) =>
+      put(rc, secureObj)
     case PostSecureObjMsg(rc, secureObj) => post(rc, secureObj)
     case DeleteSecureObjMsg(rc, secureRequest) => delete(rc, secureRequest)
     case x => log.info(s"Unhandled case : $x")

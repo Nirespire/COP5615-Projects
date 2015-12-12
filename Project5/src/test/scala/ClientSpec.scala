@@ -138,7 +138,9 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post UpdateFriendList by User1" - {
     "when calling Post /addFriend" - {
       "should add a profile to that user's friend list and allow them to view that user's content" in {
-
+        Post("/addfriend") ~> myRoute ~> check {
+          status should equal(OK)
+        }
       }
     }
   }
