@@ -97,13 +97,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         returnHandshake.add(sender)
       } else {
         myRealFriends.put(sender, id)
-        self ! MakeFriend(id)
         if (needResponse) {
+          self ! MakeFriend(id)
           sender ! Handshake(Constants.falseBool, myBaseObj.id)
         }
       }
     case MakeFriend(id) =>
-
+      // TODO Post("/addFriend")
+      // SecureMessage(SecureRequest(friendID))
 
     case PutMsg(response, reaction) => handlePutResponse(response, reaction)
     case GetMsg(response, reaction) => handleGetResponse(response, reaction)

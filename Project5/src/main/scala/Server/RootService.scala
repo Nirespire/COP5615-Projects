@@ -68,7 +68,13 @@ trait RootService extends HttpService {
         entity(as[SecureMessage]) { secureMsg => rc =>
           val (verified, aesKey) = verifyMessage(rc, secureMsg)
           if (verified) {
-
+            // TODO get public key
+            // TODO POST for user and page
+            // TODO handle addFriend
+            // TODO handle likes
+            // TODO create artificial illegal requests, generate random from and record in debug
+            // TODO client GET and DELETE = SecureMessage(SecureRequest))
+            // TODO client request within simulator to get access to old object
           }
         }
       }
