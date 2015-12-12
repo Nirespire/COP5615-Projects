@@ -23,7 +23,6 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
       ObjectType(secureObj.objectType) match {
         case ObjectType.user =>
           debugInfo.debugVar(Constants.putProfilesChar) += 1
-          log.info(pid.toString)
           profiles.put(pid, context.actorOf(Props(new UserActor(secureObj, debugInfo))))
           rc.complete(pid.toString)
         case ObjectType.page =>

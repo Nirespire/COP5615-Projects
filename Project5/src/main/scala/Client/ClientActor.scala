@@ -5,6 +5,8 @@ import java.security.PublicKey
 import Client.ClientType.ClientType
 import Client.Messages._
 import Objects.ObjectTypes.ObjectType
+import Objects.ObjectTypes.ObjectType
+import Objects.ObjectTypes.ObjectType.ObjectType
 import Utils.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
@@ -65,10 +67,22 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case true => registerMyself()
     case false if !myBaseObj.deleted => activity()
     case MakePost(postType, attachmentID) =>
+      val newPost = Objects.Post(new DateTime().toString(), statuses(Random.nextInt(statuses.length)), postType, attachmentID)
+      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
+      put(createSecureObjectMessage(newPost, ObjectType.post, keys), "post")
     case MakePicturePost =>
+      val newPicture = Picture("filename", "")
+      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
+      put(createSecureObjectMessage(newPicture, ObjectType.picture, keys), "picturepost")
     case MakePicture(albumID) =>
+      val newPicture = Picture("filename", "")
+      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
+      put(createSecureObjectMessage(newPicture, ObjectType.picture, keys), "picture")
     case AddPictureToAlbum =>
     case MakeAlbum =>
+      val newAlbum = Album(new DateTime().toString, new DateTime().toString, -1, "album desc")
+      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
+      put(createSecureObjectMessage(newAlbum, ObjectType.album, keys), "album")
     // From matchmaker
     case aNewFriend: ActorRef =>
       if (myBaseObj == null) {
@@ -148,6 +162,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
                 future3 onComplete {
                   case Success(response) =>
+                    self ! false
                   case Failure(error) => log.error(error, s"Couldn't put Page")
                 }
               }
@@ -163,9 +178,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
                 future3 onComplete {
                   case Success(response) =>
-                    //TODO
-                    //TODO self ! false
-                    //TODO
+                    self ! false
                   case Failure(error) => log.error(error, s"Couldn't put User")
                 }
               }
@@ -174,8 +187,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
       case Failure(error) => log.error(error, s"Couldn't get server_key")
     }
-
-
   }
 
 
@@ -192,7 +203,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def put(json: SecureObject, route: String, inputReaction: String = ""): Unit = {
+  def put(json: SecureMessage, route: String, inputReaction: String = ""): Unit = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
@@ -218,7 +229,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def post(json: SecureObject, route: String, inputReaction: String = "") = {
+  def post(json: SecureMessage, route: String, inputReaction: String = "") = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
@@ -231,7 +242,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def delete(json: SecureObject, route: String, inputReaction: String = "") = {
+  def delete(json: SecureMessage, route: String, inputReaction: String = "") = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
@@ -245,16 +256,16 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   }
 
   def activity() = {
-    //      log.info(myBaseObj.id + " starting activity")
-    if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
+    //    log.info(myBaseObj.id + " starting activity")
+    //    if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
 
-    if (random(1001) <= 5) {
-      random(3) match {
-        case 0 => if (numPosts > 0) get(s"post/${myBaseObj.id}/${random(numPosts) + 2}", "postdelete")
-        case 1 => if (numAlbums > 0) get(s"album/${myBaseObj.id}/${random(numAlbums) + 2}", "albumdelete")
-        case 2 => if (numPictures > 0) get(s"picture/${myBaseObj.id}/${random(numPictures) + 2}", "picturedelete")
-      }
-    }
+    //    if (random(1001) <= 5) {
+    //      random(3) match {
+    //        case 0 => if (numPosts > 0) get(s"post/${myBaseObj.id}/${random(numPosts) + 2}", "postdelete")
+    //        case 1 => if (numAlbums > 0) get(s"album/${myBaseObj.id}/${random(numAlbums) + 2}", "albumdelete")
+    //        case 2 => if (numPictures > 0) get(s"picture/${myBaseObj.id}/${random(numPictures) + 2}", "picturedelete")
+    //      }
+    //    }
 
     if (random(101) < putPercent) {
       random(4) match {
@@ -265,29 +276,29 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
 
-    if (random(101) < getPercent) {
-      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
-        if (ProfileMap.obj(id)) {
-          get(s"page/$id", "page")
-        } else {
-          get(s"user/$id", "user")
-          if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
-        }
-        if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
-        if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
-      }
-    }
+    //    if (random(101) < getPercent) {
+    //      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
+    //        if (ProfileMap.obj(id)) {
+    //          get(s"page/$id", "page")
+    //        } else {
+    //          get(s"user/$id", "user")
+    //          if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
+    //        }
+    //        if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+    //        if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+    //      }
+    //    }
 
-    if (random(101) < friendPercent) {
-      context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
-    }
+    //    if (random(101) < friendPercent) {
+    //      context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
+    //    }
 
-    if (random(101) < updatePercent) {
-      context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
-      if (numAlbums > 0) {
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, AddPictureToAlbum)
-      }
-    }
+    //    if (random(101) < updatePercent) {
+    //      context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
+    //      if (numAlbums > 0) {
+    //        context.system.scheduler.scheduleOnce(randomDuration(3), self, AddPictureToAlbum)
+    //      }
+    //    }
 
     context.system.scheduler.scheduleOnce(randomDuration(3), self, Constants.falseBool)
     // Delete case
@@ -324,12 +335,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         //          log.info(s"Printing $me - $myBaseObj")
         self ! Constants.falseBool
         if (myBaseObj.id == 0) get("debug")
-        if (updateRequest) post(response.entity.asString.parseJson.asInstanceOf[SecureObject], "profile")
+        if (updateRequest) post(response.entity.asString.parseJson.asInstanceOf[SecureMessage], "profile")
       case "post" =>
         numPosts += 1
       case "album" =>
         numAlbums += 1
-      case "picturePost" =>
+      case "picturepost" =>
         numPictures += 1
       case "picture" =>
         numPictures += 1
@@ -340,9 +351,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   def handleGetResponse(response: HttpResponse, reaction: String) = {
     reaction match {
-      case "postdelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureObject], "post")
-      case "albumdelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureObject], "album")
-      case "picturedelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureObject], "picture")
+      case "postdelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureMessage], "post")
+      case "albumdelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureMessage], "album")
+      case "picturedelete" => delete(response.entity.asString.parseJson.asInstanceOf[SecureMessage], "picture")
       case "debug" =>
         log.info(s"${response.entity.asString}")
         context.system.scheduler.scheduleOnce(durationSeconds(2), self, DebugMsg)
@@ -355,6 +366,20 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       case "getalbumaddpicture" =>
       case "album" =>
       case x => log.error("Unmatched getmsg case {}", x)
+    }
+  }
+
+  def createSecureObjectMessage(obj: Any, objType: ObjectType, keys: Map[String, PublicKey]): SecureMessage = {
+    objType match {
+      case ObjectType.post =>
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
+        Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+      case ObjectType.picture =>
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.picture.id, obj.asInstanceOf[Picture].toJson.compactPrint, keys)
+        Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+      case ObjectType.album =>
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.album.id, obj.asInstanceOf[Album].toJson.compactPrint, keys)
+        Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
     }
   }
 }
