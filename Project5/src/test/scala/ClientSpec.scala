@@ -16,7 +16,7 @@ import scala.util.Random
 class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with RootService {
   def actorRefFactory = system
 
-  var serverKey: PublicKey = null
+  var serverPublicKey: PublicKey = null
   var user1Id = -1
   var user2Id = -1
   var myPageId = -1
@@ -31,7 +31,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           val returnObject = responseAs[Array[Byte]]
           println(Base64Util.encodeString(returnObject))
-          serverKey = Crypto.constructRSAPublicKeyFromBytes(returnObject)
+          serverPublicKey = Crypto.constructRSAPublicKeyFromBytes(returnObject)
         }
       }
     }
@@ -44,7 +44,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user1KeyPair.getPrivate)
-          Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
           user1Id = Base64Util.decodeString(requestJson).toInt
@@ -61,7 +61,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObj = new BaseObject(id = user1Id)
         val userObject = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
         val secureObject = Crypto.constructSecureObject(baseObj, user1Id, user1Id, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
         Put("/user", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -77,7 +77,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
-          Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
           user2Id = Base64Util.decodeString(requestJson).toInt
@@ -94,7 +94,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObj = new BaseObject(id = user2Id)
         val userObject = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user2KeyPair.getPublic.getEncoded)
         val secureObject = Crypto.constructSecureObject(baseObj, user2Id, user2Id, ObjectType.user.id, userObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
         Put("create", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -110,7 +110,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, pageKeyPair.getPrivate)
-          Crypto.verifySign(serverKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV)
           myPageId = Base64Util.decodeString(requestJson).toInt
@@ -126,7 +126,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObj = new BaseObject(id = myPageId)
         val pageObject = Page("about", Resources.getRandomPageCategory(), -1, pageKeyPair.getPublic.getEncoded)
         val secureObject = Crypto.constructSecureObject(baseObj, myPageId, myPageId, ObjectType.page.id, pageObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverPublicKey, pageKeyPair.getPrivate)
         Put("/create", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -152,7 +152,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObject = new BaseObject()
         val postObject = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), PostType.status, -1)
         val secureObject = Crypto.constructSecureObject(baseObject, user1Id, user1Id, ObjectType.post.id, postObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
 
         Put("/post", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
@@ -171,7 +171,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val postObject = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), PostType.status, -1)
         val secureObject = Crypto.constructSecureObject(baseObject, user2Id, user1Id, ObjectType.post.id, postObject.toJson.compactPrint,
           Map(user1Id.toString -> user1KeyPair.getPublic, user2Id.toString -> user2KeyPair.getPublic, myPageId.toString -> pageKeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
 
         Put("/post", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
@@ -189,7 +189,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObject = new BaseObject()
         val postObject = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), PostType.status, -1)
         val secureObject = Crypto.constructSecureObject(baseObject, myPageId, myPageId, ObjectType.post.id, postObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverPublicKey, pageKeyPair.getPrivate)
 
         Put("/post", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
@@ -205,7 +205,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObject = BaseObject()
         val pictureObject = Picture("filename.png", "")
         val secureObject = Crypto.constructSecureObject(baseObject, user2Id, user2Id, ObjectType.post.id, pictureObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
         Put("/post", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -221,7 +221,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObject = BaseObject()
         val albumObject = Album(new DateTime().toString, new DateTime().toString, -1, "desc")
         val secureObject = Crypto.constructSecureObject(baseObject, user2Id, user2Id, ObjectType.post.id, albumObject.toJson.compactPrint, Map(user2Id.toString -> user2KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverKey, user2KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureObject.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
         Put("/album", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -239,7 +239,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
         val userObject = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
         val secureObject = Crypto.constructSecureObject(baseObject, user1Id, user1Id, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverKey, user1KeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
         Post("/user", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -254,7 +254,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val baseObject = BaseObject(id = myPageId)
         val pageObject = Page("about", Resources.getRandomPageCategory(), -1, pageKeyPair.getPublic.getEncoded)
         val secureObject = Crypto.constructSecureObject(baseObject, myPageId, myPageId, ObjectType.page.id, pageObject.toJson.compactPrint, Map(myPageId.toString -> pageKeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverKey, pageKeyPair.getPrivate)
+        val secureMessage = Crypto.constructSecureMessage(myPageId, secureObject.toJson.compactPrint, serverPublicKey, pageKeyPair.getPrivate)
         Post("/page", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
           println(entity)
@@ -293,16 +293,34 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   //      }
   //    }
   //  }
-  //
-  //  "Get profile 0" - {
-  //    "when getting profile 0" - {
-  //      "should return user 0 object" in {
-  //
-  //      }
-  //    }
-  //  }
-  //
-  //
+
+  "Get User1 public_key" - {
+    "when getting User1 public_key" - {
+      "should return User1 public_key" in {
+        Get("/getpublickey/" + user1Id) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+          val data = responseAs[Array[Byte]]
+          val publicKey = Crypto.constructRSAPublicKeyFromBytes(data)
+          println(publicKey)
+        }
+      }
+    }
+  }
+
+
+  "Get User1 profile by User1" - {
+    "when getting User1" - {
+      "should return User1 object" in {
+        val secureRequest = SecureRequest(user1Id, user1Id, ObjectType.user.id, user1Id)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+        Get("/user", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+        }
+      }
+    }
+  }
+
   //  "Get feed for 0" - {
   //    "when getting feed for user 0" - {
   //      "should return latest post object" in {
@@ -311,14 +329,20 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   //      }
   //    }
   //  }
-  //
-  //  "Get post 0 for 1" - {
-  //    "when getting post 0 for user 0" - {
-  //      "should return post 0 object" in {
-  //
-  //      }
-  //    }
-  //  }
+
+
+  "Get post 3 for User1 from User2" - {
+    "when getting post 3 for User1" - {
+      "should return Post id=3 object" in {
+        val secureRequest = SecureRequest(user2Id, user1Id, ObjectType.post.id, 3)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
+        Get("/post", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+        }
+      }
+    }
+  }
+
   //  "Get album 0 for 0" - {
   //    "when getting album 0 for user 0" - {
   //      "should return album 0 object" in {
@@ -341,15 +365,19 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   //      }
   //    }
   //  }
-  //
-  //  "Delete Post" - {
-  //    "when calling DELETE /post" - {
-  //      "should return a post object" in {
-  //
-  //      }
-  //    }
-  //  }
-  //
+
+    "Delete User1's Post3 by User1" - {
+      "when calling DELETE /post" - {
+        "should return a post object" in {
+          val secureRequest = SecureRequest(user1Id, user1Id, ObjectType.post.id, 3)
+          val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+          Delete("/post", secureMessage) ~> myRoute ~> check {
+            status should equal(OK)
+          }
+        }
+      }
+    }
+
   //  "Delete Picture" - {
   //    "when calling DELETE /picture" - {
   //      "should return a picture object" in {

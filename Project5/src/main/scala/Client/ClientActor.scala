@@ -383,4 +383,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
     }
   }
+
+  def createSecureRequestObjectMessage(from: Int, to: Int, objType: ObjectType, objId: Int): SecureMessage = {
+    val secureRequest = SecureRequest(from, to, objType.id, objId)
+    Crypto.constructSecureMessage(myBaseObj.id, secureRequest.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+  }
 }

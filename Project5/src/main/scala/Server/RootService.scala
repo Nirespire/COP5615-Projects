@@ -69,20 +69,13 @@ trait RootService extends HttpService {
           }
         }
       } ~ path("getpublickey" / IntNumber) { pid => rc =>
-        rc.complete(
-          Crypto.constructSecureMessage(
-            Constants.serverId,
-            Constants.userPublicKeys(pid).getEncoded.toJson.compactPrint,
-            Constants.userPublicKeys(pid),
-            Constants.serverPrivateKey
-          )
-        )
+        rc.complete(Constants.userPublicKeys(pid).getEncoded)
       } ~ path("friends") {
         entity(as[SecureMessage]) { secureMsg => rc =>
           val jsonMsg = verifyMessage(secureMsg)
           if (jsonMsg.nonEmpty) {
-            // TODO get friends public key
-            // TODO POST for user and page
+            // get friends public key
+            // POST for user and page
             // TODO handle addFriend
             // TODO handle likes
             // TODO create artificial illegal requests, generate random from and record in debug
