@@ -165,7 +165,11 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
 
   def like(rc: RequestContext, secureReq: SecureRequest) = ObjectType(secureReq.objectType) match {
     case ObjectType.user =>
-      baseObject.appendLike(secureReq.to)
+      if (secureReq.from == pid) {
+        baseObject.appendLike(secureReq.to)
+      } else {
+        baseObject.appendLike(secureReq.from)
+      }
       rc.complete("Added Friend!")
     case ObjectType.page =>
       baseObject.appendLike(secureReq.from)

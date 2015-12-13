@@ -18,6 +18,16 @@ import spray.routing._
 import scala.collection.mutable
 import scala.concurrent.duration._
 
+// get friends public key
+// POST for user and page
+// handle likes
+// TODO handle only friend's allowed to request stuff from a profile
+// handle get all friends public key
+// TODO handle addFriend
+// TODO client - create artificial illegal requests, generate random from and record in debug
+// TODO client - GET and DELETE = SecureMessage(SecureRequest))
+// TODO client - request within simulator to get access to old object
+
 trait RootService extends HttpService {
   val split = 8
 
@@ -75,18 +85,20 @@ trait RootService extends HttpService {
         }
       } ~ path("getpublickey" / IntNumber) { pid => rc =>
         rc.complete(Constants.userPublicKeys(pid).getEncoded)
-      } ~ path("friends") {
+      } ~ path("friends_public_keys") {
         entity(as[SecureMessage]) { secureMsg => rc =>
           val jsonMsg = verifyMessage(secureMsg)
           if (jsonMsg.nonEmpty) {
-            // get friends public key
-            // POST for user and page
-            // TODO handle get all friends public key
-            // TODO handle addFriend
-            // TODO handle likes
-            // TODO create artificial illegal requests, generate random from and record in debug
-            // TODO client GET and DELETE = SecureMessage(SecureRequest))
-            // TODO client request within simulator to get access to old object
+            dActor(secureMsg.from) ! GetFriendKeysMsg(rc, secureMsg.from)
+          } else {
+            rc.complete(defaultResponse)
+          }
+        }
+      } ~ path("friend_requests") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            dActor(secureMsg.from) ! GetFriendRequestsMsg(rc, secureMsg.from)
           } else {
             rc.complete(defaultResponse)
           }
@@ -103,17 +115,19 @@ trait RootService extends HttpService {
           val jsonMsg = userId.toJson.compactPrint
           rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, Constants.serverPrivateKey))
         }
-      } ~ entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
-          if (secureMsg.from == secureObj.from) {
-            dActor(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
+      } ~ path("create") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
+            if (secureMsg.from == secureObj.from) {
+              dActor(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
+            } else {
+              rc.complete(defaultResponse)
+            }
           } else {
             rc.complete(defaultResponse)
           }
-        } else {
-          rc.complete(defaultResponse)
         }
       }
     } ~ post {
@@ -125,9 +139,9 @@ trait RootService extends HttpService {
             if (secureMsg.from == secureReq.from) {
               if (ObjectType(secureReq.objectType) == ObjectType.user) {
                 dActor(secureReq.from) ! LikeMsg(rc, secureReq)
-              } else {
-                dActor(secureReq.to) ! LikeMsg(rc, secureReq)
               }
+
+              dActor(secureReq.to) ! LikeMsg(rc, secureReq)
             } else {
               rc.complete(defaultResponse)
             }
@@ -135,17 +149,33 @@ trait RootService extends HttpService {
             rc.complete(defaultResponse)
           }
         }
-      } ~ entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
-          if (secureMsg.from == secureObj.from) {
-            dActor(secureObj.to) ! PostSecureObjMsg(rc, secureObj)
+      } ~ path("addfriend") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
+            if (secureMsg.from == secureReq.from) {
+              dActor(secureReq.to) ! AddFriendMsg(rc, secureReq)
+            } else {
+              rc.complete(defaultResponse)
+            }
           } else {
             rc.complete(defaultResponse)
           }
-        } else {
-          rc.complete(defaultResponse)
+        }
+      } ~ path("update") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
+            if (secureMsg.from == secureObj.from) {
+              dActor(secureObj.to) ! PostSecureObjMsg(rc, secureObj)
+            } else {
+              rc.complete(defaultResponse)
+            }
+          } else {
+            rc.complete(defaultResponse)
+          }
         }
       }
     } ~ delete {
