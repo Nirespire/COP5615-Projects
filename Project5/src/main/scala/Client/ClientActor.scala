@@ -258,6 +258,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   def activity() = {
     //    log.info(myBaseObj.id + " starting activity")
+
+    /* TODO
+    *  GET /friends_public_keys
+    *  returns SecureMessage(HashMap[String, Array[Byte])
+    *  HashMap[String, Array[Byte]) -> HashMap[String, PublicKey]
+    *  Generate create SecureObject with HashMap
+    *  PUT or POST
+    * */
     if (isPage){
       val secureMsg = createSecureRequestObjectMessage(myBaseObj.id, myBaseObj.id, ObjectType.page, myBaseObj.id)
       get(secureMsg, "request", "page")
