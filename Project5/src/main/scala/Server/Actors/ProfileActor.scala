@@ -17,25 +17,24 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
   val createdTime = new DateTime().toString()
 
   val albums = mutable.ArrayBuffer[SecureObject](
-    SecureObject(BaseObject(deletedIdx, Constants.trueBool), ObjectType.album.id, "".getBytes, Map()),
-    SecureObject(BaseObject(nothingIdx, Constants.trueBool), ObjectType.album.id, "".getBytes, Map())
+    SecureObject(BaseObject(deletedIdx, Constants.trueBool), pid, pid, ObjectType.album.id, "".getBytes, Map()),
+    SecureObject(BaseObject(nothingIdx, Constants.trueBool), pid, pid, ObjectType.album.id, "".getBytes, Map())
   )
 
   val posts = mutable.ArrayBuffer[SecureObject](
-    SecureObject(BaseObject(deletedIdx, Constants.trueBool), ObjectType.post.id, "".getBytes, Map()),
-    SecureObject(BaseObject(nothingIdx), ObjectType.post.id, "".getBytes, Map())
+    SecureObject(BaseObject(deletedIdx, Constants.trueBool), pid, pid, ObjectType.post.id, "".getBytes, Map()),
+    SecureObject(BaseObject(nothingIdx), pid, pid, ObjectType.post.id, "".getBytes, Map())
   )
 
   val pictures = mutable.ArrayBuffer[SecureObject](
-    SecureObject(BaseObject(deletedIdx, Constants.trueBool), ObjectType.picture.id, "".getBytes, Map()),
-    SecureObject(BaseObject(nothingIdx), ObjectType.picture.id, "".getBytes, Map())
+    SecureObject(BaseObject(deletedIdx, Constants.trueBool), pid, pid, ObjectType.picture.id, "".getBytes, Map()),
+    SecureObject(BaseObject(nothingIdx), pid, pid, ObjectType.picture.id, "".getBytes, Map())
   )
 
   def baseObject: BaseObject
 
   def receive = {
-    case PutSecureObjMsg(rc, secureObj) =>
-      put(rc, secureObj)
+    case PutSecureObjMsg(rc, secureObj) => put(rc, secureObj)
     case PostSecureObjMsg(rc, secureObj) => post(rc, secureObj)
     case DeleteSecureObjMsg(rc, secureRequest) => delete(rc, secureRequest)
     case x => log.info(s"Unhandled case : $x")
@@ -62,41 +61,35 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
 
   def post(rc: RequestContext, secureObj: SecureObject) = ObjectType(secureObj.objectType) match {
     case ObjectType.post =>
-      if (baseObject.deleted) {
-        rc.complete("Profile is deleted!")
+
+      val postId = secureObj.baseObj.id
+      if (posts(postId).baseObj.deleted) {
+        rc.complete("Post already deleted!")
       } else {
-        val postId = secureObj.baseObj.id
-        if (posts(postId).baseObj.deleted) {
-          rc.complete("Post already deleted!")
-        } else {
-          posts(postId) = secureObj
-          rc.complete("Post updated!")
-        }
+        posts(postId) = secureObj
+        rc.complete("Post updated!")
       }
+
     case ObjectType.picture =>
-      if (baseObject.deleted) {
-        rc.complete("Profile is deleted!")
+
+      val pictureId = secureObj.baseObj.id
+      if (pictures(pictureId).baseObj.deleted) {
+        rc.complete("Picture already deleted!")
       } else {
-        val pictureId = secureObj.baseObj.id
-        if (pictures(pictureId).baseObj.deleted) {
-          rc.complete("Picture already deleted!")
-        } else {
-          pictures(pictureId) = secureObj
-          rc.complete("Picture updated!")
-        }
+        pictures(pictureId) = secureObj
+        rc.complete("Picture updated!")
       }
+
     case ObjectType.album =>
-      if (baseObject.deleted) {
-        rc.complete("Profile is deleted!")
+
+      val albumId = secureObj.baseObj.id
+      if (albums(albumId).baseObj.deleted) {
+        rc.complete("Album already deleted!")
       } else {
-        val albumId = secureObj.baseObj.id
-        if (albums(albumId).baseObj.deleted) {
-          rc.complete("Album already deleted!")
-        } else {
-          albums(albumId) = secureObj
-          rc.complete("Album updated!")
-        }
+        albums(albumId) = secureObj
+        rc.complete("Album updated!")
       }
+
   }
 
   def delete(rc: RequestContext, secureReq: SecureRequest) = ObjectType(secureReq.objectType) match {

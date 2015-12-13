@@ -1,5 +1,9 @@
 package Utils
 
+import java.security.PublicKey
+
+import scala.collection.mutable
+
 object Constants {
   val putProfilesChar = 'P'
   val putPostsChar = 'O'
@@ -42,9 +46,14 @@ object Constants {
   val authTokenHeader = "AuthToken"
   val serverPublicKeyHeader = "ServerPublicKey"
 
+  val serverId = -1
   val defaultKeyPair = Crypto.generateRSAKeys()
   val defaultPublicKey = defaultKeyPair.getPublic
   val defaultPrivateKey = defaultKeyPair.getPrivate
   val defaultKey = Crypto.generateAESKey()
+  val serverKeyPair = Crypto.generateRSAKeys()
+  val serverPublicKey = serverKeyPair.getPublic
+  val serverPrivateKey = serverKeyPair.getPrivate
 
+  val userPublicKeys = mutable.HashMap[Int, PublicKey]()
 }

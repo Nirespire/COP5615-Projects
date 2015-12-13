@@ -87,7 +87,7 @@ class CryptoSpec extends FlatSpec with Matchers {
       val a = Album("now", "now", -1, "desc")
 
       val so = Crypto.constructSecureObject(
-        baseObject, ObjectType.album.id, a.toJson.prettyPrint, Map("0" -> pair.getPublic)
+        baseObject, 0, 0, ObjectType.album.id, a.toJson.prettyPrint, Map("0" -> pair.getPublic)
       )
 
       //      println(so)

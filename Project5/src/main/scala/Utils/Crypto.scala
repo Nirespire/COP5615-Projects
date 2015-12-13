@@ -101,6 +101,8 @@ object Crypto {
 
   def constructSecureObject(
                              baseObj: BaseObject,
+                             from: Int,
+                             to: Int,
                              objType: Int,
                              json: String,
                              publicKeys: Map[String, PublicKey]
@@ -110,6 +112,8 @@ object Crypto {
 
     SecureObject(
       baseObj,
+      from,
+      to,
       objType,
       Crypto.encryptAES(Base64Util.encodeBinary(json), aesKey, Constants.IV),
       encryptedKeys

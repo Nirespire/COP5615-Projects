@@ -69,20 +69,20 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case MakePost(postType, attachmentID) =>
       val newPost = Objects.Post(new DateTime().toString(), statuses(Random.nextInt(statuses.length)), postType, attachmentID)
       val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPost, ObjectType.post, keys), "post")
+      put(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, keys), "post")
     case MakePicturePost =>
       val newPicture = Picture("filename", "")
       val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPicture, ObjectType.picture, keys), "picturepost")
+      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, keys), "picturepost")
     case MakePicture(albumID) =>
       val newPicture = Picture("filename", "")
       val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPicture, ObjectType.picture, keys), "picture")
+      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, keys), "picture")
     case AddPictureToAlbum =>
     case MakeAlbum =>
       val newAlbum = Album(new DateTime().toString, new DateTime().toString, -1, "album desc")
       val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newAlbum, ObjectType.album, keys), "album")
+      put(createSecureObjectMessage(newAlbum, myBaseObj.id, myBaseObj.id, ObjectType.album, keys), "album")
     // From matchmaker
     case aNewFriend: ActorRef =>
       if (myBaseObj == null) {
@@ -103,8 +103,8 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
       }
     case MakeFriend(id) =>
-      // TODO Post("/addFriend")
-      // SecureMessage(SecureRequest(friendID))
+    // TODO Post("/addFriend")
+    // SecureMessage(SecureRequest(friendID))
 
     case PutMsg(response, reaction) => handlePutResponse(response, reaction)
     case GetMsg(response, reaction) => handleGetResponse(response, reaction)
@@ -155,7 +155,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
               if (isPage) {
                 mePage = Page("about", Resources.getRandomPageCategory(), -1, keyPair.getPublic.getEncoded)
-                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.page.id, mePage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                val secureObject = Crypto.constructSecureObject(myBaseObj, myBaseObj.id, myBaseObj.id, ObjectType.page.id, mePage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
                   pipelining.Put(s"http://$serviceHost:$servicePort/page", secureMessage)
@@ -171,7 +171,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
               else {
                 val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
                 me = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), keyPair.getPublic.getEncoded)
-                val secureObject = Crypto.constructSecureObject(myBaseObj, ObjectType.user.id, me.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
+                val secureObject = Crypto.constructSecureObject(myBaseObj, myBaseObj.id, myBaseObj.id, ObjectType.user.id, me.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
                   pipelining.Put(s"http://$serviceHost:$servicePort/user", secureMessage)
@@ -370,16 +370,16 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def createSecureObjectMessage(obj: Any, objType: ObjectType, keys: Map[String, PublicKey]): SecureMessage = {
+  def createSecureObjectMessage(obj: Any, from: Int, to: Int, objType: ObjectType, keys: Map[String, PublicKey]): SecureMessage = {
     objType match {
       case ObjectType.post =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
       case ObjectType.picture =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.picture.id, obj.asInstanceOf[Picture].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.picture.id, obj.asInstanceOf[Picture].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
       case ObjectType.album =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), ObjectType.album.id, obj.asInstanceOf[Album].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.album.id, obj.asInstanceOf[Album].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
     }
   }
