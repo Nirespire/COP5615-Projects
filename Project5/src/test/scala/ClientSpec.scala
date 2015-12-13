@@ -138,7 +138,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-  "Post UpdateFriendList by User1" - {
+  "User1 Requesting User2 as friend" - {
     "when calling Post /addFriend" - {
       "should add a profile to that user's friend list and allow them to view that user's content" in {
         val secureRequest = SecureRequest(user1Id, user2Id, ObjectType.user.id, -1)
@@ -150,6 +150,67 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       }
     }
   }
+
+  "User2 getting friend_requests and accepting" - {
+    "when calling Get /friend_requests by User2" - {
+      "should return friend ID's that requested you, then addfriend those ID's" in {
+        val secureRequest = SecureRequest(user2Id, user2Id, -1, -1)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
+        Get("/friend_requests", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+
+          val secureMsg = responseAs[SecureMessage]
+          secureMsg.from should equal(-1)
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+          val requestJson = Base64Util.decodeString(Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV))
+          val requestArray = JsonParser(requestJson).convertTo[Array[Int]]
+
+          requestArray.size should equal(1)
+          println(requestArray.mkString(","))
+
+          // request friend request
+          requestArray.foreach { id =>
+            val secureRequest = SecureRequest(user2Id, user1Id, ObjectType.user.id, -1)
+            val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
+            Post("/like", secureMessage) ~> myRoute ~> check {
+              status should equal(OK)
+              println(entity.data.asString)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  "User1 getting friends_public_keys" - {
+    "when calling Get /friends_public_keys by User1" - {
+      "should return all public key map of friends" in {
+        val secureRequest = SecureRequest(user1Id, user1Id, -1, -1)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+        Get("/friends_public_keys", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+
+          val secureMsg = responseAs[SecureMessage]
+          secureMsg.from should equal(-1)
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user1KeyPair.getPrivate)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
+          val requestJson = Base64Util.decodeString(Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV))
+          val requestMap = JsonParser(requestJson).convertTo[Map[String, Array[Byte]]]
+          requestMap.size should equal(1)
+
+          requestMap.foreach { case (id, keyBytes) =>
+            println(Crypto.constructRSAPublicKeyFromBytes(keyBytes))
+          }
+        }
+      }
+    }
+  }
+
 
 
   "Put Post by User1 viewable only by this user" - {
