@@ -63,80 +63,96 @@ trait RootService extends HttpService {
           val jsonMsg = verifyMessage(secureMsg)
           if (jsonMsg.nonEmpty) {
             val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
-            dActor(secureReq.to) ! GetSecureObjMsg(rc, secureReq)
+            if (secureMsg.from == secureReq.from) {
+              dActor(secureReq.to) ! GetSecureObjMsg(rc, secureReq)
+            } else {
+              rc.complete(defaultResponse)
+            }
+          } else {
+            rc.complete(defaultResponse)
+          }
+        } ~ path("getpublickey" / IntNumber) { pid => rc =>
+          rc.complete(Constants.userPublicKeys(pid).getEncoded)
+        } ~ path("friends") {
+          entity(as[SecureMessage]) { secureMsg => rc =>
+            val jsonMsg = verifyMessage(secureMsg)
+            if (jsonMsg.nonEmpty) {
+              // get friends public key
+              // POST for user and page
+              // TODO handle get all friends public key
+              // TODO handle addFriend
+              // TODO handle likes
+              // TODO create artificial illegal requests, generate random from and record in debug
+              // TODO client GET and DELETE = SecureMessage(SecureRequest))
+              // TODO client request within simulator to get access to old object
+            } else {
+              rc.complete(defaultResponse)
+            }
+          }
+        }
+      } ~ put {
+        path("register") {
+          entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
+            da.debugVar(Constants.registerChar) += 1
+            val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
+            var userId = Math.abs(random.nextInt())
+            while (Constants.userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())
+            Constants.userPublicKeys.put(userId, userPublicKey)
+            val jsonMsg = userId.toJson.compactPrint
+            rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, Constants.serverPrivateKey))
+          }
+        } ~ entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
+            if (secureMsg.from == secureObj.from) {
+              dActor(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
+            } else {
+              rc.complete(defaultResponse)
+            }
           } else {
             rc.complete(defaultResponse)
           }
         }
-      } ~ path("getpublickey" / IntNumber) { pid => rc =>
-        rc.complete(Constants.userPublicKeys(pid).getEncoded)
-      } ~ path("friends") {
+      } ~ post {
         entity(as[SecureMessage]) { secureMsg => rc =>
           val jsonMsg = verifyMessage(secureMsg)
           if (jsonMsg.nonEmpty) {
-            // get friends public key
-            // POST for user and page
-            // TODO handle addFriend
-            // TODO handle likes
-            // TODO create artificial illegal requests, generate random from and record in debug
-            // TODO client GET and DELETE = SecureMessage(SecureRequest))
-            // TODO client request within simulator to get access to old object
+            val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
+            if (secureMsg.from == secureObj.from) {
+              dActor(secureObj.to) ! PostSecureObjMsg(rc, secureObj)
+            } else {
+              rc.complete(defaultResponse)
+            }
+          } else {
+            rc.complete(defaultResponse)
+          }
+        }
+      } ~ delete {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
+            if (secureMsg.from == secureReq.from) {
+              dActor(secureReq.to) ! DeleteSecureObjMsg(rc, secureReq)
+            } else {
+              rc.complete(defaultResponse)
+            }
           } else {
             rc.complete(defaultResponse)
           }
         }
       }
-    } ~ put {
-      path("register") {
-        entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
-          da.debugVar(Constants.registerChar) += 1
-          val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
-          var userId = Math.abs(random.nextInt())
-          while (Constants.userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())
-          Constants.userPublicKeys.put(userId, userPublicKey)
-          val jsonMsg = userId.toJson.compactPrint
-          rc.complete(Crypto.constructSecureMessage(-1, jsonMsg, userPublicKey, Constants.serverPrivateKey))
-        }
-      } ~ entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
-          dActor(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
-        } else {
-          rc.complete(defaultResponse)
-        }
-      }
-    } ~ post {
-      entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]
-          dActor(secureObj.to) ! PostSecureObjMsg(rc, secureObj)
-        } else {
-          rc.complete(defaultResponse)
-        }
-      }
-    } ~ delete {
-      entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
-          dActor(secureReq.to) ! DeleteSecureObjMsg(rc, secureReq)
-        } else {
-          rc.complete(defaultResponse)
-        }
-      }
     }
-  }
 
-  def verifyMessage(secureMsg: SecureMessage): String = {
-    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, Constants.serverPrivateKey)
-    if (Crypto.verifySign(Constants.userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-      Base64Util.decodeString(
-        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
-      )
-    } else {
-      ""
+    def verifyMessage(secureMsg: SecureMessage): String = {
+      val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, Constants.serverPrivateKey)
+      if (Crypto.verifySign(Constants.userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
+        Base64Util.decodeString(
+          Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+        )
+      } else {
+        ""
+      }
     }
   }
-}
