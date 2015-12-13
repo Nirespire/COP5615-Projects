@@ -21,9 +21,9 @@ import scala.concurrent.duration._
 // get friends public key
 // POST for user and page
 // handle likes
-// TODO handle only friend's allowed to request stuff from a profile
 // handle get all friends public key
-// TODO handle addFriend
+// handle addFriend
+// TODO handle only friend's allowed to request stuff from a profile
 // TODO client - create artificial illegal requests, generate random from and record in debug
 // TODO client - GET and DELETE = SecureMessage(SecureRequest))
 // TODO client - request within simulator to get access to old object
@@ -179,17 +179,19 @@ trait RootService extends HttpService {
         }
       }
     } ~ delete {
-      entity(as[SecureMessage]) { secureMsg => rc =>
-        val jsonMsg = verifyMessage(secureMsg)
-        if (jsonMsg.nonEmpty) {
-          val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
-          if (secureMsg.from == secureReq.from) {
-            dActor(secureReq.to) ! DeleteSecureObjMsg(rc, secureReq)
+      path("delete") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
+            if (secureMsg.from == secureReq.from) {
+              dActor(secureReq.to) ! DeleteSecureObjMsg(rc, secureReq)
+            } else {
+              rc.complete(defaultResponse)
+            }
           } else {
             rc.complete(defaultResponse)
           }
-        } else {
-          rc.complete(defaultResponse)
         }
       }
     }

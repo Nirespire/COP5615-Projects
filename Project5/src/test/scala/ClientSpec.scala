@@ -424,11 +424,11 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   //  }
 
   "Delete User1's Post3 by User1" - {
-    "when calling DELETE /post" - {
+    "when calling DELETE /delete" - {
       "should return a post object" in {
         val secureRequest = SecureRequest(user1Id, user1Id, ObjectType.post.id, 3)
         val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
-        Delete("/post", secureMessage) ~> myRoute ~> check {
+        Delete("/delete", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
         }
       }
