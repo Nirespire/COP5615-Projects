@@ -117,7 +117,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       } catch {
         case e: Throwable => log.error(e, "Error for response {}", response)
       }
-    case DebugMsg => get("debug")
+    case DebugMsg => get(null, "debug")
 
     case DeleteMsg(response, reaction) =>
       reaction match {
@@ -217,11 +217,11 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def get(route: String, inputReaction: String = "") = {
+  def get(json: SecureMessage, route: String, inputReaction: String = "") = {
     val reaction = if (inputReaction.nonEmpty) inputReaction else route
     val pipeline = sendReceive
     val future = pipeline {
-      pipelining.Get(s"http://$serviceHost:$servicePort/$route")
+      pipelining.Get(s"http://$serviceHost:$servicePort/$route", json)
     }
 
     future onComplete {
@@ -258,7 +258,14 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
   def activity() = {
     //    log.info(myBaseObj.id + " starting activity")
-    //    if (isPage) get(s"page/${myBaseObj.id}", "page") else get(s"user/${myBaseObj.id}", "user")
+    if (isPage){
+      val secureMsg = createSecureRequestObjectMessage(myBaseObj.id, myBaseObj.id, ObjectType.page, myBaseObj.id)
+      get(secureMsg, "request", "page")
+    }
+    else{
+      val secureMsg = createSecureRequestObjectMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, myBaseObj.id)
+      get(secureMsg, "request", "user")
+    }
 
     //    if (random(1001) <= 5) {
     //      random(3) match {
@@ -277,18 +284,18 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
 
-    //    if (random(101) < getPercent) {
-    //      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
-    //        if (ProfileMap.obj(id)) {
-    //          get(s"page/$id", "page")
-    //        } else {
-    //          get(s"user/$id", "user")
-    //          if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
-    //        }
-    //        if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
-    //        if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
-    //      }
-    //    }
+//    if (random(101) < getPercent) {
+//      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
+//        if (ProfileMap.obj(id)) {
+//          get(s"page/$id", "page")
+//        } else {
+//          get(s"user/$id", "user")
+//          if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
+//        }
+//        if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+//        if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+//      }
+//    }
 
     //    if (random(101) < friendPercent) {
     //      context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
@@ -335,7 +342,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         returnHandshake.clear()
         //          log.info(s"Printing $me - $myBaseObj")
         self ! Constants.falseBool
-        if (myBaseObj.id == 0) get("debug")
+        if (myBaseObj.id == 0) get(null, "debug")
         if (updateRequest) post(response.entity.asString.parseJson.asInstanceOf[SecureMessage], "profile")
       case "post" =>
         numPosts += 1
@@ -358,7 +365,10 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       case "debug" =>
         log.info(s"${response.entity.asString}")
         context.system.scheduler.scheduleOnce(durationSeconds(2), self, DebugMsg)
-      case "user" | "page" =>
+      case "user" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage],ObjectType.user)
+      case "page" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage],ObjectType.page)
       case "friendlist" =>
       case "feed" =>
       case "feedpost" =>
@@ -387,5 +397,25 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def createSecureRequestObjectMessage(from: Int, to: Int, objType: ObjectType, objId: Int): SecureMessage = {
     val secureRequest = SecureRequest(from, to, objType.id, objId)
     Crypto.constructSecureMessage(myBaseObj.id, secureRequest.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
+  }
+
+  def decryptSecureObjectMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
+
+    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+    if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
+      val json = Base64Util.decodeString(
+        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+      )
+      val secureObject = JsonParser(json).convertTo[SecureObject]
+      val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
+      val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+      objType match {
+        case ObjectType.user => JsonParser(objJson).convertTo[User]
+        case ObjectType.page => JsonParser(objJson).convertTo[Page]
+        case ObjectType.post => JsonParser(objJson).convertTo[Post]
+        case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
+        case ObjectType.album => JsonParser(objJson).convertTo[Album]
+      }
+    }
   }
 }

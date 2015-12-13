@@ -43,6 +43,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/register", user1KeyPair.getPublic.getEncoded) ~> myRoute ~> check {
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
+          secureMsg.from should equal(-1)
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user1KeyPair.getPrivate)
           Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
@@ -76,6 +77,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/register", user2KeyPair.getPublic.getEncoded) ~> myRoute ~> check {
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
+          secureMsg.from should equal(-1)
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
           Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
@@ -109,6 +111,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         Put("/register", pageKeyPair.getPublic.getEncoded) ~> myRoute ~> check {
           status should equal(OK)
           val secureMsg = responseAs[SecureMessage]
+          secureMsg.from should equal(-1)
           val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, pageKeyPair.getPrivate)
           Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
@@ -164,12 +167,32 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-  "Put Post by User1 viewable by all others" - {
+  "Put Post by User1 trying to pose as User2" - {
     "when calling PUT /post" - {
-      "should return a post object viewable this user, user2, and page" in {
+      "should FAIL, return defaultResponse" in {
         val baseObject = new BaseObject()
         val postObject = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), PostType.status, -1)
+        // FROM in secureMessage != from in secureObject
         val secureObject = Crypto.constructSecureObject(baseObject, user2Id, user1Id, ObjectType.post.id, postObject.toJson.compactPrint,
+          Map(user1Id.toString -> user1KeyPair.getPublic, user2Id.toString -> user2KeyPair.getPublic, myPageId.toString -> pageKeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+
+        Put("/post", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+
+          // TODO do 2 gets here, both should succeed
+        }
+      }
+    }
+  }
+
+  "Put Post by User1 viewable by all others" - {
+    "when calling PUT /post" - {
+      "should FAIL, return defaultResponse" in {
+        val baseObject = new BaseObject()
+        val postObject = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), PostType.status, -1)
+        val secureObject = Crypto.constructSecureObject(baseObject, user1Id, user1Id, ObjectType.post.id, postObject.toJson.compactPrint,
           Map(user1Id.toString -> user1KeyPair.getPublic, user2Id.toString -> user2KeyPair.getPublic, myPageId.toString -> pageKeyPair.getPublic))
         val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
 
@@ -357,6 +380,22 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
         Get("/request", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
+          println(entity)
+          val secureMsg = responseAs[SecureMessage]
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val json = Base64Util.decodeString(
+            Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+          )
+          val secureObject = JsonParser(json).convertTo[SecureObject]
+
+          val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(user2Id.toString), user2KeyPair.getPrivate))
+
+          val userJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+
+          val postObj = JsonParser(userJson).convertTo[Post]
+
+          println(postObj)
         }
       }
     }

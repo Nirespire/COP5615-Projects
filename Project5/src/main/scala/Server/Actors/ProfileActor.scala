@@ -127,7 +127,7 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
           Crypto.constructSecureMessage(
             Constants.serverId,
             posts(postId).toJson.compactPrint,
-            Constants.userPublicKeys(baseObject.id),
+            Constants.userPublicKeys(secureReq.from),
             Constants.serverPrivateKey
           )
         )
@@ -141,7 +141,7 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
           Crypto.constructSecureMessage(
             Constants.serverId,
             pictures(pictureId).toJson.compactPrint,
-            Constants.userPublicKeys(baseObject.id),
+            Constants.userPublicKeys(secureReq.from),
             Constants.serverPrivateKey
           )
         )
@@ -155,7 +155,7 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
           Crypto.constructSecureMessage(
             Constants.serverId,
             albums(albumId).toJson.compactPrint,
-            Constants.userPublicKeys(baseObject.id),
+            Constants.userPublicKeys(secureReq.from),
             Constants.serverPrivateKey
           )
         )
