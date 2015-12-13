@@ -144,15 +144,16 @@ trait RootService extends HttpService {
         }
       }
     }
+  }
 
-    def verifyMessage(secureMsg: SecureMessage): String = {
-      val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, Constants.serverPrivateKey)
-      if (Crypto.verifySign(Constants.userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
-        Base64Util.decodeString(
-          Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
-        )
-      } else {
-        ""
-      }
+  def verifyMessage(secureMsg: SecureMessage): String = {
+    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, Constants.serverPrivateKey)
+    if (Crypto.verifySign(Constants.userPublicKeys(secureMsg.from), secureMsg.signature, requestKeyBytes)) {
+      Base64Util.decodeString(
+        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+      )
+    } else {
+      ""
     }
   }
+}
