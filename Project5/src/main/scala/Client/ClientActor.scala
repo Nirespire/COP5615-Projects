@@ -11,7 +11,6 @@ import Utils.Resources._
 import Objects.ObjectJsonSupport._
 import Objects.ObjectTypes.PostType._
 import Objects._
-import Server.Messages.ResponseMessage
 import Utils.{Resources, Base64Util, Crypto, Constants}
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import com.typesafe.config.ConfigFactory

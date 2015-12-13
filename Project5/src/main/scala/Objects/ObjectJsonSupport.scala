@@ -1,7 +1,6 @@
 package Objects
 
 import Utils.{DebugInfo, Constants}
-import Server.Messages.ResponseMessage
 import spray.httpx.SprayJsonSupport
 import spray.json._
 
@@ -130,7 +129,6 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
   }
 
   implicit val PostJsonFormat = jsonFormat4(Post)
-  implicit val ResponseMessageJsonFormat = jsonFormat1(ResponseMessage)
   implicit val UpdateFriendListJsonFormat = jsonFormat2(UpdateFriendList)
   implicit val FriendListJsonFormat = jsonFormat2(FriendList)
   implicit val PageJsonFormat = jsonFormat4(Page)
