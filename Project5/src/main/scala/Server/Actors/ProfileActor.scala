@@ -40,6 +40,7 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
     case PutSecureObjMsg(rc, secureObj) => put(rc, secureObj)
     case PostSecureObjMsg(rc, secureObj) => post(rc, secureObj)
     case DeleteSecureObjMsg(rc, secureRequest) => delete(rc, secureRequest)
+    case LikeMsg(rc, secureRequest) => like(rc, secureRequest)
     case x => log.info(s"Unhandled case : $x")
   }
 
@@ -59,7 +60,6 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
       albums.append(secureObj)
       debugInfo.debugVar(Constants.putAlbumsChar) += 1
       rc.complete((albums.size - 1).toString)
-    case ObjectType.updateFriendList =>
   }
 
   def post(rc: RequestContext, secureObj: SecureObject) = ObjectType(secureObj.objectType) match {
@@ -159,6 +159,40 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
             Constants.serverPrivateKey
           )
         )
+      }
+    case _ => rc.complete("NotImplemented")
+  }
+
+  def like(rc: RequestContext, secureReq: SecureRequest) = ObjectType(secureReq.objectType) match {
+    case ObjectType.user =>
+      baseObject.appendLike(secureReq.to)
+      rc.complete("Added Friend!")
+    case ObjectType.page =>
+      baseObject.appendLike(secureReq.from)
+      rc.complete("Page liked!")
+    case ObjectType.post =>
+      val postId = secureReq.getIdx
+      if (posts(postId).baseObj.deleted) {
+        rc.complete("Post already deleted!")
+      } else {
+        posts(postId).baseObj.appendLike(secureReq.from)
+        rc.complete("Post liked!")
+      }
+    case ObjectType.picture =>
+      val pictureId = secureReq.getIdx
+      if (pictures(pictureId).baseObj.deleted) {
+        rc.complete("Picture already deleted!")
+      } else {
+        pictures(pictureId).baseObj.appendLike(secureReq.from)
+        rc.complete("Picture liked!")
+      }
+    case ObjectType.album =>
+      val albumId = secureReq.getIdx
+      if (albums(albumId).baseObj.deleted) {
+        rc.complete("Album already deleted!")
+      } else {
+        albums(albumId).baseObj.appendLike(secureReq.from)
+        rc.complete("Album liked!")
       }
     case _ => rc.complete("NotImplemented")
   }

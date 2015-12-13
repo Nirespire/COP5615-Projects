@@ -3,6 +3,7 @@ package Server
 import java.security.{PublicKey, SecureRandom}
 import javax.crypto.SecretKey
 import Objects.ObjectJsonSupport._
+import Objects.ObjectTypes.ObjectType
 import Objects._
 import Server.Actors.DelegatorActor
 import Server.Messages._
@@ -116,7 +117,25 @@ trait RootService extends HttpService {
         }
       }
     } ~ post {
-      entity(as[SecureMessage]) { secureMsg => rc =>
+      path("like") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
+            if (secureMsg.from == secureReq.from) {
+              if (ObjectType(secureReq.objectType) == ObjectType.user) {
+                dActor(secureReq.from) ! LikeMsg(rc, secureReq)
+              } else {
+                dActor(secureReq.to) ! LikeMsg(rc, secureReq)
+              }
+            } else {
+              rc.complete(defaultResponse)
+            }
+          } else {
+            rc.complete(defaultResponse)
+          }
+        }
+      } ~ entity(as[SecureMessage]) { secureMsg => rc =>
         val jsonMsg = verifyMessage(secureMsg)
         if (jsonMsg.nonEmpty) {
           val secureObj = JsonParser(jsonMsg).convertTo[SecureObject]

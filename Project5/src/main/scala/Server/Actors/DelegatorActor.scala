@@ -28,6 +28,7 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
     case postMsg@PostSecureObjMsg(rc, secureObj) => profiles(secureObj.to) ! postMsg
     case delMsg@DeleteSecureObjMsg(rc, secureReq) => profiles(secureReq.to) ! delMsg
     case getMsg@GetSecureObjMsg(rc, secureReq) => profiles(secureReq.to) ! getMsg
+    case likeMsg@LikeMsg(rc, secureReq) => profiles(secureReq.to) ! likeMsg
     case x => log.error(s"Unhandled in DelegatorActor  $x")
   }
 }

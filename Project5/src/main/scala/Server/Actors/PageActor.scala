@@ -3,9 +3,10 @@ package Server.Actors
 import Objects._
 import Objects.ObjectTypes._
 import ObjectJsonSupport._
-import Server.Messages.{DeleteSecureObjMsg, GetSecureObjMsg, PostSecureObjMsg}
+import Server.Messages.{LikeMsg, DeleteSecureObjMsg, GetSecureObjMsg, PostSecureObjMsg}
 import Utils.{Constants, Crypto, DebugInfo}
 import spray.json._
+import spray.routing.RequestContext
 
 class PageActor(var page: SecureObject, debugInfo: DebugInfo)
   extends ProfileActor(page.baseObj.id, debugInfo) {
@@ -13,51 +14,17 @@ class PageActor(var page: SecureObject, debugInfo: DebugInfo)
   def baseObject = page.baseObj
 
   def pageReceive: Receive = {
-    case PostSecureObjMsg(rc, nPage@SecureObject(_, from, _, _, _, _)) if baseObject.deleted => rc.complete(
-      Crypto.constructSecureMessage(
-        Constants.serverId,
-        "Page Deleted!",
-        Constants.userPublicKeys(from),
-        Constants.serverPrivateKey
-      )
-    )
-
-    case DeleteSecureObjMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => rc.complete(
-      Crypto.constructSecureMessage(
-        Constants.serverId,
-        "Page Already Deleted!",
-        Constants.userPublicKeys(from),
-        Constants.serverPrivateKey
-      )
-    )
-    case GetSecureObjMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => rc.complete(
-      Crypto.constructSecureMessage(
-        Constants.serverId,
-        "Page Deleted!",
-        Constants.userPublicKeys(from),
-        Constants.serverPrivateKey
-      )
-    )
+    case LikeMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handlePageDeleted(rc, from)
+    case PostSecureObjMsg(rc, nPage@SecureObject(_, from, _, _, _, _)) if baseObject.deleted =>
+      handlePageDeleted(rc, from)
+    case DeleteSecureObjMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handlePageDeleted(rc, from)
+    case GetSecureObjMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handlePageDeleted(rc, from)
     case DeleteSecureObjMsg(rc, SecureRequest(from, to, id, _)) if id == ObjectType.page.id =>
       if (from == to) {
         baseObject.delete()
-        rc.complete(
-          Crypto.constructSecureMessage(
-            Constants.serverId,
-            "Page Deleted",
-            Constants.userPublicKeys(from),
-            Constants.serverPrivateKey
-          )
-        )
+        handlePageDeleted(rc, from)
       } else {
-        rc.complete(
-          Crypto.constructSecureMessage(
-            Constants.serverId,
-            "Unauthorized Delete! Not Deleted!",
-            Constants.userPublicKeys(from),
-            Constants.serverPrivateKey
-          )
-        )
+        handleUnauthorizedRequest(rc, from)
       }
     case GetSecureObjMsg(rc, SecureRequest(from, to, id, _)) if id == ObjectType.page.id => rc.complete(
       Crypto.constructSecureMessage(
@@ -77,16 +44,28 @@ class PageActor(var page: SecureObject, debugInfo: DebugInfo)
           Constants.serverPrivateKey
         ))
       } else {
-        rc.complete(
-          Crypto.constructSecureMessage(
-            Constants.serverId,
-            "Unauthorized Update! Not Updated!",
-            Constants.userPublicKeys(from),
-            Constants.serverPrivateKey
-          )
-        )
+        handleUnauthorizedRequest(rc, from)
       }
   }
 
   override def receive = pageReceive orElse super.receive
+
+
+  def handlePageDeleted(rc: RequestContext, from: Int) = rc.complete(
+    Crypto.constructSecureMessage(
+      Constants.serverId,
+      "Page Deleted!",
+      Constants.userPublicKeys(from),
+      Constants.serverPrivateKey
+    )
+  )
+
+  def handleUnauthorizedRequest(rc: RequestContext, from: Int) = rc.complete(
+    Crypto.constructSecureMessage(
+      Constants.serverId,
+      "Unauthorized Request! Not Request!",
+      Constants.userPublicKeys(from),
+      Constants.serverPrivateKey
+    )
+  )
 }

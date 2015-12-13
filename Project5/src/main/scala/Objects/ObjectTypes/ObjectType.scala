@@ -3,9 +3,9 @@ package Objects.ObjectTypes
 import spray.json._
 
 
-object ObjectType extends Enumeration{
+object ObjectType extends Enumeration {
   type ObjectType = Value
-  val user, page, post, picture, album, updateFriendList = Value
+  val user, page, post, picture, album = Value
 
   implicit object ObjectTypeJsonFormat extends RootJsonFormat[ObjectType.ObjectType] {
     def write(obj: ObjectType.ObjectType): JsValue = JsNumber(obj.id)
@@ -15,4 +15,5 @@ object ObjectType extends Enumeration{
       case _ => throw new DeserializationException("Enum int expected")
     }
   }
+
 }
