@@ -141,8 +141,11 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Post UpdateFriendList by User1" - {
     "when calling Post /addFriend" - {
       "should add a profile to that user's friend list and allow them to view that user's content" in {
-        Post("/addfriend") ~> myRoute ~> check {
+        val secureRequest = SecureRequest(user1Id, user2Id, ObjectType.user.id, -1)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+        Post("/addfriend", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
+          println(entity.data.asString)
         }
       }
     }

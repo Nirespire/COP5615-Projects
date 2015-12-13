@@ -31,6 +31,7 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
     case likeMsg@LikeMsg(rc, secureReq) => profiles(secureReq.to) ! likeMsg
     case getFriendKeysMsg@GetFriendKeysMsg(rc, pid) => profiles(pid) ! getFriendKeysMsg
     case friendReq@GetFriendRequestsMsg(rc, pid) => profiles(pid) ! friendReq
+    case addFriend@AddFriendMsg(rc, secureReq) => profiles(secureReq.to) ! addFriend
     case x => log.error(s"Unhandled in DelegatorActor  $x")
   }
 }
