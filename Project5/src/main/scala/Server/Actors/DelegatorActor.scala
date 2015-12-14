@@ -62,13 +62,13 @@ class DelegatorActor(serverPublicKey: Key) extends Actor with ActorLogging {
         profiles(secureReq.to) ! likeMsg
       }
     case getFriendKeysMsg@GetFriendKeysMsg(rc, pid) =>
-      DebugInfo.debugVar(Constants.getFlChar) += 1
+      DebugInfo.debugVar(Constants.getAddFriendChar) += 1
       profiles(pid) ! getFriendKeysMsg
     case friendReq@GetFriendRequestsMsg(rc, pid) =>
-      DebugInfo.debugVar(Constants.postFlChar) += 1
+      DebugInfo.debugVar(Constants.postAddFriendChar) += 1
       profiles(pid) ! friendReq
     case addFriend@AddFriendMsg(rc, secureReq) =>
-      DebugInfo.debugVar(Constants.postFlChar) += 1
+      DebugInfo.debugVar(Constants.postAddFriendChar) += 1
       profiles(secureReq.to) ! addFriend
     case x => log.error(s"Unhandled in DelegatorActor  $x")
   }

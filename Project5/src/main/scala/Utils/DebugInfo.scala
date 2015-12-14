@@ -14,7 +14,7 @@ object DebugInfo {
       debugVar(Constants.postLikeChar)
     ) * Constants.nano / (System.nanoTime() - start)
 
-  def postRequestPerSecond() = (debugVar(Constants.postFlChar) +
+  def postRequestPerSecond() = (debugVar(Constants.postAddFriendChar) +
     debugVar(Constants.postUserChar) +
     debugVar(Constants.postPageChar) +
     debugVar(Constants.postPictureChar) +
@@ -33,7 +33,7 @@ object DebugInfo {
   def getRequestPerSecond() = (
     debugVar(Constants.getProfilesChar) +
       debugVar(Constants.getAlbumsChar) +
-      debugVar(Constants.getFlChar) +
+      debugVar(Constants.getAddFriendChar) +
       debugVar(Constants.getPicturesChar) +
       debugVar(Constants.getPostsChar) +
       debugVar(Constants.getFeedChar)
@@ -43,7 +43,7 @@ object DebugInfo {
     debugVar(Constants.putAlbumsChar) +
     debugVar(Constants.putPicturesChar) +
     debugVar(Constants.putPostsChar) +
-    debugVar(Constants.postFlChar) +
+    debugVar(Constants.postAddFriendChar) +
     debugVar(Constants.postUserChar) +
     debugVar(Constants.postPageChar) +
     debugVar(Constants.postPictureChar) +
@@ -56,7 +56,7 @@ object DebugInfo {
     debugVar(Constants.deleteAlbumChar) +
     debugVar(Constants.getProfilesChar) +
     debugVar(Constants.getAlbumsChar) +
-    debugVar(Constants.getFlChar) +
+    debugVar(Constants.getAddFriendChar) +
     debugVar(Constants.getPicturesChar) +
     debugVar(Constants.getPostsChar) +
     debugVar(Constants.getFeedChar) +
