@@ -12,7 +12,7 @@ import spray.routing.RequestContext
 
 import scala.collection.mutable
 
-abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Actor with ActorLogging {
+abstract class ProfileActor(val pid: Int) extends Actor with ActorLogging {
   val nothingIdx = 1
   val deletedIdx = 0
   val defaultAlbumIdx = 2
@@ -48,17 +48,17 @@ abstract class ProfileActor(val pid: Int, val debugInfo: DebugInfo) extends Acto
     case ObjectType.post =>
       secureObj.baseObj.updateId(posts.size)
       posts.append(secureObj)
-      debugInfo.debugVar(Constants.putPostsChar) += 1
+      DebugInfo.debugVar(Constants.putPostsChar) += 1
       rc.complete((posts.size - 1).toString)
     case ObjectType.picture =>
       secureObj.baseObj.updateId(pictures.size)
       pictures.append(secureObj)
-      debugInfo.debugVar(Constants.putPicturesChar) += 1
+      DebugInfo.debugVar(Constants.putPicturesChar) += 1
       rc.complete((pictures.size - 1).toString)
     case ObjectType.album =>
       secureObj.baseObj.updateId(albums.size)
       albums.append(secureObj)
-      debugInfo.debugVar(Constants.putAlbumsChar) += 1
+      DebugInfo.debugVar(Constants.putAlbumsChar) += 1
       rc.complete((albums.size - 1).toString)
   }
 

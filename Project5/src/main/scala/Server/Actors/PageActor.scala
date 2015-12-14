@@ -8,8 +8,8 @@ import Utils.{Constants, Crypto, DebugInfo}
 import spray.json._
 import spray.routing.RequestContext
 
-class PageActor(var page: SecureObject, debugInfo: DebugInfo)
-  extends ProfileActor(page.baseObj.id, debugInfo) {
+class PageActor(var page: SecureObject)
+  extends ProfileActor(page.baseObj.id) {
 
   def baseObject = page.baseObj
 

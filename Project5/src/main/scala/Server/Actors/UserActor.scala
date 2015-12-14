@@ -10,8 +10,8 @@ import spray.routing.RequestContext
 
 import scala.collection.mutable
 
-class UserActor(var user: SecureObject, debugInfo: DebugInfo)
-  extends ProfileActor(user.baseObj.id, debugInfo) {
+class UserActor(var user: SecureObject)
+  extends ProfileActor(user.baseObj.id) {
 
   val pendingRequests = mutable.Set[Int]()
 

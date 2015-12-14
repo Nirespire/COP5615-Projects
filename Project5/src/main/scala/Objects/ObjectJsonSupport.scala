@@ -21,7 +21,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
     }
   }
 
-
+/*
   implicit object DebugActorJsonFormat extends RootJsonFormat[DebugInfo] {
     def write(da: DebugInfo) = JsObject(
       "put-profiles" -> JsNumber(da.debugVar(Constants.putProfilesChar)),
@@ -108,7 +108,7 @@ object ObjectJsonSupport extends DefaultJsonProtocol with SprayJsonSupport {
       }
     }
   }
-
+*/
   implicit object AlbumJsonFormat extends RootJsonFormat[Album] {
     def write(a: Album) = JsObject(
       "createdTime" -> JsString(a.createdTime),

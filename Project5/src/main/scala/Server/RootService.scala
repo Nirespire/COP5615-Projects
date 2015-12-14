@@ -37,18 +37,17 @@ trait RootService extends HttpService {
 
   private val random = new SecureRandom()
 
-
   implicit val myEngineProvider = ServerSSLEngineProvider { engine =>
     engine.setEnabledCipherSuites(Array("TLS_RSA_WITH_AES_256_CBC_SHA"))
     engine.setEnabledProtocols(Array("SSLv3", "TLSv1"))
     engine
   }
 
-  val da = DebugInfo()
+  //  val da = DebugInfo()
 
   val delegatorActor = Array.fill[ActorRef](split)(
     actorRefFactory.actorOf(
-      Props(new DelegatorActor(da, Constants.serverPublicKey))
+      Props(new DelegatorActor(Constants.serverPublicKey))
     )
   )
 
@@ -67,7 +66,7 @@ trait RootService extends HttpService {
         rc => rc.complete(Constants.serverPublicKey.getEncoded)
       } ~ path("debug") {
         respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) { rc =>
-          rc.complete(da.toJson.compactPrint)
+          rc.complete(DebugInfo.debugVar.toMap.toJson.compactPrint)
         }
       } ~ path("request") {
         entity(as[SecureMessage]) { secureMsg => rc =>
@@ -103,15 +102,15 @@ trait RootService extends HttpService {
             rc.complete(defaultResponse)
           }
         }
-      } ~ path("feed"){
-        entity(as[SecureMessage]){secureMsg => rc =>
+      } ~ path("feed") {
+        entity(as[SecureMessage]) { secureMsg => rc =>
           // TODO GET FEED
         }
       }
     } ~ put {
       path("register") {
         entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
-          da.debugVar(Constants.registerChar) += 1
+          DebugInfo.debugVar(Constants.registerChar) += 1
           val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
           var userId = Math.abs(random.nextInt())
           while (Constants.userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())

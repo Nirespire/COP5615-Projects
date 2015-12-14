@@ -5,35 +5,35 @@ import java.security.PublicKey
 import scala.collection.mutable
 
 object Constants {
-  val putProfilesChar = 'P'
-  val putPostsChar = 'O'
-  val putAlbumsChar = 'A'
-  val putPicturesChar = 'I'
+  val putProfilesChar = "putProfilesCnt"
+  val putPostsChar = "putPostsCnt"
+  val putAlbumsChar = "putAlbumsCnt"
+  val putPicturesChar = "putPicturesCnt"
 
-  val postFlChar = 'F'
-  val postUserChar = 'z'
-  val postPageChar = 'x'
-  val postPostChar = 'c'
-  val postPictureChar = 'v'
-  val postAlbumChar = 'b'
+  val postAddFriendChar = "postAddFriendCnt"
+  val postUserChar = "postUserCnt"
+  val postPageChar = "postPageCnt"
+  val postPostChar = "postPostCnt"
+  val postPictureChar = "postPictureCnt"
+  val postAlbumChar = "postAlbumCnt"
 
-  val getProfilesChar = 'p'
-  val getPostsChar = 'o'
-  val getPicturesChar = 'i'
-  val getAlbumsChar = 'a'
-  val getFlChar = 'f'
-  val getFeedChar = 'e'
+  val getProfilesChar = "getProfilesCnt"
+  val getPostsChar = "getPostsCnt"
+  val getPicturesChar = "getPicturesCnt"
+  val getAlbumsChar = "getAlbumsCnt"
+  val getAddFriendChar = "getAddFriendCnt"
+  val getFeedChar = "getFeedCnt"
 
-  val deleteUserChar = '1'
-  val deletePageChar = '2'
-  val deletePostChar = '3'
-  val deletePictureChar = '4'
-  val deleteAlbumChar = '5'
+  val deleteUserChar = "deleteUserCnt"
+  val deletePageChar = "deletePageCnt"
+  val deletePostChar = "deletePostCnt"
+  val deletePictureChar = "deletePictureCnt"
+  val deleteAlbumChar = "deleteAlbumCnt"
 
-  val likeChar = 'l'
-  val postLikeChar = 'q'
+  val likeChar = "likeCnt"
+  val postLikeChar = "postLikeCnt"
 
-  val registerChar = 'X'
+  val registerChar = "registerCnt"
 
   val nano = 1000000000.0
   val trueBool = true
