@@ -41,11 +41,11 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
       ObjectType(secureReq.objectType) match {
         case ObjectType.user =>
           if (secureReq.from == pid) {
-            pendingRequests.remove(secureReq.to)
-            baseObject.appendLike(secureReq.to)
-          } else {
             pendingRequests.remove(secureReq.from)
             baseObject.appendLike(secureReq.from)
+          } else {
+            pendingRequests.remove(secureReq.to)
+            baseObject.appendLike(secureReq.to)
             rc.complete("Added Friend!")
           }
       }
