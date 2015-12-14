@@ -343,12 +343,20 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
 
     // Get friends' content
     if (random(101) < getPercent) {
-      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
-        val getUserRequest = createSecureRequestMessage(myBaseObj.id, id, ObjectType.post, random(3))
-        //get(getUserRequest, "request", "post")
+      random(2) match {
+        case 0 =>
+          myRealFriends.foreach {
+            case (ref: ActorRef, id: Int) =>
+              val getFeedRequest = createSecureRequestMessage(myBaseObj.id, id, ObjectType.post, -1)
+              get(getFeedRequest, "feed")
 
-        //if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
-        //if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+          }
+        case 1 =>
+          myFriendsPublicKeys.foreach {
+            case (id: String, key: PublicKey) =>
+              val getFeedRequest = createSecureRequestMessage(myBaseObj.id, id.toInt, ObjectType.post, -1)
+              get(getFeedRequest, "feed")
+          }
       }
     }
 
@@ -447,6 +455,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           post(likeMessage, "like", "acceptfriendrequest")
         }
       case "feed" =>
+        val secureObjectList = decryptSecureRequestMessage(response ~> unmarshal[SecureMessage], ObjectType.secureObjectArray).asInstanceOf[Array[SecureObject]]
+        if (!secureObjectList.isEmpty) {
+          secureObjectList.foreach { case so =>
+            decryptSecureObject(so, ObjectType.post)
+          }
+        }
       case "feedpost" =>
       case "picture" =>
         decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.picture)
@@ -478,6 +492,24 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     Crypto.constructSecureMessage(myBaseObj.id, secureRequest.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
   }
 
+  def decryptSecureObject(secureObject: SecureObject, objType: ObjectType):Any = {
+    try {
+      val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
+      val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+      objType match {
+        case ObjectType.user => JsonParser(objJson).convertTo[User]
+        case ObjectType.page => JsonParser(objJson).convertTo[Page]
+        case ObjectType.post => JsonParser(objJson).convertTo[Post]
+        case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
+        case ObjectType.album => JsonParser(objJson).convertTo[Album]
+      }
+    }
+    catch {
+      case e: NoSuchElementException => e
+      case d: BadPaddingException => d
+    }
+  }
+
   def decryptSecureRequestMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
     val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
     if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
@@ -487,6 +519,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       objType match {
         case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
         case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+        case ObjectType.secureObjectArray => JsonParser(objJson).convertTo[Array[SecureObject]]
       }
     }
   }
