@@ -24,7 +24,7 @@ object project5 extends App {
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ? Http.Bind(service, interface = serviceHost, port = servicePort)
 
-  Thread.sleep(1000)
+  Thread.sleep(10000)
 
   if (numClients > 0) {
     println("Running with " + numClients + " clients")
