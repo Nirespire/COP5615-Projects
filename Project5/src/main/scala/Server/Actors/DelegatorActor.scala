@@ -33,6 +33,8 @@ class DelegatorActor(serverPublicKey: Key, debugInfo: DebugInfo) extends Actor w
     }
     case postMsg@PostSecureObjMsg(rc, secureObj) =>
       ObjectType(secureObj.objectType) match {
+        case ObjectType.user => debugInfo.debugVar(Constants.postUserChar) += 1
+        case ObjectType.page => debugInfo.debugVar(Constants.postPageChar) += 1
         case ObjectType.post => debugInfo.debugVar(Constants.postPostChar) += 1
         case ObjectType.picture => debugInfo.debugVar(Constants.postPictureChar) += 1
         case ObjectType.album => debugInfo.debugVar(Constants.postAlbumChar) += 1
@@ -68,7 +70,7 @@ class DelegatorActor(serverPublicKey: Key, debugInfo: DebugInfo) extends Actor w
       debugInfo.debugVar(Constants.postFlChar) += 1
       profiles(pid) ! friendReq
     case addFriend@AddFriendMsg(rc, secureReq) =>
-      debugInfo.debugVar(Constants.postFlfChar) += 1
+      debugInfo.debugVar(Constants.postFlChar) += 1
       profiles(secureReq.to) ! addFriend
     case x => log.error(s"Unhandled in DelegatorActor  $x")
   }

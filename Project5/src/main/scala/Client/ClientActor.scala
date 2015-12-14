@@ -66,24 +66,38 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case true => registerMyself()
     case false if !myBaseObj.deleted && !isPage => updateFriendPublicKeys()
     case Activity if !myBaseObj.deleted => activity()
+
     case MakePost(postType, attachmentID) =>
       val newPost = Objects.Post(new DateTime().toString(), statuses(Random.nextInt(statuses.length)), postType, attachmentID)
       put(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, myFriendsPublicKeys), "create", "post")
+
     case MakePicturePost =>
       val newPicture = Picture("filename", "")
       put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, myFriendsPublicKeys), "create", "picturepost")
+
     case MakePicture(albumID) =>
       val newPicture = Picture("filename", "")
       put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, myFriendsPublicKeys), "create", "picture")
+
     case AddPictureToAlbum =>
+
     case MakeAlbum =>
       val newAlbum = Album(new DateTime().toString, new DateTime().toString, -1, "album desc")
       put(createSecureObjectMessage(newAlbum, myBaseObj.id, myBaseObj.id, ObjectType.album, myFriendsPublicKeys), "create", "album")
-    // From matchmaker
 
     case UpdatePost(postType, attachment) =>
-      val newPost = Objects.Post(new DateTime().toString,Resources.getRandomStatus(), postType,attachment)
-      post(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, myFriendsPublicKeys, random(numPosts)), "update", "post")
+      val newPost = Objects.Post(new DateTime().toString, Resources.getRandomStatus(), postType, attachment)
+      post(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, myFriendsPublicKeys, random(numPosts) + 2), "update", "post")
+
+    case UpdatePicture =>
+      val newPicture = Picture("filename", "")
+      post(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, myFriendsPublicKeys, random(numPictures) + 2), "update", "picture")
+
+    case UpdateAlbum(cover) =>
+      val newAlbum = Album(new DateTime().toString, new DateTime().toString, cover, "album desc")
+      post(createSecureObjectMessage(newAlbum, myBaseObj.id, myBaseObj.id, ObjectType.album, myFriendsPublicKeys, random(numAlbums) + 2), "update", "album")
+
+    // From matchmaker
     case aNewFriend: ActorRef =>
       if (myBaseObj == null) {
         waitForIdFriends.add(aNewFriend)
@@ -103,15 +117,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         }
       }
     case RequestFriend(id) =>
-      // TODO Post("/addFriend")
       val secureMessage = createSecureRequestMessage(myBaseObj.id, id, ObjectType.user, id)
       post(secureMessage, "addfriend")
-    // SecureMessage(SecureRequest(friendID))
 
     case AcceptFriendRequests =>
       val secureMessage = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, -1)
       get(secureMessage, "friend_requests")
-
 
     case PutMsg(response, reaction) => handlePutResponse(response, reaction)
     case GetMsg(response, reaction) => handleGetResponse(response, reaction)
@@ -127,15 +138,15 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       } catch {
         case e: Throwable => log.error(e, "Error for response {}", response)
       }
+
     case DebugMsg => get(null, "debug")
 
     case DeleteMsg(response, reaction) =>
       reaction match {
         case "user" | "page" => myBaseObj.deleted = true
-        case _ => log.info(s"${myBaseObj.id} - ${response.entity.asString}")
+        case _ => log.info(s"${myBaseObj.id} - $reaction")
       }
   }
-
 
   def registerMyself() = {
     val pipeline = sendReceive
@@ -289,14 +300,6 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def activity() = {
     //    log.info(myBaseObj.id + " starting activity")
 
-    /* TODO
-    *  GET /friends_public_keys
-    *  returns SecureMessage(HashMap[String, Array[Byte])
-    *  HashMap[String, Array[Byte]) -> HashMap[String, PublicKey]
-    *  Generate create SecureObject with HashMap
-    *  PUT or POST
-    * */
-
     context.system.scheduler.scheduleOnce(randomDuration(10), self, AcceptFriendRequests)
 
     if (isPage) {
@@ -308,14 +311,27 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       get(secureMsg, "request", "user")
     }
 
-    //    if (random(1001) <= 5) {
-    //      random(3) match {
-    //        case 0 => if (numPosts > 0) get(s"post/${myBaseObj.id}/${random(numPosts) + 2}", "postdelete")
-    //        case 1 => if (numAlbums > 0) get(s"album/${myBaseObj.id}/${random(numAlbums) + 2}", "albumdelete")
-    //        case 2 => if (numPictures > 0) get(s"picture/${myBaseObj.id}/${random(numPictures) + 2}", "picturedelete")
-    //      }
-    //    }
+    if (random(1001) <= 5) {
+      random(3) match {
+        case 0 =>
+          if (numPosts > 0) {
+            val delMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.post, random(numPosts) + 2)
+            delete(delMsg, "delete", "postdelete")
+          }
+        case 1 =>
+          if (numAlbums > 0) {
+            val delMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.album, random(numAlbums) + 2)
+            delete(delMsg, "delete", "albumdelete")
+          }
+        case 2 =>
+          if (numPictures > 0) {
+            val delMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.picture, random(numPictures) + 2)
+            delete(delMsg, "delete", "picturedelete")
+          }
+      }
+    }
 
+    // Create content
     if (random(101) < putPercent) {
       random(4) match {
         case 0 => context.system.scheduler.scheduleOnce(randomDuration(3), self, MakePost(status, -1))
@@ -325,6 +341,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
 
+    // Get friends' content
     if (random(101) < getPercent) {
       myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
         val getUserRequest = createSecureRequestMessage(myBaseObj.id, id, ObjectType.post, random(3))
@@ -335,18 +352,36 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
 
+    // update your own content
     if (random(101) < updatePercent) {
-      if(numPosts > 1) {
-        context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
+      random(3) match {
+        case 0 =>
+          if (numPosts > 1) {
+            context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
+          }
+        case 1 =>
+          if (numPictures > 1) {
+            context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePicture)
+          }
+        case 2 =>
+          if (numAlbums > 1 && numPictures > 1) {
+            context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdateAlbum(random(numPictures) + 2))
+          }
       }
     }
 
     context.system.scheduler.scheduleOnce(randomDuration(3), self, Constants.falseBool)
 
-    // Delete case
+    // Delete self case
     if (random(100001) < 5) {
-      //      if (isPage)
-      //      else
+      if (isPage) {
+        val delMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.page, myBaseObj.id)
+        delete(delMsg, "delete", "pagedelete")
+      }
+      else {
+        val delMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, myBaseObj.id)
+        delete(delMsg, "delete", "userdelete")
+      }
     }
   }
 
@@ -424,7 +459,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     }
   }
 
-  def createSecureObjectMessage(obj: Any, from: Int, to: Int, objType: ObjectType, keys: Map[String, PublicKey], id:Int = -1): SecureMessage = {
+  def createSecureObjectMessage(obj: Any, from: Int, to: Int, objType: ObjectType, keys: Map[String, PublicKey], id: Int = -1): SecureMessage = {
     objType match {
       case ObjectType.post =>
         val secureObject = Crypto.constructSecureObject(new BaseObject(id), from, to, ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
