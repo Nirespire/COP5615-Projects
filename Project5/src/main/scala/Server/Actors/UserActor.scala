@@ -26,6 +26,16 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
     case GetFriendRequestsMsg(rc, _) if baseObject.deleted => handleUserDeleted(rc, pid)
     case AddFriendMsg(rc, _) if baseObject.deleted => handleUserDeleted(rc, pid)
     case GetFriendKeysMsg(rc, _) if baseObject.deleted => handleUserDeleted(rc, pid)
+
+    case GetFeedMsg(rc, SecureRequest(from, _, _, _)) if from != pid && !baseObject.likes.contains(from) =>
+      handleUnauthorizedRequest(rc, from)
+    case PostSecureObjMsg(rc, SecureObject(_, from, _, _, _, _)) if from != pid => handleUnauthorizedRequest(rc, from)
+    case DeleteSecureObjMsg(rc, SecureRequest(from, _, _, _)) if from != pid => handleUnauthorizedRequest(rc, from)
+    case GetSecureObjMsg(rc, SecureRequest(from, _, _, _)) if from != pid && !baseObject.likes.contains(from) =>
+      handleUnauthorizedRequest(rc, from)
+    case GetFriendRequestsMsg(rc, from) if from != pid => handleUnauthorizedRequest(rc, from)
+    case GetFriendKeysMsg(rc, from) if from != pid => handleUnauthorizedRequest(rc, from)
+
     case GetFriendRequestsMsg(rc, _) => rc.complete(
       Crypto.constructSecureMessage(
         Constants.serverId,
@@ -36,16 +46,14 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
     )
     case AddFriendMsg(rc, secureReq) =>
       pendingRequests.add(secureReq.from)
-      rc.complete("Requested to be friend")
+      rc.complete(s"${secureReq.from} Requested $pid to be friend")
     case LikeMsg(rc, secureReq) =>
       ObjectType(secureReq.objectType) match {
         case ObjectType.user =>
-          if (secureReq.from == pid) {
-            pendingRequests.remove(secureReq.from)
-            baseObject.appendLike(secureReq.from)
-          } else {
+
+          baseObject.appendLike(secureReq.to)
+          if (pendingRequests.contains(secureReq.to)) {
             pendingRequests.remove(secureReq.to)
-            baseObject.appendLike(secureReq.to)
             rc.complete("Added Friend!")
           }
       }

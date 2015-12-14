@@ -150,7 +150,11 @@ trait RootService extends HttpService {
           if (jsonMsg.nonEmpty) {
             val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
             if (secureMsg.from == secureReq.from) {
-              dActor(secureReq.to) ! LikeMsg(rc, secureReq)
+              if (secureReq.objectType == ObjectType.user.id) {
+                dActor(secureReq.from) ! LikeMsg(rc, secureReq)
+              } else {
+                dActor(secureReq.to) ! LikeMsg(rc, secureReq)
+              }
             } else {
               rc.complete(defaultResponse)
             }
@@ -164,8 +168,8 @@ trait RootService extends HttpService {
           if (jsonMsg.nonEmpty) {
             val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
             if (secureMsg.from == secureReq.from) {
-              dActor(secureReq.to) ! AddFriendMsg(rc, secureReq)
               dActor(secureReq.from) ! LikeMsg(rc, secureReq)
+              dActor(secureReq.to) ! AddFriendMsg(rc, secureReq)
             } else {
               rc.complete(defaultResponse)
             }

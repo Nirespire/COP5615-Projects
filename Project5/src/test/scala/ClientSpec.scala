@@ -201,6 +201,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           val requestKey = Crypto.constructAESKeyFromBytes(requestKeyBytes)
           val requestJson = Base64Util.decodeString(Crypto.decryptAES(secureMsg.message, requestKey, Constants.IV))
           val requestMap = JsonParser(requestJson).convertTo[Map[String, Array[Byte]]]
+          println(requestMap)
           requestMap.size should equal(1)
 
           requestMap.foreach { case (id, keyBytes) =>
@@ -319,22 +320,6 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
     }
   }
 
-  "Post User1" - {
-    "when calling POST /update" - {
-      "should update User object" in {
-        val baseObject = new BaseObject(id = user1Id)
-        val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
-        val userObject = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
-        val secureObject = Crypto.constructSecureObject(baseObject, user1Id, user1Id, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
-        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
-        Post("/update", secureMessage) ~> myRoute ~> check {
-          status should equal(OK)
-          println(entity)
-        }
-      }
-    }
-  }
-
   "Post Page by page" - {
     "when calling POST /update" - {
       "should update Page object" in {
@@ -412,6 +397,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
           )
           val secureObject = JsonParser(json).convertTo[SecureObject]
 
+          println(secureObject.baseObj.likes)
           val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(user1Id.toString), user1KeyPair.getPrivate))
 
           val userJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
@@ -439,6 +425,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
   "Get post 3 for User1 from User2" - {
     "when getting post 3 for User1" - {
       "should return Post id=3 object" in {
+        Thread.sleep(1000)
         val secureRequest = SecureRequest(user2Id, user1Id, ObjectType.post.id, 3)
         val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
         Get("/request", secureMessage) ~> myRoute ~> check {
@@ -463,6 +450,80 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
       }
     }
   }
+
+
+  "Post User1" - {
+    "when calling POST /update" - {
+      "should update User object" in {
+        val baseObject = new BaseObject(id = user1Id)
+        val fullName = Resources.names(Random.nextInt(Resources.names.length)).split(' ')
+        val userObject = User("about", Resources.randomBirthday(), 'M', fullName(0), fullName(1), user1KeyPair.getPublic.getEncoded)
+        val secureObject = Crypto.constructSecureObject(baseObject, user1Id, user1Id, ObjectType.user.id, userObject.toJson.compactPrint, Map(user1Id.toString -> user1KeyPair.getPublic))
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureObject.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+        Post("/update", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+        }
+      }
+    }
+  }
+
+
+  "Get post 3 for User2 from User1 who is authorized, but the post does not have User1 version of key" - {
+    "when getting post 3 for User2" - {
+      "should return Post id=3 object" in {
+        Thread.sleep(1000)
+        val secureRequest = SecureRequest(user1Id, user2Id, ObjectType.post.id, 3)
+        val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
+        Get("/request", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+          val secureMsg = responseAs[SecureMessage]
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user1KeyPair.getPrivate)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val json = Base64Util.decodeString(
+            Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+          )
+          val secureObject = JsonParser(json).convertTo[SecureObject]
+
+          try {
+            val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(user1Id.toString), user1KeyPair.getPrivate))
+
+            val userJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+
+            val postObj = JsonParser(userJson).convertTo[Post]
+
+            println(postObj)
+          } catch {
+            case e: Throwable =>
+          }
+        }
+      }
+    }
+  }
+
+
+  "Get post 3 for User1 from User2, who now is unauthorized" - {
+    "when getting post 3 for User1" - {
+      "should return Post id=3 object" in {
+        Thread.sleep(1000)
+        val secureRequest = SecureRequest(user2Id, user1Id, ObjectType.post.id, 3)
+        val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
+        Get("/request", secureMessage) ~> myRoute ~> check {
+          status should equal(OK)
+          println(entity)
+          val secureMsg = responseAs[SecureMessage]
+          val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, user2KeyPair.getPrivate)
+          Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes) should equal(true)
+          val json = Base64Util.decodeString(
+            Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+          )
+          json should equal("Unauthorized Request! Not Request!")
+        }
+      }
+    }
+  }
+
 
   //  "Get album 0 for 0" - {
   //    "when getting album 0 for user 0" - {
