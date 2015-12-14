@@ -43,11 +43,11 @@ trait RootService extends HttpService {
     engine
   }
 
-  //  val da = DebugInfo()
+  val da = DebugInfo()
 
   val delegatorActor = Array.fill[ActorRef](split)(
     actorRefFactory.actorOf(
-      Props(new DelegatorActor(Constants.serverPublicKey))
+      Props(new DelegatorActor(Constants.serverPublicKey, da))
     )
   )
 
@@ -66,7 +66,7 @@ trait RootService extends HttpService {
         rc => rc.complete(Constants.serverPublicKey.getEncoded)
       } ~ path("debug") {
         respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) { rc =>
-          rc.complete(DebugInfo.debugVar.toMap.toJson.compactPrint)
+          rc.complete(da)
         }
       } ~ path("request") {
         entity(as[SecureMessage]) { secureMsg => rc =>
@@ -104,13 +104,23 @@ trait RootService extends HttpService {
         }
       } ~ path("feed") {
         entity(as[SecureMessage]) { secureMsg => rc =>
-          // TODO GET FEED
+          val jsonMsg = verifyMessage(secureMsg)
+          if (jsonMsg.nonEmpty) {
+            val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
+            if (secureMsg.from == secureReq.from) {
+              dActor(secureReq.to) ! GetFeedMsg(rc)
+            } else {
+              rc.complete(defaultResponse)
+            }
+          } else {
+            rc.complete(defaultResponse)
+          }
         }
       }
     } ~ put {
       path("register") {
         entity(as[Array[Byte]]) { userPublicKeyBytes => rc =>
-          DebugInfo.debugVar(Constants.registerChar) += 1
+          da.debugVar(Constants.registerChar) += 1
           val userPublicKey = Crypto.constructRSAPublicKeyFromBytes(userPublicKeyBytes)
           var userId = Math.abs(random.nextInt())
           while (Constants.userPublicKeys.contains(userId)) userId = Math.abs(random.nextInt())
