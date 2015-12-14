@@ -206,6 +206,12 @@ abstract class ProfileActor(val pid: Int, debugInfo: DebugInfo) extends Actor wi
       postsIdx -= 1
     }
 
-    rc.complete(JsArray(pIds.map(idx => idx.toJson).toVector))
+    rc.complete(
+      Crypto.constructSecureMessage(-1,
+        JsArray(pIds.map(idx => idx.toJson).toVector).toJson.compactPrint,
+        Constants.userPublicKeys(secureReq.from),
+        Constants.serverPrivateKey
+      )
+    )
   }
 }
