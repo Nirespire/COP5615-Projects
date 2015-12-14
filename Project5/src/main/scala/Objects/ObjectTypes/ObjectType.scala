@@ -5,7 +5,7 @@ import spray.json._
 
 object ObjectType extends Enumeration {
   type ObjectType = Value
-  val user, page, post, picture, album, intArray, userKeyMap = Value
+  val user, page, post, picture, album, intArray, userKeyMap, feed, secureObjectArray = Value
 
   implicit object ObjectTypeJsonFormat extends RootJsonFormat[ObjectType.ObjectType] {
     def write(obj: ObjectType.ObjectType): JsValue = JsNumber(obj.id)

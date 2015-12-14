@@ -14,6 +14,9 @@ class DelegatorActor(serverPublicKey: Key, debugInfo: DebugInfo) extends Actor w
   val profiles = mutable.HashMap[Int, ActorRef]()
 
   def receive = {
+    case feedMsg@GetFeedMsg(rc, secureReq) =>
+      debugInfo.debugVar(Constants.getFeedChar) += 1
+      profiles(secureReq.to) ! feedMsg
     case PutSecureObjMsg(rc, secureObj: SecureObject) => ObjectType(secureObj.objectType) match {
       case ObjectType.user =>
         debugInfo.debugVar(Constants.putProfilesChar) += 1

@@ -108,7 +108,7 @@ trait RootService extends HttpService {
           if (jsonMsg.nonEmpty) {
             val secureReq = JsonParser(jsonMsg).convertTo[SecureRequest]
             if (secureMsg.from == secureReq.from) {
-              dActor(secureReq.to) ! GetFeedMsg(rc)
+              dActor(secureReq.to) ! GetFeedMsg(rc, secureReq)
             } else {
               rc.complete(defaultResponse)
             }

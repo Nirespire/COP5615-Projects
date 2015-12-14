@@ -18,6 +18,7 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
   def baseObject = user.baseObj
 
   def userReceive: Receive = {
+    case GetFeedMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handleUserDeleted(rc, from)
     case LikeMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handleUserDeleted(rc, from)
     case PostSecureObjMsg(rc, SecureObject(_, from, _, _, _, _)) if baseObject.deleted => handleUserDeleted(rc, from)
     case DeleteSecureObjMsg(rc, SecureRequest(from, _, _, _)) if baseObject.deleted => handleUserDeleted(rc, from)

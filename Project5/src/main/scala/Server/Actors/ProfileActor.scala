@@ -36,6 +36,7 @@ abstract class ProfileActor(val pid: Int, debugInfo: DebugInfo) extends Actor wi
   def baseObject: BaseObject
 
   def receive = {
+    case GetFeedMsg(rc, secReq) => feed(rc, secReq)
     case GetSecureObjMsg(rc, secureRequest) => get(rc, secureRequest)
     case PutSecureObjMsg(rc, secureObj) => put(rc, secureObj)
     case PostSecureObjMsg(rc, secureObj) => post(rc, secureObj)
@@ -192,5 +193,19 @@ abstract class ProfileActor(val pid: Int, debugInfo: DebugInfo) extends Actor wi
         rc.complete("Album liked!")
       }
     case _ => rc.complete("NotImplemented")
+  }
+
+  def feed(rc: RequestContext, secureReq: SecureRequest) = {
+    val pIds = mutable.ArrayBuffer[SecureObject]()
+    var postsIdx = posts.size - 1
+    while (pIds.size < 10 && postsIdx > 0) {
+      if (!posts(postsIdx).baseObj.deleted &&
+        posts(postsIdx).encryptedKeys.contains(secureReq.from.toString)) {
+        pIds.append(posts(postsIdx))
+      }
+      postsIdx -= 1
+    }
+
+    rc.complete(JsArray(pIds.map(idx => idx.toJson).toVector))
   }
 }
