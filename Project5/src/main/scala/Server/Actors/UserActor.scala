@@ -28,7 +28,7 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
     case GetFriendKeysMsg(rc, _) if baseObject.deleted => handleUserDeleted(rc, pid)
 
     case GetFeedMsg(rc, SecureRequest(from, _, _, _)) if from != pid && !baseObject.likes.contains(from) =>
-      handleUnauthorizedRequest(rc, from)
+      handleUnauthorizedFeedRequest(rc, from)
     case PostSecureObjMsg(rc, SecureObject(_, from, _, _, _, _)) if from != pid => handleUnauthorizedRequest(rc, from)
     case DeleteSecureObjMsg(rc, SecureRequest(from, _, _, _)) if from != pid => handleUnauthorizedRequest(rc, from)
     case GetSecureObjMsg(rc, SecureRequest(from, _, _, _)) if from != pid && !baseObject.likes.contains(from) =>
@@ -115,6 +115,15 @@ class UserActor(var user: SecureObject, debugInfo: DebugInfo)
     Crypto.constructSecureMessage(
       Constants.serverId,
       "Unauthorized Request! Not Request!",
+      Constants.userPublicKeys(from),
+      Constants.serverPrivateKey
+    )
+  )
+
+  def handleUnauthorizedFeedRequest(rc: RequestContext, from: Int) = rc.complete(
+    Crypto.constructSecureMessage(
+      Constants.serverId,
+      Array[SecureObject]().toJson.compactPrint,
       Constants.userPublicKeys(from),
       Constants.serverPrivateKey
     )

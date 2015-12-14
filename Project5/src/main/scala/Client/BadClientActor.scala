@@ -42,7 +42,7 @@ class BadClientActor() extends Actor with ActorLogging {
   }
 
   def activity() = {
-    log.info("hehehe bad stuff")
+//    log.info("hehehe bad stuff")
     context.system.scheduler.scheduleOnce(randomDuration(10), self, Constants.falseBool)
   }
 

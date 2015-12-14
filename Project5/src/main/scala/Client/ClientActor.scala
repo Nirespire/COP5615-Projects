@@ -19,6 +19,7 @@ import spray.client.pipelining
 import spray.client.pipelining._
 import spray.http.HttpResponse
 import spray.http.StatusCodes._
+import spray.json.JsonParser.ParsingException
 import spray.json._
 
 import scala.collection.mutable
@@ -144,7 +145,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     case DeleteMsg(response, reaction) =>
       reaction match {
         case "user" | "page" => myBaseObj.deleted = true
-        case _ => log.info(s"${myBaseObj.id} - $reaction")
+        case _ => //log.info(s"${myBaseObj.id} - $reaction")
       }
   }
 
@@ -457,7 +458,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       case "feed" =>
         val secureObjectList = decryptSecureRequestMessage(response ~> unmarshal[SecureMessage], ObjectType.secureObjectArray).asInstanceOf[Array[SecureObject]]
         if (!secureObjectList.isEmpty) {
-          log.info(s"${myBaseObj.id} feed ${secureObjectList.size}")
+//          log.info(s"${myBaseObj.id} feed ${secureObjectList.size}")
           secureObjectList.foreach { case so =>
             decryptSecureObject(so, ObjectType.post)
           }
@@ -506,49 +507,60 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
     catch {
-      case e: NoSuchElementException => e
-      case d: BadPaddingException => d
+      case e: NoSuchElementException => log.info(s"${myBaseObj.id} doesn't have permission to decrypt ${secureObject.baseObj.id}")
+      case d: BadPaddingException => log.info(s"${myBaseObj.id} can't decrypt ${secureObject.baseObj.id}")
     }
   }
 
   def decryptSecureRequestMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
-    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
-    if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
-      val objJson = Base64Util.decodeString(
-        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
-      )
-      objType match {
-        case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
-        case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
-        case ObjectType.secureObjectArray => JsonParser(objJson).convertTo[Array[SecureObject]]
+    try {
+      val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+      if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
+        val objJson = Base64Util.decodeString(
+          Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+        )
+        objType match {
+          case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
+          case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+          case ObjectType.secureObjectArray => JsonParser(objJson).convertTo[Array[SecureObject]]
+
+        }
       }
+    }
+    catch{
+      case e: BadPaddingException => log.info(s"${myBaseObj.id} can't decrypt SecureMessage")
     }
   }
 
   def decryptSecureObjectMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
-    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
-    if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
-      val json = Base64Util.decodeString(
-        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
-      )
-      val secureObject = JsonParser(json).convertTo[SecureObject]
-      try {
-        val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
-        val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
-        objType match {
-          case ObjectType.user => JsonParser(objJson).convertTo[User]
-          case ObjectType.page => JsonParser(objJson).convertTo[Page]
-          case ObjectType.post => JsonParser(objJson).convertTo[Post]
-          case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
-          case ObjectType.album => JsonParser(objJson).convertTo[Album]
-          case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
-          case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+    try {
+      val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+      if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
+        val json = Base64Util.decodeString(
+          Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+        )
+        val secureObject = JsonParser(json).convertTo[SecureObject]
+        try {
+          val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
+          val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+          objType match {
+            case ObjectType.user => JsonParser(objJson).convertTo[User]
+            case ObjectType.page => JsonParser(objJson).convertTo[Page]
+            case ObjectType.post => JsonParser(objJson).convertTo[Post]
+            case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
+            case ObjectType.album => JsonParser(objJson).convertTo[Album]
+            case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
+            case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+          }
+        }
+        catch {
+          case e: NoSuchElementException => log.info(s"${myBaseObj.id} doesn't have permission to decrypt ${secureObject.baseObj.id}")
+          case d: BadPaddingException => log.info(s"${myBaseObj.id} can't decrypt ${secureObject.baseObj.id}")
         }
       }
-      catch {
-        case e: NoSuchElementException => e
-        case d: BadPaddingException => d
-      }
+    }
+    catch{
+      case e: BadPaddingException => log.info(s"${myBaseObj.id} can't decrypt SecureMessage")
     }
   }
 }

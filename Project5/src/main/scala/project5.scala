@@ -57,10 +57,10 @@ object project5 extends App {
       actor ! true
     }
 
-    (1 to (numClients * 0.05).ceil.toInt).foreach{idx =>
-      val badClient = clientSystem.actorOf(Props(new BadClientActor()), "badclient" + idx)
-      badClient ! true
-    }
+//    (1 to (numClients * 0.05).ceil.toInt).foreach{idx =>
+//      val badClient = clientSystem.actorOf(Props(new BadClientActor()), "badclient" + idx)
+//      badClient ! true
+//    }
 
     matchmaker ! true
     println("End Loop")
