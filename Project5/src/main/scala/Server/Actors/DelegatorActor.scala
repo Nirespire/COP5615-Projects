@@ -61,8 +61,7 @@ class DelegatorActor(serverPublicKey: Key, debugInfo: DebugInfo) extends Actor w
     case likeMsg@LikeMsg(rc, secureReq) =>
       debugInfo.debugVar(Constants.likeChar) += 2
       if (ObjectType(secureReq.objectType) == ObjectType.user) {
-        if (profiles.contains(secureReq.from)) profiles(secureReq.from) ! LikeMsg(rc, secureReq)
-        if (profiles.contains(secureReq.to)) profiles(secureReq.to) ! likeMsg
+        profiles(secureReq.from) ! likeMsg
       } else {
         profiles(secureReq.to) ! likeMsg
       }
