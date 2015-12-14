@@ -1,7 +1,7 @@
 package Client
 
 import java.security.PublicKey
-
+import javax.crypto.BadPaddingException
 import Client.ClientType.ClientType
 import Client.Messages._
 import Objects.ObjectTypes.ObjectType
@@ -30,7 +30,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   val myPages = mutable.ArrayBuffer[Page]()
   val myFriends = mutable.ArrayBuffer[Int]()
   val myRealFriends = mutable.HashMap[ActorRef, Int]()
-  val myFriendPublicKeys = mutable.HashMap[String, Int]()
+  var myFriendsPublicKeys = Map[String, PublicKey]()
   val waitForIdFriends = mutable.Set[ActorRef]()
   val returnHandshake = mutable.Set[ActorRef]()
   var me: User = null
@@ -64,25 +64,26 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
   def receive = {
     // Create a user profile or page for self
     case true => registerMyself()
-    case false if !myBaseObj.deleted => activity()
+    case false if !myBaseObj.deleted && !isPage => updateFriendPublicKeys()
+    case Activity if !myBaseObj.deleted => activity()
     case MakePost(postType, attachmentID) =>
       val newPost = Objects.Post(new DateTime().toString(), statuses(Random.nextInt(statuses.length)), postType, attachmentID)
-      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, keys), "post")
+      put(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, myFriendsPublicKeys), "create", "post")
     case MakePicturePost =>
       val newPicture = Picture("filename", "")
-      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, keys), "picturepost")
+      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, myFriendsPublicKeys), "create", "picturepost")
     case MakePicture(albumID) =>
       val newPicture = Picture("filename", "")
-      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, keys), "picture")
+      put(createSecureObjectMessage(newPicture, myBaseObj.id, myBaseObj.id, ObjectType.picture, myFriendsPublicKeys), "create", "picture")
     case AddPictureToAlbum =>
     case MakeAlbum =>
       val newAlbum = Album(new DateTime().toString, new DateTime().toString, -1, "album desc")
-      val keys = Map(myBaseObj.id.toString -> keyPair.getPublic)
-      put(createSecureObjectMessage(newAlbum, myBaseObj.id, myBaseObj.id, ObjectType.album, keys), "album")
+      put(createSecureObjectMessage(newAlbum, myBaseObj.id, myBaseObj.id, ObjectType.album, myFriendsPublicKeys), "create", "album")
     // From matchmaker
+
+    case UpdatePost(postType, attachment) =>
+      val newPost = Objects.Post(new DateTime().toString,Resources.getRandomStatus(), postType,attachment)
+      post(createSecureObjectMessage(newPost, myBaseObj.id, myBaseObj.id, ObjectType.post, myFriendsPublicKeys, random(numPosts)), "update", "post")
     case aNewFriend: ActorRef =>
       if (myBaseObj == null) {
         waitForIdFriends.add(aNewFriend)
@@ -97,13 +98,20 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       } else {
         myRealFriends.put(sender, id)
         if (needResponse) {
-          self ! MakeFriend(id)
+          self ! RequestFriend(id)
           sender ! Handshake(Constants.falseBool, myBaseObj.id)
         }
       }
-    case MakeFriend(id) =>
-    // TODO Post("/addFriend")
+    case RequestFriend(id) =>
+      // TODO Post("/addFriend")
+      val secureMessage = createSecureRequestMessage(myBaseObj.id, id, ObjectType.user, id)
+      post(secureMessage, "addfriend")
     // SecureMessage(SecureRequest(friendID))
+
+    case AcceptFriendRequests =>
+      val secureMessage = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, -1)
+      get(secureMessage, "friend_requests")
+
 
     case PutMsg(response, reaction) => handlePutResponse(response, reaction)
     case GetMsg(response, reaction) => handleGetResponse(response, reaction)
@@ -111,6 +119,9 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       try {
         reaction match {
           case "addfriend" =>
+            log.info(response ~> unmarshal[String])
+          case "acceptfriendrequest" =>
+            log.info(response ~> unmarshal[String])
           case _ => //log.info(s"Updated $reaction")
         }
       } catch {
@@ -157,12 +168,13 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
                 val secureObject = Crypto.constructSecureObject(myBaseObj, myBaseObj.id, myBaseObj.id, ObjectType.page.id, mePage.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
-                  pipelining.Put(s"http://$serviceHost:$servicePort/page", secureMessage)
+                  pipelining.Put(s"http://$serviceHost:$servicePort/create", secureMessage)
                 }
 
                 future3 onComplete {
                   case Success(response) =>
-                    self ! false
+                    //                    log.info(response.toString)
+                    self ! Activity()
                   case Failure(error) => log.error(error, s"Couldn't put Page")
                 }
               }
@@ -173,11 +185,12 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
                 val secureObject = Crypto.constructSecureObject(myBaseObj, myBaseObj.id, myBaseObj.id, ObjectType.user.id, me.toJson.compactPrint, Map(myBaseObj.id.toString -> keyPair.getPublic))
                 val secureMessage = Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
                 val future3 = pipeline {
-                  pipelining.Put(s"http://$serviceHost:$servicePort/user", secureMessage)
+                  pipelining.Put(s"http://$serviceHost:$servicePort/create", secureMessage)
                 }
 
                 future3 onComplete {
                   case Success(response) =>
+                    //                    log.info(response.toString)
                     self ! false
                   case Failure(error) => log.error(error, s"Couldn't put User")
                 }
@@ -186,6 +199,24 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
           case Failure(error) => log.error(error, s"Couldn't register")
         }
       case Failure(error) => log.error(error, s"Couldn't get server_key")
+    }
+  }
+
+  def updateFriendPublicKeys() = {
+    val pipeline = sendReceive
+
+    val secureMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, -1)
+    val future = pipeline {
+      pipelining.Get(s"http://$serviceHost:$servicePort/friends_public_keys", secureMsg)
+    }
+
+    future onComplete {
+      case Success(response) =>
+        val requestIds = decryptSecureRequestMessage(response ~> unmarshal[SecureMessage], ObjectType.userKeyMap)
+        myFriendsPublicKeys = requestIds.asInstanceOf[Map[String, Array[Byte]]].map { case (id, bytes) => (id, Crypto.constructRSAPublicKeyFromBytes(bytes)) } + (myBaseObj.id.toString -> keyPair.getPublic)
+        self ! Activity
+
+      case Failure(error) => log.error(error, s"Couldn't get pending requests")
     }
   }
 
@@ -265,12 +296,15 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
     *  Generate create SecureObject with HashMap
     *  PUT or POST
     * */
-    if (isPage){
-      val secureMsg = createSecureRequestObjectMessage(myBaseObj.id, myBaseObj.id, ObjectType.page, myBaseObj.id)
+
+    context.system.scheduler.scheduleOnce(randomDuration(10), self, AcceptFriendRequests)
+
+    if (isPage) {
+      val secureMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.page, myBaseObj.id)
       get(secureMsg, "request", "page")
     }
-    else{
-      val secureMsg = createSecureRequestObjectMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, myBaseObj.id)
+    else {
+      val secureMsg = createSecureRequestMessage(myBaseObj.id, myBaseObj.id, ObjectType.user, myBaseObj.id)
       get(secureMsg, "request", "user")
     }
 
@@ -291,31 +325,24 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       }
     }
 
-//    if (random(101) < getPercent) {
-//      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
-//        if (ProfileMap.obj(id)) {
-//          get(s"page/$id", "page")
-//        } else {
-//          get(s"user/$id", "user")
-//          if (!isPage && random(2) == 0) get(s"friendlist/$id/0", "friendlist")
-//        }
-//        if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
-//        if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
-//      }
-//    }
+    if (random(101) < getPercent) {
+      myRealFriends.foreach { case (ref: ActorRef, id: Int) =>
+        val getUserRequest = createSecureRequestMessage(myBaseObj.id, id, ObjectType.post, random(3))
+        //get(getUserRequest, "request", "post")
 
-    //    if (random(101) < friendPercent) {
-    //      context.system.scheduler.scheduleOnce(randomDuration(3), self, MakeFriend)
-    //    }
+        //if (random(2) == 0) get(s"feed/$id", "feed") else get(s"post/$id", "post")
+        //if (random(2) == 0) get(s"album/$id", "album") else get(s"picture/$id", "picture")
+      }
+    }
 
-    //    if (random(101) < updatePercent) {
-    //      context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
-    //      if (numAlbums > 0) {
-    //        context.system.scheduler.scheduleOnce(randomDuration(3), self, AddPictureToAlbum)
-    //      }
-    //    }
+    if (random(101) < updatePercent) {
+      if(numPosts > 1) {
+        context.system.scheduler.scheduleOnce(randomDuration(3), self, UpdatePost(status, -1))
+      }
+    }
 
     context.system.scheduler.scheduleOnce(randomDuration(3), self, Constants.falseBool)
+
     // Delete case
     if (random(100001) < 5) {
       //      if (isPage)
@@ -361,6 +388,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         numPictures += 1
       case "likepage" =>
       case "like" =>
+        log.info(response ~> unmarshal[String])
     }
   }
 
@@ -373,55 +401,84 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
         log.info(s"${response.entity.asString}")
         context.system.scheduler.scheduleOnce(durationSeconds(2), self, DebugMsg)
       case "user" =>
-        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage],ObjectType.user)
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.user)
       case "page" =>
-        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage],ObjectType.page)
-      case "friendlist" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.page)
+      case "friendpublickeys" =>
+      case "friend_requests" =>
+        val idList = decryptSecureRequestMessage(response ~> unmarshal[SecureMessage], ObjectType.intArray).asInstanceOf[Array[Int]]
+        idList.foreach { id =>
+          val likeMessage = createSecureRequestMessage(myBaseObj.id, id, ObjectType.user, id)
+          post(likeMessage, "like", "acceptfriendrequest")
+        }
       case "feed" =>
       case "feedpost" =>
       case "picture" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.picture)
       case "post" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.post)
       case "getalbumaddpicture" =>
       case "album" =>
+        decryptSecureObjectMessage(response ~> unmarshal[SecureMessage], ObjectType.album)
       case x => log.error("Unmatched getmsg case {}", x)
     }
   }
 
-  def createSecureObjectMessage(obj: Any, from: Int, to: Int, objType: ObjectType, keys: Map[String, PublicKey]): SecureMessage = {
+  def createSecureObjectMessage(obj: Any, from: Int, to: Int, objType: ObjectType, keys: Map[String, PublicKey], id:Int = -1): SecureMessage = {
     objType match {
       case ObjectType.post =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(id), from, to, ObjectType.post.id, obj.asInstanceOf[Post].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
       case ObjectType.picture =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.picture.id, obj.asInstanceOf[Picture].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(id), from, to, ObjectType.picture.id, obj.asInstanceOf[Picture].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
       case ObjectType.album =>
-        val secureObject = Crypto.constructSecureObject(new BaseObject(), from, to, ObjectType.album.id, obj.asInstanceOf[Album].toJson.compactPrint, keys)
+        val secureObject = Crypto.constructSecureObject(new BaseObject(id), from, to, ObjectType.album.id, obj.asInstanceOf[Album].toJson.compactPrint, keys)
         Crypto.constructSecureMessage(myBaseObj.id, secureObject.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
     }
   }
 
-  def createSecureRequestObjectMessage(from: Int, to: Int, objType: ObjectType, objId: Int): SecureMessage = {
+  def createSecureRequestMessage(from: Int, to: Int, objType: ObjectType, objId: Int): SecureMessage = {
     val secureRequest = SecureRequest(from, to, objType.id, objId)
     Crypto.constructSecureMessage(myBaseObj.id, secureRequest.toJson.compactPrint, serverPublicKey, keyPair.getPrivate)
   }
 
-  def decryptSecureObjectMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
+  def decryptSecureRequestMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
+    val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
+    if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
+      val objJson = Base64Util.decodeString(
+        Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
+      )
+      objType match {
+        case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
+        case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+      }
+    }
+  }
 
+  def decryptSecureObjectMessage(secureMsg: SecureMessage, objType: ObjectType): Any = {
     val requestKeyBytes = Crypto.decryptRSA(secureMsg.encryptedKey, keyPair.getPrivate)
     if (Crypto.verifySign(serverPublicKey, secureMsg.signature, requestKeyBytes)) {
       val json = Base64Util.decodeString(
         Crypto.decryptAES(secureMsg.message, Crypto.constructAESKeyFromBytes(requestKeyBytes), Constants.IV)
       )
       val secureObject = JsonParser(json).convertTo[SecureObject]
-      val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
-      val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
-      objType match {
-        case ObjectType.user => JsonParser(objJson).convertTo[User]
-        case ObjectType.page => JsonParser(objJson).convertTo[Page]
-        case ObjectType.post => JsonParser(objJson).convertTo[Post]
-        case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
-        case ObjectType.album => JsonParser(objJson).convertTo[Album]
+      try {
+        val aesKey = Crypto.constructAESKeyFromBytes(Crypto.decryptRSA(secureObject.encryptedKeys(myBaseObj.id.toString), keyPair.getPrivate))
+        val objJson = Base64Util.decodeString(Crypto.decryptAES(secureObject.data, aesKey, Constants.IV))
+        objType match {
+          case ObjectType.user => JsonParser(objJson).convertTo[User]
+          case ObjectType.page => JsonParser(objJson).convertTo[Page]
+          case ObjectType.post => JsonParser(objJson).convertTo[Post]
+          case ObjectType.picture => JsonParser(objJson).convertTo[Picture]
+          case ObjectType.album => JsonParser(objJson).convertTo[Album]
+          case ObjectType.intArray => JsonParser(objJson).convertTo[Array[Int]]
+          case ObjectType.userKeyMap => JsonParser(objJson).convertTo[Map[String, Array[Byte]]]
+        }
+      }
+      catch {
+        case e: NoSuchElementException => e
+        case d: BadPaddingException => d
       }
     }
   }

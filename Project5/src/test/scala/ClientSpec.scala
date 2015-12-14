@@ -173,7 +173,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
 
           // request friend request
           requestArray.foreach { id =>
-            val secureRequest = SecureRequest(user2Id, user1Id, ObjectType.user.id, -1)
+            val secureRequest = SecureRequest(user2Id, id, ObjectType.user.id, -1)
             val secureMessage = Crypto.constructSecureMessage(user2Id, secureRequest.toJson.compactPrint, serverPublicKey, user2KeyPair.getPrivate)
             Post("/like", secureMessage) ~> myRoute ~> check {
               status should equal(OK)

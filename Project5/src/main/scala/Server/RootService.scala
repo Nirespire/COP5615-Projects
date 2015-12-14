@@ -103,6 +103,10 @@ trait RootService extends HttpService {
             rc.complete(defaultResponse)
           }
         }
+      } ~ path("feed"){
+        entity(as[SecureMessage]){secureMsg => rc =>
+          // TODO GET FEED
+        }
       }
     } ~ put {
       path("register") {

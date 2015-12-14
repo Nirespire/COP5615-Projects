@@ -53,7 +53,7 @@ object project5 extends App {
 
     (numActive + numPassive + 1 to numClients).foreach { idx =>
       val actor = clientSystem.actorOf(Props(new Client.ClientActor(true, ClientType.ContentCreator)), "client" + idx)
-      matchmaker ! actor
+//      matchmaker ! actor
       actor ! true
     }
 

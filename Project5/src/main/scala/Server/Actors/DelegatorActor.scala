@@ -23,21 +23,53 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
         debugInfo.debugVar(Constants.putProfilesChar) += 1
         profiles.put(secureObj.to, context.actorOf(Props(new PageActor(secureObj, debugInfo))))
         rc.complete(secureObj.to.toString)
-      case _ => profiles(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
+      case _ =>
+        ObjectType(secureObj.objectType) match{
+          case ObjectType.post => debugInfo.debugVar(Constants.putPostsChar) += 1
+          case ObjectType.picture => debugInfo.debugVar(Constants.putPicturesChar) += 1
+          case ObjectType.album => debugInfo.debugVar(Constants.putAlbumsChar) += 1
+        }
+        profiles(secureObj.to) ! PutSecureObjMsg(rc, secureObj)
     }
-    case postMsg@PostSecureObjMsg(rc, secureObj) => profiles(secureObj.to) ! postMsg
-    case delMsg@DeleteSecureObjMsg(rc, secureReq) => profiles(secureReq.to) ! delMsg
-    case getMsg@GetSecureObjMsg(rc, secureReq) => profiles(secureReq.to) ! getMsg
+    case postMsg@PostSecureObjMsg(rc, secureObj) =>
+      ObjectType(secureObj.objectType) match{
+        case ObjectType.post => debugInfo.debugVar(Constants.postPostChar) += 1
+        case ObjectType.picture => debugInfo.debugVar(Constants.postPictureChar) += 1
+        case ObjectType.album => debugInfo.debugVar(Constants.postAlbumChar) += 1
+      }
+      profiles(secureObj.to) ! postMsg
+    case delMsg@DeleteSecureObjMsg(rc, secureReq) =>
+      ObjectType(secureReq.objectType) match{
+        case ObjectType.post => debugInfo.debugVar(Constants.deletePostChar) += 1
+        case ObjectType.picture => debugInfo.debugVar(Constants.deletePictureChar) += 1
+        case ObjectType.album => debugInfo.debugVar(Constants.deleteAlbumChar) += 1
+      }
+      profiles(secureReq.to) ! delMsg
+    case getMsg@GetSecureObjMsg(rc, secureReq) =>
+      ObjectType(secureReq.objectType) match{
+        case ObjectType.post => debugInfo.debugVar(Constants.getPostsChar) += 1
+        case ObjectType.picture => debugInfo.debugVar(Constants.getPicturesChar) += 1
+        case ObjectType.album => debugInfo.debugVar(Constants.getAlbumsChar) += 1
+        case ObjectType.user | ObjectType.page => debugInfo.debugVar(Constants.getProfilesChar) += 1
+      }
+      profiles(secureReq.to) ! getMsg
     case likeMsg@LikeMsg(rc, secureReq) =>
+      debugInfo.debugVar(Constants.likeChar) += 2
       if (ObjectType(secureReq.objectType) == ObjectType.user) {
         if (profiles.contains(secureReq.from)) profiles(secureReq.from) ! LikeMsg(rc, secureReq)
         if (profiles.contains(secureReq.to)) profiles(secureReq.to) ! likeMsg
       } else {
         profiles(secureReq.to) ! likeMsg
       }
-    case getFriendKeysMsg@GetFriendKeysMsg(rc, pid) => profiles(pid) ! getFriendKeysMsg
-    case friendReq@GetFriendRequestsMsg(rc, pid) => profiles(pid) ! friendReq
-    case addFriend@AddFriendMsg(rc, secureReq) => profiles(secureReq.to) ! addFriend
+    case getFriendKeysMsg@GetFriendKeysMsg(rc, pid) =>
+      debugInfo.debugVar(Constants.getFlChar) += 1
+      profiles(pid) ! getFriendKeysMsg
+    case friendReq@GetFriendRequestsMsg(rc, pid) =>
+      debugInfo.debugVar(Constants.postFlChar) += 1
+      profiles(pid) ! friendReq
+    case addFriend@AddFriendMsg(rc, secureReq) =>
+      debugInfo.debugVar(Constants.postFlChar) += 1
+      profiles(secureReq.to) ! addFriend
     case x => log.error(s"Unhandled in DelegatorActor  $x")
   }
 }
