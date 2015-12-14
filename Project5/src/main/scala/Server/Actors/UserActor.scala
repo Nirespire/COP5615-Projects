@@ -45,8 +45,8 @@ class UserActor(var user: SecureObject)
           } else {
             pendingRequests.remove(secureReq.from)
             baseObject.appendLike(secureReq.from)
+            rc.complete("Added Friend!")
           }
-          rc.complete("Added Friend!")
       }
     case GetFriendKeysMsg(rc, _) =>
       val friendsKeyMap = baseObject.likes.map { fid =>
