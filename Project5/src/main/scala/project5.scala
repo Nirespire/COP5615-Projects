@@ -1,4 +1,4 @@
-import Client.{ClientType, MatchMaker}
+import Client.{BadClientActor, ClientType, MatchMaker}
 import Server.Actors.RootServerActor
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
@@ -55,6 +55,11 @@ object project5 extends App {
       val actor = clientSystem.actorOf(Props(new Client.ClientActor(true, ClientType.ContentCreator)), "client" + idx)
 //      matchmaker ! actor
       actor ! true
+    }
+
+    (1 to (numClients * 0.05).ceil.toInt).foreach{idx =>
+      val badClient = clientSystem.actorOf(Props(new BadClientActor()), "badclient" + idx)
+      badClient ! true
     }
 
     matchmaker ! true

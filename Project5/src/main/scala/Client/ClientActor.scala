@@ -457,6 +457,7 @@ class ClientActor(isPage: Boolean = false, clientType: ClientType) extends Actor
       case "feed" =>
         val secureObjectList = decryptSecureRequestMessage(response ~> unmarshal[SecureMessage], ObjectType.secureObjectArray).asInstanceOf[Array[SecureObject]]
         if (!secureObjectList.isEmpty) {
+          log.info(s"${myBaseObj.id} feed ${secureObjectList.size}")
           secureObjectList.foreach { case so =>
             decryptSecureObject(so, ObjectType.post)
           }
