@@ -494,6 +494,7 @@ class ClientSpec extends FreeSpec with ScalatestRouteTest with Matchers with Roo
         val secureMessage = Crypto.constructSecureMessage(user1Id, secureRequest.toJson.compactPrint, serverPublicKey, user1KeyPair.getPrivate)
         Delete("/delete", secureMessage) ~> myRoute ~> check {
           status should equal(OK)
+          println(entity)
         }
       }
     }

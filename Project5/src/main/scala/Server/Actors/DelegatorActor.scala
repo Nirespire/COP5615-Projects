@@ -33,6 +33,8 @@ class DelegatorActor(debugInfo: DebugInfo, serverPublicKey: Key) extends Actor w
     }
     case postMsg@PostSecureObjMsg(rc, secureObj) =>
       ObjectType(secureObj.objectType) match{
+        case ObjectType.user => debugInfo.debugVar(Constants.postUserChar)
+        case ObjectType.page => debugInfo.debugVar(Constants.postPageChar)
         case ObjectType.post => debugInfo.debugVar(Constants.postPostChar) += 1
         case ObjectType.picture => debugInfo.debugVar(Constants.postPictureChar) += 1
         case ObjectType.album => debugInfo.debugVar(Constants.postAlbumChar) += 1
